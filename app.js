@@ -131,7 +131,7 @@ function renderCalculator() {
           <div class="result-metrics">
             <div class="metric">
               <span>Draw per dose</span>
-              <strong>${formatMl(option.doseMl)}</strong>
+              <strong>${formatDrawMl(option.doseMl)}</strong>
             </div>
             <div class="metric">
               <span>Concentration</span>
@@ -288,7 +288,7 @@ function renderSelectedFill() {
       </div>
       <div class="selected-pill">
         <span>Draw</span>
-        <strong>${formatMl(state.selectedOption.doseMl)}</strong>
+        <strong>${formatDrawMl(state.selectedOption.doseMl)}</strong>
       </div>
       <div class="selected-pill">
         <span>Concentration</span>
@@ -327,7 +327,7 @@ function renderSavedFills() {
           <div class="result-metrics">
             <div class="metric">
               <span>Draw</span>
-              <strong>${formatMl(fill.doseMl)}</strong>
+              <strong>${formatDrawMl(fill.doseMl)}</strong>
             </div>
             <div class="metric">
               <span>Concentration</span>
@@ -389,7 +389,7 @@ function renderFillSourceOptions() {
   if (state.selectedOption) {
     options.push({
       key: "current-selection",
-      label: `Current selection: ${formatMl(state.selectedOption.doseMl)} draw`,
+      label: `Current selection: ${formatDrawMl(state.selectedOption.doseMl)} draw`,
       fill: state.selectedOption,
     });
   }
@@ -485,7 +485,7 @@ function renderSchedules() {
             <div>
               <h3>${escapeHtml(schedule.name)}</h3>
               <p class="card-note">
-                ${escapeHtml(schedule.fill.label)} • ${formatMl(schedule.fill.doseMl)} draw
+                ${escapeHtml(schedule.fill.label)} • ${formatDrawMl(schedule.fill.doseMl)} draw
               </p>
             </div>
             <span class="badge">Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</span>
@@ -589,7 +589,7 @@ function fireReminder(schedule) {
   const title = schedule.name;
   const body =
     `Time for ${formatDose(schedule.fill.doseMg)}. ` +
-    `Draw ${formatMl(schedule.fill.doseMl)} from your constituted vial.`;
+    `Draw ${formatDrawMl(schedule.fill.doseMl)} from your constituted vial.`;
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
@@ -650,6 +650,10 @@ function formatMl(value) {
   return `${formatNumber(value)} mL`;
 }
 
+function formatDrawMl(value) {
+  return `${formatDrawNumber(value)} mL`;
+}
+
 function formatDose(value) {
   return `${formatNumber(value)} mg`;
 }
@@ -660,6 +664,14 @@ function formatUnits(value) {
 
 function formatNumber(value) {
   return Number(value).toFixed(2).replace(/\.00$/, "");
+}
+
+function formatDrawNumber(value) {
+  if (value >= 1) {
+    return Number(value).toFixed(2).replace(/\.00$/, "");
+  }
+
+  return Number(value).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function formatDate(dateString) {
