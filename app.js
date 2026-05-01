@@ -15,7 +15,7 @@ const elements = {
   resetForm: document.getElementById("reset-form"),
   resultsGrid: document.getElementById("results-grid"),
   selectedFill: document.getElementById("selected-fill"),
-  savedFills: document.getElementById("saved-fills"),
+  currentPeptides: document.getElementById("current-peptides"),
   reminderForm: document.getElementById("reminder-form"),
   reminderName: document.getElementById("reminder-name"),
   fillSource: document.getElementById("fill-source"),
@@ -23,12 +23,13 @@ const elements = {
   intervalDays: document.getElementById("interval-days"),
   reminderTime: document.getElementById("reminder-time"),
   reminderList: document.getElementById("reminder-list"),
+  calendarList: document.getElementById("calendar-list"),
   enableNotifications: document.getElementById("enable-notifications"),
   notificationStatus: document.getElementById("notification-status"),
 };
 
 const state = {
-  fills: readStorage(STORAGE_KEYS.fills, []),
+  fills: readStorage(STORAGE_KEYS.fills, []).map(normalizeFill),
   schedules: readStorage(STORAGE_KEYS.schedules, []),
   selectedOption: readStorage(STORAGE_KEYS.selectedFill, null),
   latestOptions: [],
@@ -42,9 +43,10 @@ function initialize() {
   setTodayAsDefault();
   bindEvents();
   renderCalculator();
-  renderSavedFills();
+  renderCurrentPeptides();
   renderFillSourceOptions();
   renderSchedules();
+  renderCalendar();
   renderNotificationState();
   queueNextReminder();
 }
@@ -178,25 +180,38 @@ function renderCalculator() {
         return;
       }
 
-      const label = window.prompt(
-        "Give this fill a name",
-        `${formatDose(option.doseMg)} from ${formatDose(option.vialMg)} vial`
-      );
-
-      if (label === null) {
+      const peptideNameInput = window.prompt("Peptide name", option.peptideName || "Semaglutide");
+      if (peptideNameInput === null) {
         return;
       }
 
+      const peptideName = peptideNameInput.trim() || "Unnamed Peptide";
+      const fillNameInput = window.prompt("Fill name", `${peptideName} Fill`);
+      if (fillNameInput === null) {
+        return;
+      }
+
+      const fillName = fillNameInput.trim() || `${peptideName} Fill`;
       const savedFill = {
         ...option,
         savedId: crypto.randomUUID(),
-        label: label.trim() || `${formatDose(option.doseMg)} from ${formatDose(option.vialMg)} vial`,
+        peptideName,
+        fillName,
+        label: fillName,
         savedAt: new Date().toISOString(),
       };
 
       state.fills = [savedFill, ...state.fills];
+      state.selectedOption = {
+        ...option,
+        peptideName,
+        fillName,
+        label: fillName,
+      };
       writeStorage(STORAGE_KEYS.fills, state.fills);
-      renderSavedFills();
+      writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
+      renderCurrentPeptides();
+      renderSelectedFill();
       renderFillSourceOptions();
     });
   });
@@ -273,11 +288,19 @@ function renderSelectedFill() {
     return;
   }
 
+  const activeTitle = state.selectedOption.fillName
+    ? `${escapeHtml(state.selectedOption.fillName)}`
+    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg)} vial`;
+  const activeSubtitle = state.selectedOption.peptideName
+    ? `${escapeHtml(state.selectedOption.peptideName)} • ${formatMl(state.selectedOption.waterMl)} bacteriostatic water`
+    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg)} vial`;
+
   elements.selectedFill.innerHTML = `
     <div class="card-topline">
       <div>
         <span class="section-kicker">Active Fill</span>
-        <h3>${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg)} vial</h3>
+        <h3>${activeTitle}</h3>
+        <p class="card-note">${activeSubtitle}</p>
       </div>
       <span class="badge">Ready</span>
     </div>
@@ -302,53 +325,86 @@ function renderSelectedFill() {
   `;
 }
 
-function renderSavedFills() {
+function renderCurrentPeptides() {
   if (!state.fills.length) {
-    elements.savedFills.innerHTML = `
+    elements.currentPeptides.innerHTML = `
       <div class="empty-state">
-        No saved fills yet. Save one from the recommended options so you can reuse it later.
+        No peptide fills saved yet. Save a named fill like Semaglutide Fill to build your organizer.
       </div>
     `;
     return;
   }
 
-  elements.savedFills.innerHTML = state.fills
-    .map(
-      (fill) => `
-        <article class="list-card">
+  const groupedFills = groupFillsByPeptide(state.fills);
+
+  elements.currentPeptides.innerHTML = groupedFills
+    .map(({ peptideName, fills }) => {
+      const peptideSchedules = state.schedules.filter(
+        (schedule) => resolvePeptideName(schedule.fill) === peptideName
+      );
+      const nextReminder = peptideSchedules
+        .map((schedule) => getNextOccurrence(schedule, new Date()))
+        .filter(Boolean)
+        .sort((left, right) => left - right)[0];
+
+      return `
+        <article class="peptide-card">
           <div class="list-topline">
             <div>
-              <h3>${escapeHtml(fill.label)}</h3>
-              <p class="card-note">${formatDose(fill.doseMg)} dose from a ${formatDose(fill.vialMg)} vial</p>
+              <h3>${escapeHtml(peptideName)}</h3>
+              <p class="card-note">
+                ${fills.length} fill${fills.length === 1 ? "" : "s"} saved
+                ${nextReminder ? `• next dose ${formatDateTime(nextReminder)}` : "• no schedule yet"}
+              </p>
             </div>
-            <span class="badge">${formatMl(fill.waterMl)} water</span>
+            <span class="badge">${peptideSchedules.length} reminder${peptideSchedules.length === 1 ? "" : "s"}</span>
           </div>
 
-          <div class="result-metrics">
-            <div class="metric">
-              <span>Draw</span>
-              <strong>${formatDrawMl(fill.doseMl)}</strong>
-            </div>
-            <div class="metric">
-              <span>Concentration</span>
-              <strong>${formatNumber(fill.concentrationMgMl)} mg/mL</strong>
-            </div>
-            <div class="metric">
-              <span>1 mL syringe units</span>
-              <strong>${formatUnits(fill.insulinUnits)}</strong>
-            </div>
-          </div>
+          <div class="peptide-fill-list">
+            ${fills
+              .map(
+                (fill) => `
+                  <div class="peptide-fill-item">
+                    <div class="list-topline">
+                      <div>
+                        <h4>${escapeHtml(resolveFillName(fill))}</h4>
+                        <p class="subtle-line">
+                          Add ${formatMl(fill.waterMl)} BAC water • ${formatDose(fill.vialMg)} vial • ${formatDose(fill.doseMg)} dose
+                        </p>
+                      </div>
+                      <span class="badge">${formatDrawMl(fill.doseMl)} draw</span>
+                    </div>
 
-          <div class="card-actions">
-            <button class="mini-button" type="button" data-action="use-fill" data-id="${fill.savedId}">Use Fill</button>
-            <button class="mini-button" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
+                    <div class="result-metrics">
+                      <div class="metric">
+                        <span>Concentration</span>
+                        <strong>${formatNumber(fill.concentrationMgMl)} mg/mL</strong>
+                      </div>
+                      <div class="metric">
+                        <span>1 mL syringe units</span>
+                        <strong>${formatUnits(fill.insulinUnits)}</strong>
+                      </div>
+                      <div class="metric">
+                        <span>Max syringe</span>
+                        <strong>${formatMl(fill.syringeMax)}</strong>
+                      </div>
+                    </div>
+
+                    <div class="card-actions">
+                      <button class="mini-button" type="button" data-action="use-fill" data-id="${fill.savedId}">Use Fill</button>
+                      <button class="mini-button" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
+                    </div>
+                  </div>
+                `
+              )
+              .join("")}
           </div>
         </article>
-      `
-    )
+      `;
+    })
     .join("");
 
-  elements.savedFills.querySelectorAll("[data-action='use-fill']").forEach((button) => {
+  elements.currentPeptides.querySelectorAll("[data-action='use-fill']").forEach((button) => {
     button.addEventListener("click", () => {
       const fill = state.fills.find((item) => item.savedId === button.dataset.id);
       if (!fill) {
@@ -367,18 +423,22 @@ function renderSavedFills() {
         concentrationMgMl: fill.concentrationMgMl,
         doseMl: fill.doseMl,
         insulinUnits: fill.insulinUnits,
+        peptideName: fill.peptideName,
+        fillName: fill.fillName,
+        label: fill.label,
       };
       writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
       renderCalculator();
     });
   });
 
-  elements.savedFills.querySelectorAll("[data-action='delete-fill']").forEach((button) => {
+  elements.currentPeptides.querySelectorAll("[data-action='delete-fill']").forEach((button) => {
     button.addEventListener("click", () => {
       state.fills = state.fills.filter((item) => item.savedId !== button.dataset.id);
       writeStorage(STORAGE_KEYS.fills, state.fills);
-      renderSavedFills();
+      renderCurrentPeptides();
       renderFillSourceOptions();
+      renderCalendar();
     });
   });
 }
@@ -389,7 +449,7 @@ function renderFillSourceOptions() {
   if (state.selectedOption) {
     options.push({
       key: "current-selection",
-      label: `Current selection: ${formatDrawMl(state.selectedOption.doseMl)} draw`,
+      label: `Current selection: ${resolvePeptideName(state.selectedOption)} - ${resolveFillName(state.selectedOption)} (${formatDrawMl(state.selectedOption.doseMl)} draw)`,
       fill: state.selectedOption,
     });
   }
@@ -397,7 +457,7 @@ function renderFillSourceOptions() {
   state.fills.forEach((fill) => {
     options.push({
       key: fill.savedId,
-      label: fill.label,
+      label: `${resolvePeptideName(fill)} - ${resolveFillName(fill)}`,
       fill,
     });
   });
@@ -437,6 +497,8 @@ function saveReminder() {
     startDate,
     fill: {
       label: fill.label || `${formatDose(fill.doseMg)} dose`,
+      peptideName: resolvePeptideName(fill),
+      fillName: resolveFillName(fill),
       doseMg: fill.doseMg,
       doseMl: fill.doseMl,
       waterMl: fill.waterMl,
@@ -455,6 +517,8 @@ function saveReminder() {
   elements.reminderTime.value = "09:00";
 
   renderSchedules();
+  renderCurrentPeptides();
+  renderCalendar();
   queueNextReminder();
 }
 
@@ -485,7 +549,7 @@ function renderSchedules() {
             <div>
               <h3>${escapeHtml(schedule.name)}</h3>
               <p class="card-note">
-                ${escapeHtml(schedule.fill.label)} • ${formatDrawMl(schedule.fill.doseMl)} draw
+                ${escapeHtml(resolvePeptideName(schedule.fill))} • ${escapeHtml(resolveFillName(schedule.fill))} • ${formatDrawMl(schedule.fill.doseMl)} draw
               </p>
             </div>
             <span class="badge">Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</span>
@@ -520,6 +584,8 @@ function renderSchedules() {
       state.schedules = state.schedules.filter((schedule) => schedule.id !== button.dataset.id);
       writeStorage(STORAGE_KEYS.schedules, state.schedules);
       renderSchedules();
+      renderCurrentPeptides();
+      renderCalendar();
       queueNextReminder();
     });
   });
@@ -580,16 +646,18 @@ function queueNextReminder() {
       freshSchedule.lastTriggeredAt = next.nextAt.toISOString();
       writeStorage(STORAGE_KEYS.schedules, state.schedules);
       renderSchedules();
+      renderCurrentPeptides();
+      renderCalendar();
     }
     queueNextReminder();
   }, Math.max(delay, 1000));
 }
 
 function fireReminder(schedule) {
-  const title = schedule.name;
+  const title = `${resolvePeptideName(schedule.fill)} Reminder`;
   const body =
-    `Time for ${formatDose(schedule.fill.doseMg)}. ` +
-    `Draw ${formatDrawMl(schedule.fill.doseMl)} from your constituted vial.`;
+    `${resolveFillName(schedule.fill)}: take ${formatDose(schedule.fill.doseMg)} and ` +
+    `draw ${formatDrawMl(schedule.fill.doseMl)} from the constituted vial.`;
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
@@ -618,6 +686,64 @@ function renderNotificationState(forcedPermission) {
   }
 }
 
+function renderCalendar() {
+  const entries = buildCalendarEntries(state.schedules);
+
+  if (!entries.length) {
+    elements.calendarList.innerHTML = `
+      <div class="empty-state">
+        Your calendar is empty right now. Save a reminder to see upcoming peptide doses here.
+      </div>
+    `;
+    return;
+  }
+
+  const groupedByDay = entries.reduce((groups, entry) => {
+    const dayKey = entry.when.toISOString().split("T")[0];
+    if (!groups[dayKey]) {
+      groups[dayKey] = [];
+    }
+    groups[dayKey].push(entry);
+    return groups;
+  }, {});
+
+  elements.calendarList.innerHTML = Object.entries(groupedByDay)
+    .map(
+      ([dayKey, dayEntries]) => `
+        <article class="calendar-day">
+          <div class="list-topline">
+            <div>
+              <h3>${formatDate(dayKey)}</h3>
+              <p class="card-note">${dayEntries.length} planned reminder${dayEntries.length === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+
+          <div class="calendar-day-list">
+            ${dayEntries
+              .map(
+                (entry) => `
+                  <div class="calendar-item">
+                    <div class="list-topline">
+                      <div>
+                        <h4>${escapeHtml(entry.peptideName)}</h4>
+                        <p class="subtle-line">${escapeHtml(entry.fillName)} • ${escapeHtml(entry.scheduleName)}</p>
+                      </div>
+                      <span class="badge">${formatTime(entry.when)}</span>
+                    </div>
+                    <p class="subtle-line">
+                      Add ${formatMl(entry.waterMl)} BAC water and draw ${formatDrawMl(entry.doseMl)} for ${formatDose(entry.doseMg)}.
+                    </p>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+        </article>
+      `
+    )
+    .join("");
+}
+
 function setTodayAsDefault() {
   if (!elements.startDate.value) {
     elements.startDate.value = new Date().toISOString().split("T")[0];
@@ -631,6 +757,69 @@ function combineDateAndTime(dateString, timeString) {
 
   const combined = new Date(`${dateString}T${timeString}:00`);
   return Number.isNaN(combined.getTime()) ? null : combined;
+}
+
+function groupFillsByPeptide(fills) {
+  const groups = fills.reduce((map, fill) => {
+    const peptideName = resolvePeptideName(fill);
+    if (!map.has(peptideName)) {
+      map.set(peptideName, []);
+    }
+    map.get(peptideName).push(fill);
+    return map;
+  }, new Map());
+
+  return Array.from(groups.entries())
+    .map(([peptideName, peptideFills]) => ({
+      peptideName,
+      fills: peptideFills.sort((left, right) => new Date(right.savedAt || 0) - new Date(left.savedAt || 0)),
+    }))
+    .sort((left, right) => left.peptideName.localeCompare(right.peptideName));
+}
+
+function buildCalendarEntries(schedules) {
+  const now = new Date();
+  const entries = [];
+
+  schedules.forEach((schedule) => {
+    let next = getNextOccurrence(schedule, now);
+    let count = 0;
+
+    while (next && count < 4) {
+      entries.push({
+        scheduleId: schedule.id,
+        scheduleName: schedule.name,
+        peptideName: resolvePeptideName(schedule.fill),
+        fillName: resolveFillName(schedule.fill),
+        waterMl: schedule.fill.waterMl,
+        doseMl: schedule.fill.doseMl,
+        doseMg: schedule.fill.doseMg,
+        when: next,
+      });
+
+      next = new Date(next.getTime() + schedule.intervalDays * 24 * 60 * 60 * 1000);
+      count += 1;
+    }
+  });
+
+  return entries.sort((left, right) => left.when - right.when).slice(0, 20);
+}
+
+function normalizeFill(fill) {
+  return {
+    ...fill,
+    peptideName: fill.peptideName || fill.peptide || "Unnamed Peptide",
+    fillName: fill.fillName || fill.label || `${fill.peptideName || fill.peptide || "Peptide"} Fill`,
+    label: fill.label || fill.fillName || `${fill.peptideName || fill.peptide || "Peptide"} Fill`,
+  };
+}
+
+function resolvePeptideName(fill) {
+  return fill?.peptideName || fill?.peptide || "Unnamed Peptide";
+}
+
+function resolveFillName(fill) {
+  return fill?.fillName || fill?.label || `${resolvePeptideName(fill)} Fill`;
 }
 
 function readStorage(key, fallback) {
@@ -686,6 +875,13 @@ function formatDateTime(date) {
   return new Date(date).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatTime(date) {
+  return new Date(date).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
   });
