@@ -4,8 +4,10 @@ const STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
   selectedFill: "peptide-calculator-v2-selected-fill",
+  userId: "peptide-calculator-v2-user-id",
 };
 const REMINDER_LOOKAHEAD_MS = 2147483647;
+const APP_CONFIG = window.APP_CONFIG || {};
 
 const elements = {
   calculatorForm: document.getElementById("calculator-form"),
@@ -32,6 +34,7 @@ const state = {
   fills: readStorage(STORAGE_KEYS.fills, []).map(normalizeFill),
   schedules: readStorage(STORAGE_KEYS.schedules, []),
   selectedOption: readStorage(STORAGE_KEYS.selectedFill, null),
+  userId: readStorage(STORAGE_KEYS.userId, null) || crypto.randomUUID(),
   latestOptions: [],
 };
 
@@ -40,6 +43,7 @@ let reminderTimer = null;
 initialize();
 
 function initialize() {
+  writeStorage(STORAGE_KEYS.userId, state.userId);
   setTodayAsDefault();
   bindEvents();
   renderCalculator();
@@ -48,6 +52,7 @@ function initialize() {
   renderSchedules();
   renderCalendar();
   renderNotificationState();
+  maybeRegisterNativePushIdentity();
   queueNextReminder();
 }
 
@@ -79,6 +84,16 @@ function bindEvents() {
   });
 
   elements.enableNotifications.addEventListener("click", async () => {
+    if (hasMedianOneSignal()) {
+      try {
+        window.median.onesignal.promptForPushNotifications();
+        elements.notificationStatus.textContent = "Native push permission request sent through Median.";
+        return;
+      } catch (error) {
+        // Fall through to web notification permission.
+      }
+    }
+
     if (!("Notification" in window)) {
       elements.notificationStatus.textContent = "This device does not support browser notifications.";
       return;
@@ -213,6 +228,7 @@ function renderCalculator() {
       renderCurrentPeptides();
       renderSelectedFill();
       renderFillSourceOptions();
+      syncRemindersToBackend();
     });
   });
 
@@ -439,6 +455,7 @@ function renderCurrentPeptides() {
       renderCurrentPeptides();
       renderFillSourceOptions();
       renderCalendar();
+      syncRemindersToBackend();
     });
   });
 }
@@ -519,6 +536,7 @@ function saveReminder() {
   renderSchedules();
   renderCurrentPeptides();
   renderCalendar();
+  syncRemindersToBackend();
   queueNextReminder();
 }
 
@@ -586,6 +604,7 @@ function renderSchedules() {
       renderSchedules();
       renderCurrentPeptides();
       renderCalendar();
+      syncRemindersToBackend();
       queueNextReminder();
     });
   });
@@ -670,6 +689,12 @@ function fireReminder(schedule) {
 }
 
 function renderNotificationState(forcedPermission) {
+  if (hasMedianOneSignal()) {
+    elements.notificationStatus.textContent =
+      "Median native push is available. Connect OneSignal and a backend to make reminders work even when the app is closed.";
+    return;
+  }
+
   if (!("Notification" in window)) {
     elements.notificationStatus.textContent = "This device does not support browser notifications.";
     return;
@@ -820,6 +845,64 @@ function resolvePeptideName(fill) {
 
 function resolveFillName(fill) {
   return fill?.fillName || fill?.label || `${resolvePeptideName(fill)} Fill`;
+}
+
+function hasMedianOneSignal() {
+  return Boolean(window.median && window.median.onesignal);
+}
+
+function maybeRegisterNativePushIdentity() {
+  if (!hasMedianOneSignal()) {
+    return;
+  }
+
+  const prefix = APP_CONFIG.onesignalExternalIdPrefix || "peptide-calculator-v2";
+  const externalId = `${prefix}-${state.userId}`;
+
+  try {
+    if (typeof window.median.onesignal.login === "function") {
+      window.median.onesignal.login(externalId);
+    }
+  } catch (error) {
+    // Ignore bridge errors during web testing.
+  }
+}
+
+async function syncRemindersToBackend() {
+  if (!APP_CONFIG.backendBaseUrl) {
+    return;
+  }
+
+  const payload = {
+    userId: state.userId,
+    schedules: state.schedules.map((schedule) => ({
+      id: schedule.id,
+      name: schedule.name,
+      startDate: schedule.startDate,
+      reminderTime: schedule.reminderTime,
+      intervalDays: schedule.intervalDays,
+      fill: {
+        peptideName: resolvePeptideName(schedule.fill),
+        fillName: resolveFillName(schedule.fill),
+        waterMl: schedule.fill.waterMl,
+        doseMg: schedule.fill.doseMg,
+        doseMl: schedule.fill.doseMl,
+        vialMg: schedule.fill.vialMg,
+      },
+    })),
+  };
+
+  try {
+    await fetch(`${APP_CONFIG.backendBaseUrl.replace(/\/$/, "")}/reminders/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // Keep the app usable even if the backend is not ready yet.
+  }
 }
 
 function readStorage(key, fallback) {
