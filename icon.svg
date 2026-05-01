@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Peptide Calculator V2</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#ff7d5c"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <path d="M37 29h20c18.225 0 33 14.775 33 33S75.225 95 57 95H37V29Zm18.5 50c9.665 0 17.5-7.835 17.5-17.5S65.165 44 55.5 44H53v35h2.5Z" fill="#fff7ef"/>
+  <path d="M77 33h14v62H77z" fill="#15312f" opacity=".16"/>
+</svg>
