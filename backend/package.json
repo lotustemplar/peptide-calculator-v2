@@ -1,0 +1,16 @@
+{
+  "name": "peptide-calculator-v2-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reminder sync and OneSignal push backend for Peptide Calculator V2",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
