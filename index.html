@@ -34,8 +34,11 @@
             <button class="primary-button" type="button" data-jump="#calculator-card">
               Start Calculating
             </button>
-            <button class="ghost-button" type="button" data-jump="#reminders-card">
-              Set Reminder
+            <button class="ghost-button" type="button" data-jump="#current-peptides-card">
+              Current Peptides
+            </button>
+            <button class="ghost-button" type="button" data-jump="#calendar-card">
+              Calendar
             </button>
           </div>
         </div>
@@ -54,6 +57,13 @@
           </div>
         </div>
       </header>
+
+      <nav class="section-nav" aria-label="App sections">
+        <button class="ghost-button" type="button" data-jump="#calculator-card">Calculator</button>
+        <button class="ghost-button" type="button" data-jump="#current-peptides-card">Current Peptides</button>
+        <button class="ghost-button" type="button" data-jump="#reminders-card">Schedules</button>
+        <button class="ghost-button" type="button" data-jump="#calendar-card">Calendar</button>
+      </nav>
 
       <main class="layout-grid">
         <section class="card calculator-card" id="calculator-card">
@@ -104,13 +114,13 @@
           <div id="results-grid" class="results-grid" aria-live="polite"></div>
         </section>
 
-        <section class="card" id="saved-fills-card">
+        <section class="card" id="current-peptides-card">
           <div class="section-heading">
-            <span class="section-kicker">Saved Fills</span>
-            <h2>Keep your favorite setups</h2>
-            <p>Save a fill so you can reuse it later or attach it to reminders.</p>
+            <span class="section-kicker">Current Peptides</span>
+            <h2>Organize every peptide in one place</h2>
+            <p>Save named fills like Semaglutide Fill, keep the BAC water details attached, and reuse them for reminders.</p>
           </div>
-          <div id="saved-fills" class="stack-list"></div>
+          <div id="current-peptides" class="stack-list"></div>
         </section>
 
         <section class="card" id="reminders-card">
@@ -161,6 +171,16 @@
           </form>
 
           <div id="reminder-list" class="stack-list"></div>
+        </section>
+
+        <section class="card" id="calendar-card">
+          <div class="section-heading">
+            <span class="section-kicker">Calendar</span>
+            <h2>Upcoming dose timeline</h2>
+            <p>See the next planned reminders across all peptides in one simple agenda.</p>
+          </div>
+
+          <div id="calendar-list" class="stack-list"></div>
         </section>
       </main>
 
