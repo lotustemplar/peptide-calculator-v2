@@ -6,9 +6,9 @@
     <title>Peptide Calculator</title>
     <meta
       name="description"
-      content="A clean peptide calculator with saved fill presets, organized schedules, and safety-first dose math."
+      content="A clean peptide calculator with inventory-aware fill planning, dosage schedules, and safety-first dose math."
     >
-    <meta name="theme-color" content="#0b6b64">
+    <meta name="theme-color" content="#08131d">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -19,7 +19,7 @@
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="stylesheet" href="./styles.css">
   </head>
-  <body>
+  <body data-theme="dark">
     <div class="page-shell">
       <header class="topbar">
         <div class="brand-lockup">
@@ -29,15 +29,16 @@
           <div class="brand-copy">
             <span class="eyebrow">Peptide Calculator</span>
             <h1>Peptide Calculator</h1>
-            <p>Safety-first fill planning with easy-to-read syringe draw targets.</p>
+            <p>Plan fills, track what is left in the vial, and keep every dose on one clear calendar.</p>
           </div>
         </div>
 
         <div class="topbar-actions">
           <button class="ghost-button" type="button" data-jump="#calculator-card">Calculator</button>
-          <button class="ghost-button" type="button" data-jump="#current-peptides-card">Current Peptides</button>
-          <button class="ghost-button" type="button" data-jump="#reminders-card">Schedules</button>
+          <button class="ghost-button" type="button" data-jump="#cabinet-card">Peptide Cabinet</button>
+          <button class="ghost-button" type="button" data-jump="#dosage-card">Dosage Plans</button>
           <button class="ghost-button" type="button" data-jump="#calendar-card">Calendar</button>
+          <button class="ghost-button" type="button" id="theme-toggle">Light Mode</button>
         </div>
       </header>
 
@@ -47,21 +48,21 @@
           <strong>0.05 mL / 5 units</strong>
         </div>
         <div class="info-pill">
-          <span class="info-label">Goal</span>
-          <strong>Prefer easy rounded draw amounts</strong>
+          <span class="info-label">Preferred draw style</span>
+          <strong>Rounded, easy-to-read syringe amounts first</strong>
         </div>
         <div class="info-pill">
           <span class="info-label">Water guidance</span>
-          <strong>Above 3 mL allowed with warning</strong>
+          <strong>More than 3 mL allowed with a caution</strong>
         </div>
       </section>
 
       <main class="layout-grid">
         <section class="card calculator-card" id="calculator-card">
           <div class="section-heading">
-            <span class="section-kicker">Dose Planner</span>
+            <span class="section-kicker">Fill Builder</span>
             <h2>Build your fill options</h2>
-            <p>Choose the vial unit, syringe size, and water ceiling. Results only show options that stay at or above the 5-unit minimum draw.</p>
+            <p>Enter the vial amount, your target dose, and syringe size. The app ranks the easiest draw amounts first and filters out anything under 5 units.</p>
           </div>
 
           <form id="calculator-form" class="calculator-form">
@@ -75,12 +76,12 @@
 
             <label>
               <span id="vial-amount-label">Amount in vial (mg)</span>
-              <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="10">
+              <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
             </label>
 
             <label>
               <span id="dose-amount-label">Desired dose (mg)</span>
-              <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="0.5">
+              <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="3">
             </label>
 
             <label>
@@ -104,34 +105,34 @@
           </form>
 
           <div class="selected-fill" id="selected-fill">
-            <p class="selected-fill-empty">Choose one of the options below to mark it as your active fill.</p>
+            <p class="selected-fill-empty">Save a fill option to add it into your Peptide Cabinet.</p>
           </div>
         </section>
 
         <section class="card results-card">
           <div class="section-heading">
-            <span class="section-kicker">Fill Options</span>
-            <h2>Recommended water amounts</h2>
-            <p id="results-summary">These options rank the easiest draw amounts first and avoid anything under 0.05 mL.</p>
+            <span class="section-kicker">Recommended Options</span>
+            <h2>Water amounts ranked by ease of use</h2>
+            <p id="results-summary">These options stay within your syringe limit and prefer easy rounded draw amounts.</p>
           </div>
 
           <div id="results-grid" class="results-grid" aria-live="polite"></div>
         </section>
 
-        <section class="card" id="current-peptides-card">
+        <section class="card" id="cabinet-card">
           <div class="section-heading">
-            <span class="section-kicker">Current Peptides</span>
-            <h2>Organize fills and dosages separately</h2>
-            <p>Each peptide fill stores the vial and water setup. Each dosage plan stores what you take on a schedule.</p>
+            <span class="section-kicker">Peptide Cabinet</span>
+            <h2>Track fills, doses left, and reorder timing</h2>
+            <p>Each fill stores the vial and BAC water setup. Inside each saved fill, dosage plans show what you take and how much to draw.</p>
           </div>
           <div id="current-peptides" class="stack-list"></div>
         </section>
 
-        <section class="card" id="reminders-card">
+        <section class="card" id="dosage-card">
           <div class="section-heading">
             <span class="section-kicker">Dosage Plans</span>
-            <h2>Attach dosages to a saved fill</h2>
-            <p>Choose a saved fill, enter the amount you plan to take, and the app will calculate the syringe draw for that schedule.</p>
+            <h2>Add another dose schedule when needed</h2>
+            <p>Use this when one saved fill needs an additional recurring dosage plan. The app calculates the syringe draw from the fill automatically.</p>
           </div>
 
           <div class="notice-row">
@@ -143,7 +144,7 @@
             </p>
           </div>
 
-          <form id="reminder-form" class="reminder-form">
+          <form id="dosage-form" class="reminder-form">
             <label>
               <span>Use this fill</span>
               <select id="fill-source" name="fillSource"></select>
@@ -151,7 +152,7 @@
 
             <label>
               <span id="schedule-dose-label">Dosage amount (mg)</span>
-              <input id="schedule-dose-amount" name="scheduleDoseAmount" type="number" min="0.01" step="0.01" placeholder="0.5">
+              <input id="schedule-dose-amount" name="scheduleDoseAmount" type="number" min="0.01" step="0.01" placeholder="3">
             </label>
 
             <label>
@@ -161,7 +162,7 @@
 
             <label>
               <span>Every X days</span>
-              <input id="interval-days" name="intervalDays" type="number" min="1" step="1" value="2">
+              <input id="interval-days" name="intervalDays" type="number" min="1" step="1" value="7">
             </label>
 
             <label>
@@ -181,7 +182,7 @@
           <div class="section-heading">
             <span class="section-kicker">Calendar</span>
             <h2>Upcoming dose timeline</h2>
-            <p>See the next planned reminders across all peptides in one simple agenda.</p>
+            <p>Every saved dosage plan lands here automatically, so one fill setup can build the next reminders in a single step.</p>
           </div>
 
           <div id="calendar-list" class="stack-list"></div>
@@ -193,6 +194,54 @@
           For planning only. Always verify the protocol, unit conversion, materials, and dosing instructions before use.
         </p>
       </footer>
+    </div>
+
+    <div class="modal-shell is-hidden" id="save-fill-modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="true"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="save-fill-title">
+        <div class="card-topline">
+          <div>
+            <span class="section-kicker">Save Fill</span>
+            <h2 id="save-fill-title">NAME YOUR PEPTIDE FILL</h2>
+            <p class="card-note">Save the fill and create the first dosage plan in one step.</p>
+          </div>
+          <button class="ghost-button icon-button" type="button" id="close-save-fill" aria-label="Close save fill dialog">×</button>
+        </div>
+
+        <div class="save-fill-preview" id="save-fill-preview"></div>
+
+        <form id="save-fill-form" class="calculator-form modal-form">
+          <label>
+            <span>Fill name</span>
+            <input id="save-fill-name" name="saveFillName" type="text" maxlength="80" placeholder="Retatrutide">
+          </label>
+
+          <label>
+            <span id="modal-dose-label">Dosage amount (mg)</span>
+            <input id="modal-dose-display" name="modalDoseDisplay" type="text" readonly>
+          </label>
+
+          <label>
+            <span>Every X days</span>
+            <input id="save-fill-interval" name="saveFillInterval" type="number" min="1" step="1" value="7">
+          </label>
+
+          <label>
+            <span>Reminder time</span>
+            <input id="save-fill-time" name="saveFillTime" type="time" value="09:00">
+          </label>
+
+          <label>
+            <span>Start date</span>
+            <input id="save-fill-start-date" name="saveFillStartDate" type="date">
+          </label>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Save Fill</button>
+            <button class="secondary-button" type="button" id="cancel-save-fill">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script src="./config.example.js"></script>
