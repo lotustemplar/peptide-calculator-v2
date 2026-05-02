@@ -31,9 +31,9 @@ const elements = {
 };
 
 const state = {
-  fills: readStorage(STORAGE_KEYS.fills, []).map(normalizeFill),
-  schedules: readStorage(STORAGE_KEYS.schedules, []),
-  selectedOption: readStorage(STORAGE_KEYS.selectedFill, null),
+  fills: readStorage(STORAGE_KEYS.fills, []).map(normalizeFill).filter(isCalculableFill),
+  schedules: readStorage(STORAGE_KEYS.schedules, []).map(normalizeSchedule).filter(isValidSchedule),
+  selectedOption: normalizeSelection(readStorage(STORAGE_KEYS.selectedFill, null)),
   userId: readStorage(STORAGE_KEYS.userId, null) || crypto.randomUUID(),
   latestOptions: [],
 };
@@ -109,8 +109,20 @@ function renderCalculator() {
   const doseMg = Number(elements.doseMg.value);
   const syringeMax = Number(elements.syringeMax.value);
 
-  if (!vialMg || !doseMg || !syringeMax || vialMg <= 0 || doseMg <= 0 || syringeMax <= 0) {
+  if (!isPositiveNumber(vialMg) || !isPositiveNumber(doseMg) || !isPositiveNumber(syringeMax)) {
     elements.resultsGrid.innerHTML = `<div class="empty-state">Enter valid values to see fill options.</div>`;
+    state.latestOptions = [];
+    renderSelectedFill();
+    renderFillSourceOptions();
+    return;
+  }
+
+  if (doseMg > vialMg) {
+    elements.resultsGrid.innerHTML = `
+      <div class="empty-state">
+        The desired dose cannot be larger than the total amount in the vial.
+      </div>
+    `;
     state.latestOptions = [];
     renderSelectedFill();
     renderFillSourceOptions();
@@ -159,6 +171,7 @@ function renderCalculator() {
               <strong>${formatUnits(option.insulinUnits)}</strong>
             </div>
           </div>
+          <p class="card-note">${option.formulaSummary}</p>
 
           <div class="card-actions">
             <button class="primary-button" type="button" data-action="select-option" data-id="${option.id}">
@@ -180,8 +193,8 @@ function renderCalculator() {
         return;
       }
 
-      state.selectedOption = option;
-      writeStorage(STORAGE_KEYS.selectedFill, option);
+      state.selectedOption = normalizeSelection(option);
+      writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
       renderSelectedFill();
       renderCalculator();
       renderFillSourceOptions();
@@ -207,22 +220,17 @@ function renderCalculator() {
       }
 
       const fillName = fillNameInput.trim() || `${peptideName} Fill`;
-      const savedFill = {
+      const savedFill = normalizeFill({
         ...option,
         savedId: crypto.randomUUID(),
         peptideName,
         fillName,
         label: fillName,
         savedAt: new Date().toISOString(),
-      };
+      });
 
       state.fills = [savedFill, ...state.fills];
-      state.selectedOption = {
-        ...option,
-        peptideName,
-        fillName,
-        label: fillName,
-      };
+      state.selectedOption = normalizeSelection(savedFill);
       writeStorage(STORAGE_KEYS.fills, state.fills);
       writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
       renderCurrentPeptides();
@@ -248,14 +256,14 @@ function buildOptions(vialMg, doseMg, syringeMax) {
 
   return uniqueWaterOptions
     .map((waterMl) => {
-      const concentrationMgMl = vialMg / waterMl;
-      const doseMl = doseMg / concentrationMgMl;
+      const derived = deriveCalculatedFields({ vialMg, doseMg, waterMl });
+      const concentrationMgMl = derived.concentrationMgMl;
+      const doseMl = derived.doseMl;
 
-      if (doseMl > syringeMax) {
+      if (!isPositiveNumber(concentrationMgMl) || !isPositiveNumber(doseMl) || doseMl > syringeMax) {
         return null;
       }
 
-      const insulinUnits = doseMl * 100;
       return {
         id: `${vialMg}-${doseMg}-${syringeMax}-${waterMl}`,
         vialMg,
@@ -264,12 +272,14 @@ function buildOptions(vialMg, doseMg, syringeMax) {
         waterMl,
         concentrationMgMl,
         doseMl,
-        insulinUnits,
+        insulinUnits: derived.insulinUnits,
         score: scoreOption(waterMl, doseMl, syringeMax),
         guidance: describeDraw(doseMl, syringeMax),
+        formulaSummary: buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl),
       };
     })
     .filter(Boolean)
+    .filter(auditOption)
     .sort((left, right) => left.score - right.score)
     .slice(0, 9);
 }
@@ -338,6 +348,13 @@ function renderSelectedFill() {
         <strong>${formatUnits(state.selectedOption.insulinUnits)}</strong>
       </div>
     </div>
+    <p class="card-note">${buildFormulaSummary(
+      state.selectedOption.vialMg,
+      state.selectedOption.waterMl,
+      state.selectedOption.doseMg,
+      state.selectedOption.concentrationMgMl,
+      state.selectedOption.doseMl
+    )}</p>
   `;
 }
 
@@ -402,9 +419,16 @@ function renderCurrentPeptides() {
                       </div>
                       <div class="metric">
                         <span>Max syringe</span>
-                        <strong>${formatMl(fill.syringeMax)}</strong>
+                        <strong>${fill.syringeMax ? formatMl(fill.syringeMax) : "Not set"}</strong>
                       </div>
                     </div>
+                    <p class="card-note">${buildFormulaSummary(
+                      fill.vialMg,
+                      fill.waterMl,
+                      fill.doseMg,
+                      fill.concentrationMgMl,
+                      fill.doseMl
+                    )}</p>
 
                     <div class="card-actions">
                       <button class="mini-button" type="button" data-action="use-fill" data-id="${fill.savedId}">Use Fill</button>
@@ -429,20 +453,8 @@ function renderCurrentPeptides() {
 
       elements.vialMg.value = fill.vialMg;
       elements.doseMg.value = fill.doseMg;
-      elements.syringeMax.value = fill.syringeMax;
-      state.selectedOption = {
-        id: fill.id,
-        vialMg: fill.vialMg,
-        doseMg: fill.doseMg,
-        syringeMax: fill.syringeMax,
-        waterMl: fill.waterMl,
-        concentrationMgMl: fill.concentrationMgMl,
-        doseMl: fill.doseMl,
-        insulinUnits: fill.insulinUnits,
-        peptideName: fill.peptideName,
-        fillName: fill.fillName,
-        label: fill.label,
-      };
+      elements.syringeMax.value = fill.syringeMax || elements.syringeMax.value;
+      state.selectedOption = normalizeSelection(fill);
       writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
       renderCalculator();
     });
@@ -466,7 +478,9 @@ function renderFillSourceOptions() {
   if (state.selectedOption) {
     options.push({
       key: "current-selection",
-      label: `Current selection: ${resolvePeptideName(state.selectedOption)} - ${resolveFillName(state.selectedOption)} (${formatDrawMl(state.selectedOption.doseMl)} draw)`,
+      label: `Current selection: ${resolvePeptideName(state.selectedOption)} - ${resolveFillName(
+        state.selectedOption
+      )} (${formatDrawMl(state.selectedOption.doseMl)} draw)`,
       fill: state.selectedOption,
     });
   }
@@ -512,7 +526,7 @@ function saveReminder() {
     intervalDays,
     reminderTime,
     startDate,
-    fill: {
+    fill: normalizeFill({
       label: fill.label || `${formatDose(fill.doseMg)} dose`,
       peptideName: resolvePeptideName(fill),
       fillName: resolveFillName(fill),
@@ -520,7 +534,8 @@ function saveReminder() {
       doseMl: fill.doseMl,
       waterMl: fill.waterMl,
       vialMg: fill.vialMg,
-    },
+      syringeMax: fill.syringeMax,
+    }),
     createdAt: new Date().toISOString(),
     lastTriggeredAt: null,
   };
@@ -567,7 +582,9 @@ function renderSchedules() {
             <div>
               <h3>${escapeHtml(schedule.name)}</h3>
               <p class="card-note">
-                ${escapeHtml(resolvePeptideName(schedule.fill))} • ${escapeHtml(resolveFillName(schedule.fill))} • ${formatDrawMl(schedule.fill.doseMl)} draw
+                ${escapeHtml(resolvePeptideName(schedule.fill))} • ${escapeHtml(resolveFillName(
+                  schedule.fill
+                ))} • ${formatDrawMl(schedule.fill.doseMl)} draw
               </p>
             </div>
             <span class="badge">Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</span>
@@ -583,6 +600,13 @@ function renderSchedules() {
               <strong>${nextDose ? formatDateTime(nextDose) : "Check inputs"}</strong>
             </div>
           </div>
+          <p class="card-note">${buildFormulaSummary(
+            schedule.fill.vialMg,
+            schedule.fill.waterMl,
+            schedule.fill.doseMg,
+            schedule.fill.concentrationMgMl,
+            schedule.fill.doseMl
+          )}</p>
 
           <div class="card-actions">
             <button class="mini-button" type="button" data-action="test-reminder" data-id="${schedule.id}">
@@ -830,13 +854,118 @@ function buildCalendarEntries(schedules) {
   return entries.sort((left, right) => left.when - right.when).slice(0, 20);
 }
 
+function deriveCalculatedFields(fill) {
+  const vialMg = Number(fill?.vialMg);
+  const doseMg = Number(fill?.doseMg);
+  const waterMl = Number(fill?.waterMl);
+
+  if (!isPositiveNumber(vialMg) || !isPositiveNumber(doseMg) || !isPositiveNumber(waterMl)) {
+    return {
+      concentrationMgMl: Number.NaN,
+      doseMl: Number.NaN,
+      insulinUnits: Number.NaN,
+    };
+  }
+
+  const concentrationMgMl = vialMg / waterMl;
+  const doseMl = doseMg / concentrationMgMl;
+  const insulinUnits = doseMl * 100;
+
+  return {
+    concentrationMgMl,
+    doseMl,
+    insulinUnits,
+  };
+}
+
+function buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl) {
+  const insulinUnits = Number(doseMl) * 100;
+  return (
+    `${formatNumber(vialMg)} mg / ${formatNumber(waterMl)} mL = ` +
+    `${formatNumber(concentrationMgMl)} mg/mL. ` +
+    `${formatNumber(doseMg)} mg / ${formatNumber(concentrationMgMl)} mg/mL = ` +
+    `${formatDrawNumber(doseMl)} mL (${formatNumber(insulinUnits)} units).`
+  );
+}
+
+function auditOption(option) {
+  if (!isCalculableFill(option)) {
+    return false;
+  }
+
+  const expectedConcentration = Number(option.vialMg) / Number(option.waterMl);
+  const expectedDoseMl = Number(option.doseMg) / expectedConcentration;
+  const expectedUnits = expectedDoseMl * 100;
+  const reconstructedVialMg = Number(option.concentrationMgMl) * Number(option.waterMl);
+  const tolerance = 1e-9;
+
+  return (
+    Math.abs(Number(option.concentrationMgMl) - expectedConcentration) < tolerance &&
+    Math.abs(Number(option.doseMl) - expectedDoseMl) < tolerance &&
+    Math.abs(Number(option.insulinUnits) - expectedUnits) < tolerance &&
+    Math.abs(reconstructedVialMg - Number(option.vialMg)) < tolerance
+  );
+}
+
 function normalizeFill(fill) {
+  const derived = deriveCalculatedFields(fill);
+  const peptideName = fill?.peptideName || fill?.peptide || "Unnamed Peptide";
+  const fillName = fill?.fillName || fill?.label || `${peptideName} Fill`;
+
   return {
     ...fill,
-    peptideName: fill.peptideName || fill.peptide || "Unnamed Peptide",
-    fillName: fill.fillName || fill.label || `${fill.peptideName || fill.peptide || "Peptide"} Fill`,
-    label: fill.label || fill.fillName || `${fill.peptideName || fill.peptide || "Peptide"} Fill`,
+    vialMg: Number(fill?.vialMg),
+    doseMg: Number(fill?.doseMg),
+    syringeMax: fill?.syringeMax ? Number(fill.syringeMax) : null,
+    waterMl: Number(fill?.waterMl),
+    concentrationMgMl: derived.concentrationMgMl,
+    doseMl: derived.doseMl,
+    insulinUnits: derived.insulinUnits,
+    peptideName,
+    fillName,
+    label: fill?.label || fillName,
   };
+}
+
+function normalizeSelection(fill) {
+  if (!fill) {
+    return null;
+  }
+
+  const normalized = normalizeFill(fill);
+  return isCalculableFill(normalized) ? normalized : null;
+}
+
+function normalizeSchedule(schedule) {
+  return {
+    ...schedule,
+    intervalDays: Number(schedule?.intervalDays),
+    fill: normalizeFill(schedule?.fill || {}),
+  };
+}
+
+function isValidSchedule(schedule) {
+  return Boolean(
+    schedule &&
+      isCalculableFill(schedule.fill) &&
+      Number.isInteger(schedule.intervalDays) &&
+      schedule.intervalDays >= 1 &&
+      schedule.startDate &&
+      schedule.reminderTime
+  );
+}
+
+function isCalculableFill(fill) {
+  return (
+    fill &&
+    isPositiveNumber(fill.vialMg) &&
+    isPositiveNumber(fill.doseMg) &&
+    isPositiveNumber(fill.waterMl) &&
+    Number.isFinite(fill.concentrationMgMl) &&
+    Number.isFinite(fill.doseMl) &&
+    Number.isFinite(fill.insulinUnits) &&
+    fill.doseMg <= fill.vialMg
+  );
 }
 
 function resolvePeptideName(fill) {
@@ -916,6 +1045,10 @@ function readStorage(key, fallback) {
 
 function writeStorage(key, value) {
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function isPositiveNumber(value) {
+  return Number.isFinite(Number(value)) && Number(value) > 0;
 }
 
 function formatMl(value) {
