@@ -271,22 +271,16 @@ function renderCalculator() {
         return;
       }
 
-      const peptideNameInput = window.prompt("Peptide name", option.peptideName || "Semaglutide");
-      if (peptideNameInput === null) {
-        return;
-      }
-
-      const peptideName = peptideNameInput.trim() || "Unnamed Peptide";
-      const fillNameInput = window.prompt("Fill name", `${peptideName} Fill`);
+      const fillNameInput = window.prompt("NAME YOUR PEPTIDE FILL", option.fillName || option.peptideName || "Semaglutide");
       if (fillNameInput === null) {
         return;
       }
 
-      const fillName = fillNameInput.trim() || `${peptideName} Fill`;
+      const fillName = fillNameInput.trim() || "Unnamed Peptide Fill";
       const savedFill = normalizeFill({
         ...option,
         savedId: crypto.randomUUID(),
-        peptideName,
+        peptideName: fillName,
         fillName,
         label: fillName,
         savedAt: new Date().toISOString(),
@@ -440,7 +434,25 @@ function renderSelectedFill() {
       state.selectedOption.doseMl,
       unitLabel
     )}</p>
+    <div class="card-actions">
+      <button class="mini-button" type="button" data-action="rename-selected-fill">Rename Fill</button>
+      <button class="mini-button" type="button" data-action="delete-selected-fill">Delete Fill</button>
+    </div>
   `;
+
+  const renameButton = elements.selectedFill.querySelector("[data-action='rename-selected-fill']");
+  if (renameButton) {
+    renameButton.addEventListener("click", () => {
+      renameFillRecord(state.selectedOption);
+    });
+  }
+
+  const deleteButton = elements.selectedFill.querySelector("[data-action='delete-selected-fill']");
+  if (deleteButton) {
+    deleteButton.addEventListener("click", () => {
+      deleteFillRecord(state.selectedOption);
+    });
+  }
 }
 
 function renderCurrentPeptides() {
@@ -518,6 +530,7 @@ function renderCurrentPeptides() {
 
                     <div class="card-actions">
                       <button class="mini-button" type="button" data-action="use-fill" data-id="${fill.savedId}">Use Fill</button>
+                      <button class="mini-button" type="button" data-action="rename-fill" data-id="${fill.savedId}">Rename</button>
                       <button class="mini-button" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
                     </div>
                   </div>
@@ -552,12 +565,19 @@ function renderCurrentPeptides() {
 
   elements.currentPeptides.querySelectorAll("[data-action='delete-fill']").forEach((button) => {
     button.addEventListener("click", () => {
-      state.fills = state.fills.filter((item) => item.savedId !== button.dataset.id);
-      writeStorage(STORAGE_KEYS.fills, state.fills);
-      renderCurrentPeptides();
-      renderFillSourceOptions();
-      renderCalendar();
-      syncRemindersToBackend();
+      const fill = state.fills.find((item) => item.savedId === button.dataset.id);
+      if (fill) {
+        deleteFillRecord(fill);
+      }
+    });
+  });
+
+  elements.currentPeptides.querySelectorAll("[data-action='rename-fill']").forEach((button) => {
+    button.addEventListener("click", () => {
+      const fill = state.fills.find((item) => item.savedId === button.dataset.id);
+      if (fill) {
+        renameFillRecord(fill);
+      }
     });
   });
 }
@@ -1004,8 +1024,8 @@ function auditOption(option) {
 
 function normalizeFill(fill) {
   const derived = deriveCalculatedFields(fill);
-  const peptideName = fill?.peptideName || fill?.peptide || "Unnamed Peptide";
-  const fillName = fill?.fillName || fill?.label || `${peptideName} Fill`;
+  const fillName = fill?.fillName || fill?.label || fill?.peptideName || fill?.peptide || "Unnamed Peptide Fill";
+  const peptideName = fill?.peptideName || fill?.peptide || fillName;
   const unitLabel = fill?.unitLabel || "mg";
 
   return {
@@ -1072,7 +1092,124 @@ function resolvePeptideName(fill) {
 }
 
 function resolveFillName(fill) {
-  return fill?.fillName || fill?.label || `${resolvePeptideName(fill)} Fill`;
+  return fill?.fillName || fill?.label || resolvePeptideName(fill);
+}
+
+function renameFillRecord(fill) {
+  const targetFill = fill?.savedId
+    ? state.fills.find((item) => item.savedId === fill.savedId)
+    : state.selectedOption;
+  if (!targetFill) {
+    return;
+  }
+
+  const nextNameInput = window.prompt("NAME YOUR PEPTIDE FILL", resolveFillName(targetFill));
+  if (nextNameInput === null) {
+    return;
+  }
+
+  const nextName = nextNameInput.trim() || "Unnamed Peptide Fill";
+  const previousName = resolveFillName(targetFill);
+  state.fills = state.fills.map((item) =>
+    item.savedId === targetFill.savedId
+      ? normalizeFill({
+          ...item,
+          peptideName: nextName,
+          fillName: nextName,
+          label: nextName,
+        })
+      : item
+  );
+
+  state.schedules = state.schedules.map((schedule) =>
+    doesScheduleMatchFill(schedule, targetFill, previousName)
+      ? {
+          ...schedule,
+          fill: normalizeFill({
+            ...schedule.fill,
+            peptideName: nextName,
+            fillName: nextName,
+            label: nextName,
+          }),
+        }
+      : schedule
+  );
+
+  if (state.selectedOption && targetFill.savedId && state.selectedOption.savedId === targetFill.savedId) {
+    state.selectedOption = normalizeSelection({
+      ...state.selectedOption,
+      peptideName: nextName,
+      fillName: nextName,
+      label: nextName,
+    });
+  } else if (!targetFill.savedId && state.selectedOption) {
+    state.selectedOption = normalizeSelection({
+      ...state.selectedOption,
+      peptideName: nextName,
+      fillName: nextName,
+      label: nextName,
+    });
+  }
+
+  writeStorage(STORAGE_KEYS.fills, state.fills);
+  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
+  renderSchedules();
+  renderCurrentPeptides();
+  renderSelectedFill();
+  renderFillSourceOptions();
+  renderCalendar();
+  syncRemindersToBackend();
+}
+
+function deleteFillRecord(fill) {
+  if (!fill) {
+    return;
+  }
+
+  const savedId = fill.savedId || state.selectedOption?.savedId;
+  if (!savedId) {
+    state.selectedOption = null;
+    writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
+    renderSelectedFill();
+    renderFillSourceOptions();
+    return;
+  }
+
+  state.fills = state.fills.filter((item) => item.savedId !== savedId);
+  if (state.selectedOption && state.selectedOption.savedId === savedId) {
+    state.selectedOption = null;
+  }
+
+  state.schedules = state.schedules.filter((schedule) => !doesScheduleMatchFill(schedule, fill));
+
+  writeStorage(STORAGE_KEYS.fills, state.fills);
+  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
+  renderSchedules();
+  renderCurrentPeptides();
+  renderSelectedFill();
+  renderFillSourceOptions();
+  renderCalendar();
+  syncRemindersToBackend();
+}
+
+function doesScheduleMatchFill(schedule, fill, previousName = null) {
+  if (!schedule?.fill || !fill) {
+    return false;
+  }
+
+  const candidateNames = [resolveFillName(fill), resolvePeptideName(fill)];
+  if (previousName) {
+    candidateNames.push(previousName);
+  }
+
+  return (
+    candidateNames.includes(resolveFillName(schedule.fill)) &&
+    Number(schedule.fill.vialMg) === Number(fill.vialMg) &&
+    Number(schedule.fill.doseMg) === Number(fill.doseMg) &&
+    Number(schedule.fill.waterMl) === Number(fill.waterMl)
+  );
 }
 
 function getCurrentUnitLabel() {
