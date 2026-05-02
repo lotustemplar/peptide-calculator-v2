@@ -1,5 +1,6 @@
-const MAX_WATER_ML = 3;
-const PREFERRED_WATER_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+const DEFAULT_MAX_WATER_ML = 3;
+const MIN_DRAW_ML = 0.05;
+const DISPLAY_OPTION_LIMIT = 12;
 const STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
@@ -13,7 +14,13 @@ const elements = {
   calculatorForm: document.getElementById("calculator-form"),
   vialMg: document.getElementById("vial-mg"),
   doseMg: document.getElementById("dose-mg"),
+  doseUnit: document.getElementById("dose-unit"),
   syringeMax: document.getElementById("syringe-max"),
+  maxWaterMl: document.getElementById("max-water-ml"),
+  waterWarning: document.getElementById("water-warning"),
+  vialAmountLabel: document.getElementById("vial-amount-label"),
+  doseAmountLabel: document.getElementById("dose-amount-label"),
+  resultsSummary: document.getElementById("results-summary"),
   resetForm: document.getElementById("reset-form"),
   resultsGrid: document.getElementById("results-grid"),
   selectedFill: document.getElementById("selected-fill"),
@@ -45,6 +52,8 @@ initialize();
 function initialize() {
   writeStorage(STORAGE_KEYS.userId, state.userId);
   setTodayAsDefault();
+  updateUnitLabels();
+  updateWaterWarning();
   bindEvents();
   renderCalculator();
   renderCurrentPeptides();
@@ -72,9 +81,23 @@ function bindEvents() {
   });
 
   elements.resetForm.addEventListener("click", () => {
+    elements.doseUnit.value = "mg";
     elements.vialMg.value = "10";
     elements.doseMg.value = "0.5";
     elements.syringeMax.value = "1";
+    elements.maxWaterMl.value = String(DEFAULT_MAX_WATER_ML);
+    updateUnitLabels();
+    updateWaterWarning();
+    renderCalculator();
+  });
+
+  elements.doseUnit.addEventListener("change", () => {
+    updateUnitLabels();
+    renderCalculator();
+  });
+
+  elements.maxWaterMl.addEventListener("input", () => {
+    updateWaterWarning();
     renderCalculator();
   });
 
@@ -104,12 +127,48 @@ function bindEvents() {
   });
 }
 
+function updateUnitLabels() {
+  const unitLabel = getCurrentUnitLabel();
+  elements.vialAmountLabel.textContent = `Amount in vial (${unitLabel})`;
+  elements.doseAmountLabel.textContent = `Desired dose (${unitLabel})`;
+}
+
+function updateWaterWarning() {
+  const maxWaterMl = Number(elements.maxWaterMl.value);
+  if (!isPositiveNumber(maxWaterMl)) {
+    elements.waterWarning.textContent = "Enter a valid water ceiling in mL.";
+    elements.waterWarning.className = "form-message warning";
+    return;
+  }
+
+  if (maxWaterMl > DEFAULT_MAX_WATER_ML) {
+    elements.waterWarning.textContent =
+      "More than 3 mL is allowed for easier draw amounts, but many vials cannot comfortably fit more than 3 mL at once.";
+    elements.waterWarning.className = "form-message warning";
+    return;
+  }
+
+  elements.waterWarning.textContent = "Staying at or under 3 mL is usually preferred for vial fit.";
+  elements.waterWarning.className = "form-message";
+}
+
 function renderCalculator() {
   const vialMg = Number(elements.vialMg.value);
   const doseMg = Number(elements.doseMg.value);
   const syringeMax = Number(elements.syringeMax.value);
+  const maxWaterMl = Number(elements.maxWaterMl.value);
+  const unitLabel = getCurrentUnitLabel();
 
-  if (!isPositiveNumber(vialMg) || !isPositiveNumber(doseMg) || !isPositiveNumber(syringeMax)) {
+  updateWaterWarning();
+  elements.resultsSummary.textContent =
+    `These options prefer rounded draw amounts and reject anything under ${formatDrawMl(MIN_DRAW_ML)}.`;
+
+  if (
+    !isPositiveNumber(vialMg) ||
+    !isPositiveNumber(doseMg) ||
+    !isPositiveNumber(syringeMax) ||
+    !isPositiveNumber(maxWaterMl)
+  ) {
     elements.resultsGrid.innerHTML = `<div class="empty-state">Enter valid values to see fill options.</div>`;
     state.latestOptions = [];
     renderSelectedFill();
@@ -129,14 +188,14 @@ function renderCalculator() {
     return;
   }
 
-  const options = buildOptions(vialMg, doseMg, syringeMax);
+  const options = buildOptions(vialMg, doseMg, syringeMax, maxWaterMl, unitLabel);
   state.latestOptions = options;
 
   if (!options.length) {
     elements.resultsGrid.innerHTML = `
       <div class="empty-state">
-        No options fit within a ${formatMl(syringeMax)} syringe when water is capped at ${formatMl(MAX_WATER_ML)}.
-        Try a smaller dose or a larger syringe.
+        No options fit within a ${formatMl(syringeMax)} syringe while keeping each draw at or above ${formatDrawMl(MIN_DRAW_ML)}.
+        Try increasing the maximum water, using a larger syringe, or lowering the dose target.
       </div>
     `;
     renderSelectedFill();
@@ -147,14 +206,17 @@ function renderCalculator() {
   elements.resultsGrid.innerHTML = options
     .map((option, index) => {
       const active = state.selectedOption && state.selectedOption.id === option.id;
+      const cautionBadge = option.waterMl > DEFAULT_MAX_WATER_ML ? `<span class="badge warning">Above 3 mL</span>` : "";
+      const recommendedBadge = index === 0 ? `<span class="badge">Recommended</span>` : cautionBadge;
+      const cardClass = option.waterMl > DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";
       return `
-        <article class="result-card ${index === 0 ? "recommended" : ""}">
+        <article class="${cardClass} ${index === 0 ? "recommended" : ""}">
           <div class="card-topline">
             <div>
               <h3>${formatMl(option.waterMl)} bacteriostatic water</h3>
               <p class="card-note">${option.guidance}</p>
             </div>
-            ${index === 0 ? `<span class="badge">Recommended</span>` : ""}
+            ${recommendedBadge}
           </div>
 
           <div class="result-metrics">
@@ -164,7 +226,7 @@ function renderCalculator() {
             </div>
             <div class="metric">
               <span>Concentration</span>
-              <strong>${formatNumber(option.concentrationMgMl)} mg/mL</strong>
+              <strong>${formatNumber(option.concentrationMgMl)} ${escapeHtml(option.unitLabel)}/mL</strong>
             </div>
             <div class="metric">
               <span>1 mL syringe units</span>
@@ -172,6 +234,7 @@ function renderCalculator() {
             </div>
           </div>
           <p class="card-note">${option.formulaSummary}</p>
+          ${option.waterMl > DEFAULT_MAX_WATER_ML ? `<p class="card-note safety-note">This option is above 3 mL. It may improve measurability, but vial space can become a practical limit.</p>` : ""}
 
           <div class="card-actions">
             <button class="primary-button" type="button" data-action="select-option" data-id="${option.id}">
@@ -244,64 +307,84 @@ function renderCalculator() {
   renderFillSourceOptions();
 }
 
-function buildOptions(vialMg, doseMg, syringeMax) {
-  const extraWaterOptions = [];
-  for (let water = 0.6; water <= MAX_WATER_ML; water += 0.2) {
-    extraWaterOptions.push(Number(water.toFixed(2)));
-  }
+function buildOptions(vialMg, doseMg, syringeMax, maxWaterMl, unitLabel) {
+  const waterOptions = buildWaterOptions(maxWaterMl);
 
-  const uniqueWaterOptions = Array.from(new Set([...PREFERRED_WATER_OPTIONS, ...extraWaterOptions])).sort(
-    (left, right) => left - right
-  );
-
-  return uniqueWaterOptions
+  return waterOptions
     .map((waterMl) => {
       const derived = deriveCalculatedFields({ vialMg, doseMg, waterMl });
       const concentrationMgMl = derived.concentrationMgMl;
       const doseMl = derived.doseMl;
 
-      if (!isPositiveNumber(concentrationMgMl) || !isPositiveNumber(doseMl) || doseMl > syringeMax) {
+      if (
+        !isPositiveNumber(concentrationMgMl) ||
+        !isPositiveNumber(doseMl) ||
+        doseMl > syringeMax ||
+        doseMl < MIN_DRAW_ML
+      ) {
         return null;
       }
 
       return {
-        id: `${vialMg}-${doseMg}-${syringeMax}-${waterMl}`,
+        id: `${vialMg}-${doseMg}-${syringeMax}-${maxWaterMl}-${waterMl}-${unitLabel}`,
         vialMg,
         doseMg,
         syringeMax,
+        maxWaterMl,
         waterMl,
+        unitLabel,
         concentrationMgMl,
         doseMl,
         insulinUnits: derived.insulinUnits,
         score: scoreOption(waterMl, doseMl, syringeMax),
-        guidance: describeDraw(doseMl, syringeMax),
-        formulaSummary: buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl),
+        guidance: describeDraw(doseMl, syringeMax, waterMl),
+        formulaSummary: buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl, unitLabel),
       };
     })
     .filter(Boolean)
     .filter(auditOption)
     .sort((left, right) => left.score - right.score)
-    .slice(0, 9);
+    .slice(0, DISPLAY_OPTION_LIMIT);
+}
+
+function buildWaterOptions(maxWaterMl) {
+  const options = new Set();
+  const upperBound = Math.max(maxWaterMl, 0.5);
+
+  for (let water = 0.5; water <= upperBound + 0.0001; water += 0.05) {
+    options.add(Number(water.toFixed(2)));
+  }
+
+  return Array.from(options).sort((left, right) => left - right);
 }
 
 function scoreOption(waterMl, doseMl, syringeMax) {
-  const drawStepPenalty = Math.abs(doseMl * 20 - Math.round(doseMl * 20));
-  const waterStepPenalty = Math.abs(waterMl * 4 - Math.round(waterMl * 4));
-  const comfortZone = doseMl / syringeMax;
-  const comfortPenalty = Math.abs(comfortZone - 0.45);
-  const tinyDrawPenalty = doseMl < 0.05 ? 0.7 : 0;
-  return drawStepPenalty * 2 + waterStepPenalty + comfortPenalty + tinyDrawPenalty;
+  const nearestTenth = Math.round(doseMl / 0.1) * 0.1;
+  const nearestFiveUnits = Math.round(doseMl / 0.05) * 0.05;
+  const tenthPenalty = Math.abs(doseMl - nearestTenth) * 100;
+  const fiveUnitPenalty = Math.abs(doseMl - nearestFiveUnits) * 60;
+  const idealCenter = doseMl < 0.5 ? 0.2 : 0.5;
+  const comfortPenalty = Math.abs(doseMl - idealCenter) * 8;
+  const syringePenalty = Math.abs((doseMl / syringeMax) - 0.35) * 4;
+  const overThreePenalty = waterMl > DEFAULT_MAX_WATER_ML ? 2 + (waterMl - DEFAULT_MAX_WATER_ML) * 2 : 0;
+  return tenthPenalty + fiveUnitPenalty + comfortPenalty + syringePenalty + overThreePenalty;
 }
 
-function describeDraw(doseMl, syringeMax) {
+function describeDraw(doseMl, syringeMax, waterMl) {
+  if (doseMl === roundToStep(doseMl, 0.1)) {
+    return "Clean tenth-of-a-mL draw. This should be especially easy to read on the syringe.";
+  }
+  if (doseMl === roundToStep(doseMl, 0.05)) {
+    return "Clean 5-unit draw. This stays at the minimum readability threshold.";
+  }
+
   const ratio = doseMl / syringeMax;
-  if (doseMl < 0.05) {
-    return "Very tiny draw. Accurate measuring may be harder.";
+  if (ratio <= 0.3) {
+    return waterMl > DEFAULT_MAX_WATER_ML
+      ? "Small draw made easier by adding more water than usual."
+      : "Small draw with room in the syringe.";
   }
-  if (ratio <= 0.25) {
-    return "Small, easy draw with plenty of room in the syringe.";
-  }
-  if (ratio <= 0.7) {
+  if (ratio <= 0.75) {
     return "Balanced draw volume that is usually easy to measure.";
   }
   return "Larger draw, but still inside your syringe limit.";
@@ -314,12 +397,13 @@ function renderSelectedFill() {
     return;
   }
 
+  const unitLabel = state.selectedOption.unitLabel || "mg";
   const activeTitle = state.selectedOption.fillName
     ? `${escapeHtml(state.selectedOption.fillName)}`
-    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg)} vial`;
+    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg, unitLabel)} vial`;
   const activeSubtitle = state.selectedOption.peptideName
     ? `${escapeHtml(state.selectedOption.peptideName)} • ${formatMl(state.selectedOption.waterMl)} bacteriostatic water`
-    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg)} vial`;
+    : `${formatMl(state.selectedOption.waterMl)} water for ${formatDose(state.selectedOption.vialMg, unitLabel)} vial`;
 
   elements.selectedFill.innerHTML = `
     <div class="card-topline">
@@ -333,7 +417,7 @@ function renderSelectedFill() {
     <div class="selected-fill-grid">
       <div class="selected-pill">
         <span>Dose</span>
-        <strong>${formatDose(state.selectedOption.doseMg)}</strong>
+        <strong>${formatDose(state.selectedOption.doseMg, unitLabel)}</strong>
       </div>
       <div class="selected-pill">
         <span>Draw</span>
@@ -341,7 +425,7 @@ function renderSelectedFill() {
       </div>
       <div class="selected-pill">
         <span>Concentration</span>
-        <strong>${formatNumber(state.selectedOption.concentrationMgMl)} mg/mL</strong>
+        <strong>${formatNumber(state.selectedOption.concentrationMgMl)} ${escapeHtml(unitLabel)}/mL</strong>
       </div>
       <div class="selected-pill">
         <span>1 mL syringe units</span>
@@ -353,7 +437,8 @@ function renderSelectedFill() {
       state.selectedOption.waterMl,
       state.selectedOption.doseMg,
       state.selectedOption.concentrationMgMl,
-      state.selectedOption.doseMl
+      state.selectedOption.doseMl,
+      unitLabel
     )}</p>
   `;
 }
@@ -402,7 +487,7 @@ function renderCurrentPeptides() {
                       <div>
                         <h4>${escapeHtml(resolveFillName(fill))}</h4>
                         <p class="subtle-line">
-                          Add ${formatMl(fill.waterMl)} BAC water • ${formatDose(fill.vialMg)} vial • ${formatDose(fill.doseMg)} dose
+                          Add ${formatMl(fill.waterMl)} BAC water • ${formatDose(fill.vialMg, fill.unitLabel)} vial • ${formatDose(fill.doseMg, fill.unitLabel)} dose
                         </p>
                       </div>
                       <span class="badge">${formatDrawMl(fill.doseMl)} draw</span>
@@ -411,7 +496,7 @@ function renderCurrentPeptides() {
                     <div class="result-metrics">
                       <div class="metric">
                         <span>Concentration</span>
-                        <strong>${formatNumber(fill.concentrationMgMl)} mg/mL</strong>
+                        <strong>${formatNumber(fill.concentrationMgMl)} ${escapeHtml(fill.unitLabel)}/mL</strong>
                       </div>
                       <div class="metric">
                         <span>1 mL syringe units</span>
@@ -427,7 +512,8 @@ function renderCurrentPeptides() {
                       fill.waterMl,
                       fill.doseMg,
                       fill.concentrationMgMl,
-                      fill.doseMl
+                      fill.doseMl,
+                      fill.unitLabel
                     )}</p>
 
                     <div class="card-actions">
@@ -451,9 +537,13 @@ function renderCurrentPeptides() {
         return;
       }
 
+      elements.doseUnit.value = fill.unitLabel || "mg";
       elements.vialMg.value = fill.vialMg;
       elements.doseMg.value = fill.doseMg;
       elements.syringeMax.value = fill.syringeMax || elements.syringeMax.value;
+      elements.maxWaterMl.value = fill.maxWaterMl || Math.max(fill.waterMl, DEFAULT_MAX_WATER_ML);
+      updateUnitLabels();
+      updateWaterWarning();
       state.selectedOption = normalizeSelection(fill);
       writeStorage(STORAGE_KEYS.selectedFill, state.selectedOption);
       renderCalculator();
@@ -522,19 +612,20 @@ function saveReminder() {
 
   const reminder = {
     id: crypto.randomUUID(),
-    name: elements.reminderName.value.trim() || `${formatDose(fill.doseMg)} reminder`,
+    name: elements.reminderName.value.trim() || `${formatDose(fill.doseMg, fill.unitLabel)} reminder`,
     intervalDays,
     reminderTime,
     startDate,
     fill: normalizeFill({
-      label: fill.label || `${formatDose(fill.doseMg)} dose`,
+      label: fill.label || `${formatDose(fill.doseMg, fill.unitLabel)} dose`,
       peptideName: resolvePeptideName(fill),
       fillName: resolveFillName(fill),
+      unitLabel: fill.unitLabel,
       doseMg: fill.doseMg,
-      doseMl: fill.doseMl,
       waterMl: fill.waterMl,
       vialMg: fill.vialMg,
       syringeMax: fill.syringeMax,
+      maxWaterMl: fill.maxWaterMl,
     }),
     createdAt: new Date().toISOString(),
     lastTriggeredAt: null,
@@ -605,7 +696,8 @@ function renderSchedules() {
             schedule.fill.waterMl,
             schedule.fill.doseMg,
             schedule.fill.concentrationMgMl,
-            schedule.fill.doseMl
+            schedule.fill.doseMl,
+            schedule.fill.unitLabel
           )}</p>
 
           <div class="card-actions">
@@ -697,9 +789,10 @@ function queueNextReminder() {
 }
 
 function fireReminder(schedule) {
+  const unitLabel = schedule.fill.unitLabel || "mg";
   const title = `${resolvePeptideName(schedule.fill)} Reminder`;
   const body =
-    `${resolveFillName(schedule.fill)}: take ${formatDose(schedule.fill.doseMg)} and ` +
+    `${resolveFillName(schedule.fill)}: take ${formatDose(schedule.fill.doseMg, unitLabel)} and ` +
     `draw ${formatDrawMl(schedule.fill.doseMl)} from the constituted vial.`;
 
   if ("Notification" in window && Notification.permission === "granted") {
@@ -780,7 +873,7 @@ function renderCalendar() {
                       <span class="badge">${formatTime(entry.when)}</span>
                     </div>
                     <p class="subtle-line">
-                      Add ${formatMl(entry.waterMl)} BAC water and draw ${formatDrawMl(entry.doseMl)} for ${formatDose(entry.doseMg)}.
+                      Add ${formatMl(entry.waterMl)} BAC water and draw ${formatDrawMl(entry.doseMl)} for ${formatDose(entry.doseMg, entry.unitLabel)}.
                     </p>
                   </div>
                 `
@@ -843,6 +936,7 @@ function buildCalendarEntries(schedules) {
         waterMl: schedule.fill.waterMl,
         doseMl: schedule.fill.doseMl,
         doseMg: schedule.fill.doseMg,
+        unitLabel: schedule.fill.unitLabel || "mg",
         when: next,
       });
 
@@ -878,12 +972,12 @@ function deriveCalculatedFields(fill) {
   };
 }
 
-function buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl) {
+function buildFormulaSummary(vialMg, waterMl, doseMg, concentrationMgMl, doseMl, unitLabel) {
   const insulinUnits = Number(doseMl) * 100;
   return (
-    `${formatNumber(vialMg)} mg / ${formatNumber(waterMl)} mL = ` +
-    `${formatNumber(concentrationMgMl)} mg/mL. ` +
-    `${formatNumber(doseMg)} mg / ${formatNumber(concentrationMgMl)} mg/mL = ` +
+    `${formatNumber(vialMg)} ${escapeHtml(unitLabel)} / ${formatNumber(waterMl)} mL = ` +
+    `${formatNumber(concentrationMgMl)} ${escapeHtml(unitLabel)}/mL. ` +
+    `${formatNumber(doseMg)} ${escapeHtml(unitLabel)} / ${formatNumber(concentrationMgMl)} ${escapeHtml(unitLabel)}/mL = ` +
     `${formatDrawNumber(doseMl)} mL (${formatNumber(insulinUnits)} units).`
   );
 }
@@ -903,7 +997,8 @@ function auditOption(option) {
     Math.abs(Number(option.concentrationMgMl) - expectedConcentration) < tolerance &&
     Math.abs(Number(option.doseMl) - expectedDoseMl) < tolerance &&
     Math.abs(Number(option.insulinUnits) - expectedUnits) < tolerance &&
-    Math.abs(reconstructedVialMg - Number(option.vialMg)) < tolerance
+    Math.abs(reconstructedVialMg - Number(option.vialMg)) < tolerance &&
+    Number(option.doseMl) >= MIN_DRAW_ML
   );
 }
 
@@ -911,13 +1006,16 @@ function normalizeFill(fill) {
   const derived = deriveCalculatedFields(fill);
   const peptideName = fill?.peptideName || fill?.peptide || "Unnamed Peptide";
   const fillName = fill?.fillName || fill?.label || `${peptideName} Fill`;
+  const unitLabel = fill?.unitLabel || "mg";
 
   return {
     ...fill,
     vialMg: Number(fill?.vialMg),
     doseMg: Number(fill?.doseMg),
     syringeMax: fill?.syringeMax ? Number(fill.syringeMax) : null,
+    maxWaterMl: fill?.maxWaterMl ? Number(fill.maxWaterMl) : null,
     waterMl: Number(fill?.waterMl),
+    unitLabel,
     concentrationMgMl: derived.concentrationMgMl,
     doseMl: derived.doseMl,
     insulinUnits: derived.insulinUnits,
@@ -964,7 +1062,8 @@ function isCalculableFill(fill) {
     Number.isFinite(fill.concentrationMgMl) &&
     Number.isFinite(fill.doseMl) &&
     Number.isFinite(fill.insulinUnits) &&
-    fill.doseMg <= fill.vialMg
+    fill.doseMg <= fill.vialMg &&
+    fill.doseMl >= MIN_DRAW_ML
   );
 }
 
@@ -974,6 +1073,10 @@ function resolvePeptideName(fill) {
 
 function resolveFillName(fill) {
   return fill?.fillName || fill?.label || `${resolvePeptideName(fill)} Fill`;
+}
+
+function getCurrentUnitLabel() {
+  return elements.doseUnit.value || "mg";
 }
 
 function hasMedianOneSignal() {
@@ -1013,6 +1116,7 @@ async function syncRemindersToBackend() {
       fill: {
         peptideName: resolvePeptideName(schedule.fill),
         fillName: resolveFillName(schedule.fill),
+        unitLabel: schedule.fill.unitLabel,
         waterMl: schedule.fill.waterMl,
         doseMg: schedule.fill.doseMg,
         doseMl: schedule.fill.doseMl,
@@ -1051,6 +1155,10 @@ function isPositiveNumber(value) {
   return Number.isFinite(Number(value)) && Number(value) > 0;
 }
 
+function roundToStep(value, step) {
+  return Number((Math.round(value / step) * step).toFixed(3));
+}
+
 function formatMl(value) {
   return `${formatNumber(value)} mL`;
 }
@@ -1059,8 +1167,8 @@ function formatDrawMl(value) {
   return `${formatDrawNumber(value)} mL`;
 }
 
-function formatDose(value) {
-  return `${formatNumber(value)} mg`;
+function formatDose(value, unitLabel = "mg") {
+  return `${formatNumber(value)} ${unitLabel}`;
 }
 
 function formatUnits(value) {
