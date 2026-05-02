@@ -121,17 +121,17 @@
         <section class="card" id="current-peptides-card">
           <div class="section-heading">
             <span class="section-kicker">Current Peptides</span>
-            <h2>Organize every peptide in one place</h2>
-            <p>Save named fills like Semaglutide Fill, keep the water details attached, and reuse them for reminders.</p>
+            <h2>Organize fills and dosages separately</h2>
+            <p>Each peptide fill stores the vial and water setup. Each dosage plan stores what you take on a schedule.</p>
           </div>
           <div id="current-peptides" class="stack-list"></div>
         </section>
 
         <section class="card" id="reminders-card">
           <div class="section-heading">
-            <span class="section-kicker">Dose Schedule</span>
-            <h2>Plan reminders</h2>
-            <p>Set a recurring reminder to take one dose every X days at a chosen time.</p>
+            <span class="section-kicker">Dosage Plans</span>
+            <h2>Attach dosages to a saved fill</h2>
+            <p>Choose a saved fill, enter the amount you plan to take, and the app will calculate the syringe draw for that schedule.</p>
           </div>
 
           <div class="notice-row">
@@ -145,13 +145,13 @@
 
           <form id="reminder-form" class="reminder-form">
             <label>
-              <span>Reminder name</span>
-              <input id="reminder-name" name="reminderName" type="text" placeholder="Morning dose">
+              <span>Use this fill</span>
+              <select id="fill-source" name="fillSource"></select>
             </label>
 
             <label>
-              <span>Use this fill</span>
-              <select id="fill-source" name="fillSource"></select>
+              <span id="schedule-dose-label">Dosage amount (mg)</span>
+              <input id="schedule-dose-amount" name="scheduleDoseAmount" type="number" min="0.01" step="0.01" placeholder="0.5">
             </label>
 
             <label>
@@ -170,7 +170,7 @@
             </label>
 
             <div class="form-actions">
-              <button class="primary-button" type="submit">Save Reminder</button>
+              <button class="primary-button" type="submit">Save Dosage Plan</button>
             </div>
           </form>
 
