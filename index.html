@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Peptide Calculator V2</title>
+    <title>Peptide Calculator</title>
     <meta
       name="description"
-      content="A clean peptide calculator with saved fill presets and dose reminders."
+      content="A clean peptide calculator with saved fill presets, organized schedules, and safety-first dose math."
     >
-    <meta name="theme-color" content="#0f766e">
+    <meta name="theme-color" content="#0b6b64">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -21,77 +21,81 @@
   </head>
   <body>
     <div class="page-shell">
-      <header class="hero">
-        <div class="hero-copy">
-          <span class="eyebrow">Peptide Calculator V2</span>
-          <h1>Fast, clear dose math with fill presets and reminders.</h1>
-          <p>
-            Enter your vial strength, target dose, and syringe size. The app suggests
-            practical bacteriostatic water amounts up to 3 mL and shows exactly how
-            much to draw for each dose.
-          </p>
-          <div class="hero-actions">
-            <button class="primary-button" type="button" data-jump="#calculator-card">
-              Start Calculating
-            </button>
-            <button class="ghost-button" type="button" data-jump="#current-peptides-card">
-              Current Peptides
-            </button>
-            <button class="ghost-button" type="button" data-jump="#calendar-card">
-              Calendar
-            </button>
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">
+            <img src="./icon.svg" alt="Peptide Calculator logo">
+          </div>
+          <div class="brand-copy">
+            <span class="eyebrow">Peptide Calculator</span>
+            <h1>Peptide Calculator</h1>
+            <p>Safety-first fill planning with easy-to-read syringe draw targets.</p>
           </div>
         </div>
-        <div class="hero-panel">
-          <div class="hero-stat">
-            <span class="hero-stat-label">Water limit</span>
-            <strong>Up to 3.00 mL</strong>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-label">Syringe default</span>
-            <strong>1.00 mL</strong>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-label">Built for</span>
-            <strong>Quick, clean planning</strong>
-          </div>
+
+        <div class="topbar-actions">
+          <button class="ghost-button" type="button" data-jump="#calculator-card">Calculator</button>
+          <button class="ghost-button" type="button" data-jump="#current-peptides-card">Current Peptides</button>
+          <button class="ghost-button" type="button" data-jump="#reminders-card">Schedules</button>
+          <button class="ghost-button" type="button" data-jump="#calendar-card">Calendar</button>
         </div>
       </header>
 
-      <nav class="section-nav" aria-label="App sections">
-        <button class="ghost-button" type="button" data-jump="#calculator-card">Calculator</button>
-        <button class="ghost-button" type="button" data-jump="#current-peptides-card">Current Peptides</button>
-        <button class="ghost-button" type="button" data-jump="#reminders-card">Schedules</button>
-        <button class="ghost-button" type="button" data-jump="#calendar-card">Calendar</button>
-      </nav>
+      <section class="info-strip">
+        <div class="info-pill">
+          <span class="info-label">Minimum draw</span>
+          <strong>0.05 mL / 5 units</strong>
+        </div>
+        <div class="info-pill">
+          <span class="info-label">Goal</span>
+          <strong>Prefer easy rounded draw amounts</strong>
+        </div>
+        <div class="info-pill">
+          <span class="info-label">Water guidance</span>
+          <strong>Above 3 mL allowed with warning</strong>
+        </div>
+      </section>
 
       <main class="layout-grid">
         <section class="card calculator-card" id="calculator-card">
           <div class="section-heading">
             <span class="section-kicker">Dose Planner</span>
             <h2>Build your fill options</h2>
+            <p>Choose the vial unit, syringe size, and water ceiling. Results only show options that stay at or above the 5-unit minimum draw.</p>
           </div>
 
           <form id="calculator-form" class="calculator-form">
             <label>
-              <span>Milligrams in the vial</span>
+              <span>Vial unit</span>
+              <select id="dose-unit" name="doseUnit">
+                <option value="mg" selected>mg</option>
+                <option value="IU">IU</option>
+              </select>
+            </label>
+
+            <label>
+              <span id="vial-amount-label">Amount in vial (mg)</span>
               <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="10">
             </label>
 
             <label>
-              <span>Desired dose (mg)</span>
+              <span id="dose-amount-label">Desired dose (mg)</span>
               <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="0.5">
             </label>
 
             <label>
               <span>Max syringe size (mL)</span>
-              <input id="syringe-max" name="syringeMax" type="number" min="0.1" step="0.05" value="1">
+              <input id="syringe-max" name="syringeMax" type="number" min="0.05" step="0.05" value="1">
             </label>
 
             <label>
-              <span>Maximum bacteriostatic water</span>
-              <input type="text" value="3.00 mL" readonly>
+              <span>Maximum bacteriostatic water (mL)</span>
+              <input id="max-water-ml" name="maxWaterMl" type="number" min="0.5" step="0.05" value="3">
             </label>
+
+            <div class="form-message" id="water-warning">
+              Staying at or under 3 mL is usually preferred for vial fit.
+            </div>
 
             <div class="form-actions">
               <button class="primary-button" type="submit">Generate Options</button>
@@ -108,7 +112,7 @@
           <div class="section-heading">
             <span class="section-kicker">Fill Options</span>
             <h2>Recommended water amounts</h2>
-            <p>These options stay at or under your syringe limit and rank the easiest draws first.</p>
+            <p id="results-summary">These options rank the easiest draw amounts first and avoid anything under 0.05 mL.</p>
           </div>
 
           <div id="results-grid" class="results-grid" aria-live="polite"></div>
@@ -118,7 +122,7 @@
           <div class="section-heading">
             <span class="section-kicker">Current Peptides</span>
             <h2>Organize every peptide in one place</h2>
-            <p>Save named fills like Semaglutide Fill, keep the BAC water details attached, and reuse them for reminders.</p>
+            <p>Save named fills like Semaglutide Fill, keep the water details attached, and reuse them for reminders.</p>
           </div>
           <div id="current-peptides" class="stack-list"></div>
         </section>
@@ -186,7 +190,7 @@
 
       <footer class="footer-note">
         <p>
-          For calculation planning only. Always verify your protocol, materials, and dosing instructions before use.
+          For planning only. Always verify the protocol, unit conversion, materials, and dosing instructions before use.
         </p>
       </footer>
     </div>
