@@ -20,180 +20,166 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body data-theme="dark">
-    <div class="page-shell">
-      <header class="topbar">
-        <div class="brand-lockup">
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-lockup compact">
           <div class="brand-mark">
             <img src="./icon.svg" alt="Peptide Calculator logo">
           </div>
-          <div class="brand-copy">
+          <div class="brand-copy compact">
             <span class="eyebrow">Peptide Calculator</span>
             <h1>Peptide Calculator</h1>
-            <p>Plan fills, track what is left in the vial, and keep every dose on one clear calendar.</p>
           </div>
         </div>
-
-        <div class="topbar-actions">
-          <button class="ghost-button" type="button" data-jump="#calculator-card">Calculator</button>
-          <button class="ghost-button" type="button" data-jump="#cabinet-card">Peptide Cabinet</button>
-          <button class="ghost-button" type="button" data-jump="#dosage-card">Dosage Plans</button>
-          <button class="ghost-button" type="button" data-jump="#calendar-card">Calendar</button>
-          <button class="ghost-button" type="button" id="theme-toggle">Light Mode</button>
-        </div>
+        <button class="ghost-button compact-toggle" type="button" id="theme-toggle">Light Mode</button>
       </header>
 
-      <section class="info-strip">
-        <div class="info-pill">
-          <span class="info-label">Minimum draw</span>
-          <strong>0.05 mL / 5 units</strong>
-        </div>
-        <div class="info-pill">
-          <span class="info-label">Preferred draw style</span>
-          <strong>Rounded, easy-to-read syringe amounts first</strong>
-        </div>
-        <div class="info-pill">
-          <span class="info-label">Water guidance</span>
-          <strong>More than 3 mL allowed with a caution</strong>
-        </div>
-      </section>
+      <nav class="tabbar" aria-label="App sections">
+        <button class="tab-button is-active" type="button" data-view-target="calculator-view">Fill</button>
+        <button class="tab-button" type="button" data-view-target="cabinet-view">Cabinet</button>
+        <button class="tab-button" type="button" data-view-target="schedule-view">Schedule</button>
+        <button class="tab-button" type="button" data-view-target="calendar-view">Calendar</button>
+      </nav>
 
-      <main class="layout-grid">
-        <section class="card calculator-card" id="calculator-card">
-          <div class="section-heading">
-            <span class="section-kicker">Fill Builder</span>
-            <h2>Build your fill options</h2>
-            <p>Enter the vial amount, your target dose, and syringe size. The app ranks the easiest draw amounts first and filters out anything under 5 units.</p>
+      <main class="app-main">
+        <section class="app-view is-active" id="calculator-view" data-view="calculator-view">
+          <div class="view-grid view-grid-fill">
+            <section class="card calculator-card" id="calculator-card">
+              <div class="section-heading compact">
+                <span class="section-kicker">Fill Builder</span>
+                <h2>Build your fill options</h2>
+                <p>Choose the vial amount, dose, syringe size, and BAC water ceiling. The app will rank the easiest draw options first.</p>
+              </div>
+
+              <form id="calculator-form" class="calculator-form">
+                <label>
+                  <span>Vial unit</span>
+                  <select id="dose-unit" name="doseUnit">
+                    <option value="mg" selected>mg</option>
+                    <option value="IU">IU</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span id="vial-amount-label">Amount in vial (mg)</span>
+                  <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
+                </label>
+
+                <label>
+                  <span id="dose-amount-label">Desired dose (mg)</span>
+                  <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="3">
+                </label>
+
+                <label>
+                  <span>Max syringe size (mL)</span>
+                  <input id="syringe-max" name="syringeMax" type="number" min="0.05" step="0.05" value="1">
+                </label>
+
+                <label>
+                  <span>Maximum bacteriostatic water (mL)</span>
+                  <input id="max-water-ml" name="maxWaterMl" type="number" min="0.5" step="0.05" value="3">
+                </label>
+
+                <div class="form-message" id="water-warning">
+                  Staying at or under 3 mL is usually preferred for vial fit.
+                </div>
+
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">Generate Options</button>
+                  <button class="secondary-button" type="button" id="reset-form">Reset</button>
+                </div>
+              </form>
+
+              <div class="selected-fill" id="selected-fill">
+                <p class="selected-fill-empty">Save a fill option to add it into your Peptide Cabinet.</p>
+              </div>
+            </section>
+
+            <section class="card results-card">
+              <div class="section-heading compact">
+                <span class="section-kicker">Options</span>
+                <h2>Recommended water amounts</h2>
+                <p id="results-summary">These options stay within your syringe limit and prefer easy rounded draw amounts.</p>
+              </div>
+              <div id="results-grid" class="results-grid" aria-live="polite"></div>
+            </section>
           </div>
+        </section>
 
-          <form id="calculator-form" class="calculator-form">
-            <label>
-              <span>Vial unit</span>
-              <select id="dose-unit" name="doseUnit">
-                <option value="mg" selected>mg</option>
-                <option value="IU">IU</option>
-              </select>
-            </label>
+        <section class="app-view" id="cabinet-view" data-view="cabinet-view">
+          <section class="card full-height-card" id="cabinet-card">
+            <div class="section-heading compact">
+              <span class="section-kicker">Peptide Cabinet</span>
+              <h2>Track fills, remaining vial volume, and reorder timing</h2>
+              <p>Each fill stores the BAC water setup. Each saved dose plan tells you how much to take and how much to draw.</p>
+            </div>
+            <div id="current-peptides" class="stack-list"></div>
+          </section>
+        </section>
 
-            <label>
-              <span id="vial-amount-label">Amount in vial (mg)</span>
-              <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
-            </label>
-
-            <label>
-              <span id="dose-amount-label">Desired dose (mg)</span>
-              <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="3">
-            </label>
-
-            <label>
-              <span>Max syringe size (mL)</span>
-              <input id="syringe-max" name="syringeMax" type="number" min="0.05" step="0.05" value="1">
-            </label>
-
-            <label>
-              <span>Maximum bacteriostatic water (mL)</span>
-              <input id="max-water-ml" name="maxWaterMl" type="number" min="0.5" step="0.05" value="3">
-            </label>
-
-            <div class="form-message" id="water-warning">
-              Staying at or under 3 mL is usually preferred for vial fit.
+        <section class="app-view" id="schedule-view" data-view="schedule-view">
+          <section class="card full-height-card" id="dosage-card">
+            <div class="section-heading compact">
+              <span class="section-kicker">Dosage Plans</span>
+              <h2>Add another dose schedule</h2>
+              <p>Use this when one saved fill needs another recurring dose plan. The draw amount is calculated automatically from the fill.</p>
             </div>
 
-            <div class="form-actions">
-              <button class="primary-button" type="submit">Generate Options</button>
-              <button class="secondary-button" type="button" id="reset-form">Reset</button>
+            <div class="notice-row">
+              <button type="button" class="secondary-button" id="enable-notifications">
+                Enable Notifications
+              </button>
+              <p id="notification-status" class="notice-text">
+                Notifications work best when this app is installed or wrapped in Median.
+              </p>
             </div>
-          </form>
 
-          <div class="selected-fill" id="selected-fill">
-            <p class="selected-fill-empty">Save a fill option to add it into your Peptide Cabinet.</p>
-          </div>
+            <form id="dosage-form" class="reminder-form">
+              <label>
+                <span>Use this fill</span>
+                <select id="fill-source" name="fillSource"></select>
+              </label>
+
+              <label>
+                <span id="schedule-dose-label">Dosage amount (mg)</span>
+                <input id="schedule-dose-amount" name="scheduleDoseAmount" type="number" min="0.01" step="0.01" placeholder="3">
+              </label>
+
+              <label>
+                <span>Start date</span>
+                <input id="start-date" name="startDate" type="date">
+              </label>
+
+              <label>
+                <span>Every X days</span>
+                <input id="interval-days" name="intervalDays" type="number" min="1" step="1" value="7">
+              </label>
+
+              <label>
+                <span>Reminder time</span>
+                <input id="reminder-time" name="reminderTime" type="time" value="09:00">
+              </label>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Save Dosage Plan</button>
+              </div>
+            </form>
+
+            <div id="reminder-list" class="stack-list"></div>
+          </section>
         </section>
 
-        <section class="card results-card">
-          <div class="section-heading">
-            <span class="section-kicker">Recommended Options</span>
-            <h2>Water amounts ranked by ease of use</h2>
-            <p id="results-summary">These options stay within your syringe limit and prefer easy rounded draw amounts.</p>
-          </div>
-
-          <div id="results-grid" class="results-grid" aria-live="polite"></div>
-        </section>
-
-        <section class="card" id="cabinet-card">
-          <div class="section-heading">
-            <span class="section-kicker">Peptide Cabinet</span>
-            <h2>Track fills, doses left, and reorder timing</h2>
-            <p>Each fill stores the vial and BAC water setup. Inside each saved fill, dosage plans show what you take and how much to draw.</p>
-          </div>
-          <div id="current-peptides" class="stack-list"></div>
-        </section>
-
-        <section class="card" id="dosage-card">
-          <div class="section-heading">
-            <span class="section-kicker">Dosage Plans</span>
-            <h2>Add another dose schedule when needed</h2>
-            <p>Use this when one saved fill needs an additional recurring dosage plan. The app calculates the syringe draw from the fill automatically.</p>
-          </div>
-
-          <div class="notice-row">
-            <button type="button" class="secondary-button" id="enable-notifications">
-              Enable Notifications
-            </button>
-            <p id="notification-status" class="notice-text">
-              Notifications work best when this app is installed or wrapped in Median.
-            </p>
-          </div>
-
-          <form id="dosage-form" class="reminder-form">
-            <label>
-              <span>Use this fill</span>
-              <select id="fill-source" name="fillSource"></select>
-            </label>
-
-            <label>
-              <span id="schedule-dose-label">Dosage amount (mg)</span>
-              <input id="schedule-dose-amount" name="scheduleDoseAmount" type="number" min="0.01" step="0.01" placeholder="3">
-            </label>
-
-            <label>
-              <span>Start date</span>
-              <input id="start-date" name="startDate" type="date">
-            </label>
-
-            <label>
-              <span>Every X days</span>
-              <input id="interval-days" name="intervalDays" type="number" min="1" step="1" value="7">
-            </label>
-
-            <label>
-              <span>Reminder time</span>
-              <input id="reminder-time" name="reminderTime" type="time" value="09:00">
-            </label>
-
-            <div class="form-actions">
-              <button class="primary-button" type="submit">Save Dosage Plan</button>
+        <section class="app-view" id="calendar-view" data-view="calendar-view">
+          <section class="card full-height-card" id="calendar-card">
+            <div class="section-heading compact">
+              <span class="section-kicker">Calendar</span>
+              <h2>Upcoming dose timeline</h2>
+              <p>Every saved dosage plan lands here automatically so the app works like a proper dosing organizer, not a long webpage.</p>
             </div>
-          </form>
-
-          <div id="reminder-list" class="stack-list"></div>
-        </section>
-
-        <section class="card" id="calendar-card">
-          <div class="section-heading">
-            <span class="section-kicker">Calendar</span>
-            <h2>Upcoming dose timeline</h2>
-            <p>Every saved dosage plan lands here automatically, so one fill setup can build the next reminders in a single step.</p>
-          </div>
-
-          <div id="calendar-list" class="stack-list"></div>
+            <div id="calendar-list" class="stack-list"></div>
+          </section>
         </section>
       </main>
-
-      <footer class="footer-note">
-        <p>
-          For planning only. Always verify the protocol, unit conversion, materials, and dosing instructions before use.
-        </p>
-      </footer>
     </div>
 
     <div class="modal-shell is-hidden" id="save-fill-modal" aria-hidden="true">
