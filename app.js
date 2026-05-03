@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   expandedFill: "peptide-calculator-v2-expanded-fill",
   theme: "peptide-calculator-v2-theme",
   reorderAlerts: "peptide-calculator-v2-reorder-alerts",
+  activeView: "peptide-calculator-v2-active-view",
 };
 const APP_CONFIG = window.APP_CONFIG || {};
 
@@ -52,6 +53,8 @@ const elements = {
   saveFillStartDate: document.getElementById("save-fill-start-date"),
   closeSaveFill: document.getElementById("close-save-fill"),
   cancelSaveFill: document.getElementById("cancel-save-fill"),
+  viewTabs: Array.from(document.querySelectorAll("[data-view-target]")),
+  views: Array.from(document.querySelectorAll("[data-view]")),
 };
 
 const state = {
@@ -61,6 +64,7 @@ const state = {
   expandedFillId: readStorage(STORAGE_KEYS.expandedFill, null),
   theme: readStorage(STORAGE_KEYS.theme, "dark"),
   reorderAlerts: readStorage(STORAGE_KEYS.reorderAlerts, {}),
+  activeView: readStorage(STORAGE_KEYS.activeView, "calculator-view"),
   userId: readStorage(STORAGE_KEYS.userId, null) || crypto.randomUUID(),
   latestOptions: [],
   pendingSaveOptionId: null,
@@ -72,8 +76,15 @@ initialize();
 
 function initialize() {
   writeStorage(STORAGE_KEYS.userId, state.userId);
+  if (state.selectedFillId && !findFillById(state.selectedFillId)) {
+    state.selectedFillId = state.fills[0]?.savedId || null;
+  }
+  if (!elements.views.some((view) => view.dataset.view === state.activeView)) {
+    state.activeView = "calculator-view";
+  }
   setDefaultDates();
   applyTheme(state.theme);
+  setActiveView(state.activeView, false);
   updateUnitLabels();
   updateWaterWarning();
   bindEvents();
@@ -83,12 +94,9 @@ function initialize() {
 }
 
 function bindEvents() {
-  document.querySelectorAll("[data-jump]").forEach((button) => {
+  elements.viewTabs.forEach((button) => {
     button.addEventListener("click", () => {
-      const target = document.querySelector(button.dataset.jump);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      setActiveView(button.dataset.viewTarget);
     });
   });
 
@@ -138,7 +146,7 @@ function bindEvents() {
         elements.notificationStatus.textContent = "Native push permission request sent through Median.";
         return;
       } catch (error) {
-        // Fall back to browser notifications.
+        // Fall through to browser notifications.
       }
     }
 
@@ -175,6 +183,19 @@ function renderAll() {
   renderSchedules();
   renderCalendar();
   renderNotificationState();
+}
+
+function setActiveView(viewId, persist = true) {
+  state.activeView = viewId;
+  elements.views.forEach((view) => {
+    view.classList.toggle("is-active", view.dataset.view === viewId);
+  });
+  elements.viewTabs.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.viewTarget === viewId);
+  });
+  if (persist) {
+    writeStorage(STORAGE_KEYS.activeView, viewId);
+  }
 }
 
 function renderCalculator() {
@@ -349,7 +370,7 @@ function openSaveFillModal(optionId) {
   }
 
   state.pendingSaveOptionId = optionId;
-  elements.saveFillName.value = option.name || "";
+  elements.saveFillName.value = "";
   elements.modalDoseLabel.textContent = `Dosage amount (${option.unitLabel})`;
   elements.modalDoseDisplay.value = `${formatNumber(option.doseAmount)} ${option.unitLabel}`;
   elements.saveFillInterval.value = elements.intervalDays.value || "7";
@@ -429,6 +450,7 @@ function saveFillFromModal() {
 
   closeSaveFillModal();
   renderAll();
+  setActiveView("cabinet-view");
   syncRemindersToBackend();
   queueNextReminder();
 }
@@ -472,6 +494,8 @@ function renderSelectedFill() {
   }
 
   const primarySchedule = getSchedulesForFill(fill.savedId)[0] || null;
+  const preferredDose = primarySchedule ? primarySchedule.doseAmount : fill.recommendedDoseAmount;
+  const preferredDraw = primarySchedule ? primarySchedule.doseMl : preferredDose / fill.concentrationPerMl;
   elements.selectedFill.innerHTML = `
     <div class="card-topline">
       <div>
@@ -484,11 +508,11 @@ function renderSelectedFill() {
     <div class="selected-fill-grid">
       <div class="selected-pill">
         <span>Preferred dose</span>
-        <strong>${primarySchedule ? formatDose(primarySchedule.doseAmount, fill.unitLabel) : formatDose(fill.recommendedDoseAmount, fill.unitLabel)}</strong>
+        <strong>${formatDose(preferredDose, fill.unitLabel)}</strong>
       </div>
       <div class="selected-pill">
         <span>Draw</span>
-        <strong>${primarySchedule ? formatDrawMl(primarySchedule.doseMl) : formatDrawMl(fill.recommendedDoseAmount / fill.concentrationPerMl)}</strong>
+        <strong>${formatDrawMl(preferredDraw)}</strong>
       </div>
       <div class="selected-pill">
         <span>Concentration</span>
@@ -496,10 +520,10 @@ function renderSelectedFill() {
       </div>
       <div class="selected-pill">
         <span>1 mL syringe units</span>
-        <strong>${formatUnits((primarySchedule ? primarySchedule.doseMl : fill.recommendedDoseAmount / fill.concentrationPerMl) * 100)}</strong>
+        <strong>${formatUnits(preferredDraw * 100)}</strong>
       </div>
     </div>
-    <p class="card-note">${buildFormulaSummary(fill.vialAmount, fill.waterMl, primarySchedule ? primarySchedule.doseAmount : fill.recommendedDoseAmount, fill.concentrationPerMl, primarySchedule ? primarySchedule.doseMl : fill.recommendedDoseAmount / fill.concentrationPerMl, fill.unitLabel)}</p>
+    <p class="card-note">${buildFormulaSummary(fill.vialAmount, fill.waterMl, preferredDose, fill.concentrationPerMl, preferredDraw, fill.unitLabel)}</p>
   `;
 }
 
@@ -510,12 +534,15 @@ function renderFillSourceOptions() {
     return;
   }
 
-  elements.fillSource.innerHTML = state.fills
-    .sort((left, right) => new Date(right.savedAt || 0) - new Date(left.savedAt || 0))
+  const fills = state.fills
+    .slice()
+    .sort((left, right) => new Date(right.savedAt || 0) - new Date(left.savedAt || 0));
+
+  elements.fillSource.innerHTML = fills
     .map((fill) => `<option value="${fill.savedId}">${escapeHtml(fill.name)}</option>`)
     .join("");
 
-  if (state.selectedFillId && state.fills.some((fill) => fill.savedId === state.selectedFillId)) {
+  if (state.selectedFillId && fills.some((fill) => fill.savedId === state.selectedFillId)) {
     elements.fillSource.value = state.selectedFillId;
   }
 
@@ -565,11 +592,14 @@ function saveDosagePlan() {
     startDate,
   });
 
+  state.selectedFillId = fill.savedId;
+  writeStorage(STORAGE_KEYS.selectedFill, state.selectedFillId);
   elements.scheduleDoseAmount.value = "";
   setDefaultDates();
   renderCurrentPeptides();
   renderSchedules();
   renderCalendar();
+  setActiveView("calendar-view");
   syncRemindersToBackend();
   queueNextReminder();
 }
@@ -578,7 +608,7 @@ function renderCurrentPeptides() {
   if (!state.fills.length) {
     elements.currentPeptides.innerHTML = `
       <div class="empty-state">
-        No fills saved yet. Save an option above to start your Peptide Cabinet.
+        No fills saved yet. Save an option in Fill to start your Peptide Cabinet.
       </div>
     `;
     return;
@@ -595,6 +625,7 @@ function renderCurrentPeptides() {
       const expanded = state.expandedFillId === fill.savedId;
       const liquidPercent = clamp(usage.percentRemaining, 0, 100);
       const threshold = usage.reorderLinePercent;
+
       return `
         <article class="cabinet-card">
           <div class="fill-header">
@@ -633,13 +664,12 @@ function renderCurrentPeptides() {
             <div class="vial-copy">
               <strong>${formatMl(usage.remainingVolumeMl)} liquid remaining</strong>
               <p class="card-note">${usage.nextDose ? `Next dose ${formatDateTime(usage.nextDose)}.` : "No dosage plan saved yet."}</p>
-              <p class="card-note">${usage.refillDue ? `Refill due before ${formatDateTime(usage.refillDue)}.` : usage.totalSchedules ? "This fill has enough medication for the currently saved plan." : "Save a dosage plan to start depletion tracking."}</p>
+              <p class="card-note">${usage.refillDue ? `Refill due before ${formatDateTime(usage.refillDue)}.` : usage.totalSchedules ? "This fill still covers the currently saved plan." : "Save a dosage plan to start depletion tracking."}</p>
               ${usage.shouldReorder ? '<p class="reorder-note">4 doses or fewer remain. Re-order soon.</p>' : ""}
             </div>
           </div>
 
           <div class="peptide-fill-list ${expanded ? "" : "is-collapsed"}">
-            <p class="card-note">${buildFormulaSummary(fill.vialAmount, fill.waterMl, schedules[0]?.doseAmount || fill.recommendedDoseAmount, fill.concentrationPerMl, schedules[0]?.doseMl || fill.recommendedDoseAmount / fill.concentrationPerMl, fill.unitLabel)}</p>
             <div class="card-actions">
               <button class="mini-button" type="button" data-action="use-fill" data-id="${fill.savedId}">Use Fill</button>
               <button class="mini-button" type="button" data-action="add-dosage" data-id="${fill.savedId}">Add Dosage</button>
@@ -664,6 +694,7 @@ function renderDosageCards(fill, schedules, now) {
   return `
     <div class="dosage-list">
       ${schedules
+        .slice()
         .sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0))
         .map((schedule) => {
           const nextDose = getNextOccurrence(schedule, now);
@@ -684,7 +715,7 @@ function renderDosageCards(fill, schedules, now) {
                 </div>
                 <div class="metric">
                   <span>Refill due</span>
-                  <strong>${formatRefillDue(fill, schedule)}</strong>
+                  <strong>${formatRefillDue(fill)}</strong>
                 </div>
               </div>
               <div class="card-actions">
@@ -725,6 +756,7 @@ function attachCabinetEvents() {
       updateWaterWarning();
       renderCalculator();
       renderSelectedFill();
+      setActiveView("calculator-view");
     });
   });
 
@@ -740,7 +772,7 @@ function attachCabinetEvents() {
       elements.fillSource.value = fill.savedId;
       elements.scheduleDoseAmount.value = formatNumber(fill.recommendedDoseAmount || 0).replace(/\.00$/, "");
       updateScheduleDoseLabel();
-      document.querySelector("#dosage-card").scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveView("schedule-view");
     });
   });
 
@@ -797,636 +829,4 @@ function renderSchedules() {
         <article class="list-card">
           <div class="list-topline">
             <div>
-              <h3>${fill ? escapeHtml(fill.name) : "Saved Dose"}</h3>
-              <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} • draw ${formatDrawMl(schedule.doseMl)}</p>
-            </div>
-            <span class="badge">Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</span>
-          </div>
-          <div class="schedule-metrics">
-            <div class="metric">
-              <span>Start</span>
-              <strong>${formatDate(schedule.startDate)}</strong>
-            </div>
-            <div class="metric">
-              <span>Next reminder</span>
-              <strong>${nextDose ? formatDateTime(nextDose) : "Check inputs"}</strong>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="mini-button" type="button" data-action="test-reminder" data-id="${schedule.id}">Test Alert</button>
-            <button class="mini-button" type="button" data-action="delete-reminder" data-id="${schedule.id}">Delete</button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-
-  elements.reminderList.querySelectorAll('[data-action="delete-reminder"]').forEach((button) => {
-    button.addEventListener("click", () => deleteSchedule(button.dataset.id));
-  });
-
-  elements.reminderList.querySelectorAll('[data-action="test-reminder"]').forEach((button) => {
-    button.addEventListener("click", () => {
-      const schedule = state.schedules.find((item) => item.id === button.dataset.id);
-      if (schedule) {
-        fireReminder(schedule);
-      }
-    });
-  });
-}
-
-function renderCalendar() {
-  const entries = buildCalendarEntries(state.schedules);
-  if (!entries.length) {
-    elements.calendarList.innerHTML = `
-      <div class="empty-state">
-        Your calendar is empty right now. Save a fill or add a dosage plan to see upcoming doses here.
-      </div>
-    `;
-    return;
-  }
-
-  const groupedByDay = entries.reduce((groups, entry) => {
-    const dayKey = entry.when.toISOString().split("T")[0];
-    if (!groups[dayKey]) {
-      groups[dayKey] = [];
-    }
-    groups[dayKey].push(entry);
-    return groups;
-  }, {});
-
-  elements.calendarList.innerHTML = Object.entries(groupedByDay)
-    .map(([dayKey, dayEntries]) => `
-      <article class="calendar-day">
-        <div class="list-topline">
-          <div>
-            <h3>${formatDate(dayKey)}</h3>
-            <p class="card-note">${dayEntries.length} planned dose${dayEntries.length === 1 ? "" : "s"}</p>
-          </div>
-        </div>
-        <div class="calendar-day-list">
-          ${dayEntries
-            .map((entry) => `
-              <div class="calendar-item">
-                <div class="list-topline">
-                  <div>
-                    <h4>${escapeHtml(entry.fillName)}</h4>
-                    <p class="subtle-line">${formatDose(entry.doseAmount, entry.unitLabel)} • draw ${formatDrawMl(entry.doseMl)}</p>
-                  </div>
-                  <span class="badge">${formatTime(entry.when)}</span>
-                </div>
-              </div>
-            `)
-            .join("")}
-        </div>
-      </article>
-    `)
-    .join("");
-}
-
-function buildCalendarEntries(schedules) {
-  const now = new Date();
-  const entries = [];
-
-  schedules.forEach((schedule) => {
-    const fill = resolveScheduleFill(schedule);
-    let nextAt = getNextOccurrence(schedule, now);
-    let count = 0;
-
-    while (fill && nextAt && count < 4) {
-      entries.push({
-        scheduleId: schedule.id,
-        fillName: fill.name,
-        doseAmount: schedule.doseAmount,
-        doseMl: schedule.doseMl,
-        unitLabel: schedule.unitLabel,
-        when: nextAt,
-      });
-      nextAt = new Date(nextAt.getTime() + schedule.intervalDays * DAY_MS);
-      count += 1;
-    }
-  });
-
-  return entries.sort((left, right) => left.when - right.when).slice(0, 20);
-}
-
-function getFillUsageSummary(fill, schedules, fromDate) {
-  const sortedSchedules = schedules.slice().sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0));
-  const consumedAmount = sortedSchedules.reduce((sum, schedule) => sum + getTakenOccurrences(schedule, fromDate) * schedule.doseAmount, 0);
-  const consumedVolume = sortedSchedules.reduce((sum, schedule) => sum + getTakenOccurrences(schedule, fromDate) * schedule.doseMl, 0);
-  const remainingAmount = clamp(fill.vialAmount - consumedAmount, 0, fill.vialAmount);
-  const remainingVolumeMl = clamp(fill.waterMl - consumedVolume, 0, fill.waterMl);
-  const primarySchedule = sortedSchedules[0] || null;
-  const dosesLeft = primarySchedule ? Math.floor((remainingAmount / primarySchedule.doseAmount) + 1e-9) : null;
-  const nextDose = sortedSchedules
-    .map((schedule) => getNextOccurrence(schedule, fromDate))
-    .filter(Boolean)
-    .sort((left, right) => left - right)[0] || null;
-  const reorderLinePercent = primarySchedule ? clamp((primarySchedule.doseMl * 4 * 100) / fill.waterMl, 0, 100) : null;
-  return {
-    remainingAmount,
-    remainingVolumeMl,
-    percentRemaining: fill.waterMl ? (remainingVolumeMl / fill.waterMl) * 100 : 0,
-    dosesLeft,
-    nextDose,
-    refillDue: getRefillDueDate(fill, sortedSchedules, fromDate),
-    shouldReorder: dosesLeft !== null && dosesLeft <= 4,
-    reorderLinePercent,
-    totalSchedules: sortedSchedules.length,
-  };
-}
-
-function getRefillDueDate(fill, schedules, fromDate) {
-  if (!schedules.length) {
-    return null;
-  }
-
-  let remainingAmount = clamp(
-    fill.vialAmount - schedules.reduce((sum, schedule) => sum + getTakenOccurrences(schedule, fromDate) * schedule.doseAmount, 0),
-    0,
-    fill.vialAmount
-  );
-
-  const cursors = schedules
-    .map((schedule) => ({
-      schedule,
-      nextAt: getNextOccurrence(schedule, fromDate),
-    }))
-    .filter((cursor) => cursor.nextAt);
-
-  for (let index = 0; index < 512 && cursors.length; index += 1) {
-    cursors.sort((left, right) => left.nextAt - right.nextAt);
-    const cursor = cursors[0];
-    if (remainingAmount + 1e-9 < cursor.schedule.doseAmount) {
-      return cursor.nextAt;
-    }
-    remainingAmount -= cursor.schedule.doseAmount;
-    cursor.nextAt = new Date(cursor.nextAt.getTime() + cursor.schedule.intervalDays * DAY_MS);
-  }
-
-  return null;
-}
-
-function formatRefillDue(fill, schedule) {
-  const usage = getFillUsageSummary(fill, getSchedulesForFill(fill.savedId), new Date());
-  return usage.refillDue ? formatDate(usage.refillDue.toISOString()) : "Not soon";
-}
-
-function maybeNotifyReorder(fill, usage) {
-  const alreadyAlerted = Boolean(state.reorderAlerts[fill.savedId]);
-  if (usage.shouldReorder && !alreadyAlerted) {
-    state.reorderAlerts[fill.savedId] = true;
-    writeStorage(STORAGE_KEYS.reorderAlerts, state.reorderAlerts);
-    window.alert(`${fill.name}: 4 doses or fewer remain. Re-order soon.`);
-    return;
-  }
-
-  if (!usage.shouldReorder && alreadyAlerted) {
-    state.reorderAlerts[fill.savedId] = false;
-    writeStorage(STORAGE_KEYS.reorderAlerts, state.reorderAlerts);
-  }
-}
-
-function deleteSchedule(scheduleId) {
-  state.schedules = state.schedules.filter((schedule) => schedule.id !== scheduleId);
-  writeStorage(STORAGE_KEYS.schedules, state.schedules);
-  renderCurrentPeptides();
-  renderSchedules();
-  renderCalendar();
-  syncRemindersToBackend();
-  queueNextReminder();
-}
-
-function renameFillRecord(fill) {
-  const nextNameInput = window.prompt("NAME YOUR PEPTIDE FILL", fill.name);
-  if (nextNameInput === null) {
-    return;
-  }
-
-  const nextName = nextNameInput.trim() || "Unnamed Peptide Fill";
-  state.fills = state.fills.map((item) => (item.savedId === fill.savedId ? normalizeFill({ ...item, name: nextName }) : item));
-  state.schedules = state.schedules.map((schedule) =>
-    schedule.fillSavedId === fill.savedId
-      ? normalizeSchedule({
-          ...schedule,
-          fillSnapshot: {
-            ...resolveScheduleFill(schedule),
-            name: nextName,
-          },
-        })
-      : schedule
-  );
-
-  writeStorage(STORAGE_KEYS.fills, state.fills);
-  writeStorage(STORAGE_KEYS.schedules, state.schedules);
-  renderSelectedFill();
-  renderFillSourceOptions();
-  renderCurrentPeptides();
-  renderSchedules();
-  renderCalendar();
-  syncRemindersToBackend();
-}
-
-function deleteFillRecord(fill) {
-  state.fills = state.fills.filter((item) => item.savedId !== fill.savedId);
-  state.schedules = state.schedules.filter((schedule) => schedule.fillSavedId !== fill.savedId);
-  if (state.selectedFillId === fill.savedId) {
-    state.selectedFillId = state.fills[0]?.savedId || null;
-  }
-  if (state.expandedFillId === fill.savedId) {
-    state.expandedFillId = null;
-  }
-
-  writeStorage(STORAGE_KEYS.fills, state.fills);
-  writeStorage(STORAGE_KEYS.schedules, state.schedules);
-  writeStorage(STORAGE_KEYS.selectedFill, state.selectedFillId);
-  writeStorage(STORAGE_KEYS.expandedFill, state.expandedFillId);
-  renderAll();
-  syncRemindersToBackend();
-  queueNextReminder();
-}
-
-function queueNextReminder() {
-  if (reminderTimer) {
-    window.clearTimeout(reminderTimer);
-  }
-
-  const now = new Date();
-  const upcoming = state.schedules
-    .map((schedule) => ({ schedule, nextAt: getNextOccurrence(schedule, now) }))
-    .filter((entry) => entry.nextAt)
-    .sort((left, right) => left.nextAt - right.nextAt);
-
-  if (!upcoming.length) {
-    return;
-  }
-
-  const next = upcoming[0];
-  const delay = next.nextAt.getTime() - now.getTime();
-
-  if (delay > REMINDER_LOOKAHEAD_MS) {
-    reminderTimer = window.setTimeout(queueNextReminder, REMINDER_LOOKAHEAD_MS);
-    return;
-  }
-
-  reminderTimer = window.setTimeout(() => {
-    const freshSchedule = state.schedules.find((item) => item.id === next.schedule.id);
-    if (freshSchedule) {
-      fireReminder(freshSchedule);
-      freshSchedule.lastTriggeredAt = next.nextAt.toISOString();
-      writeStorage(STORAGE_KEYS.schedules, state.schedules);
-      renderCurrentPeptides();
-      renderSchedules();
-      renderCalendar();
-    }
-    queueNextReminder();
-  }, Math.max(delay, 1000));
-}
-
-function fireReminder(schedule) {
-  const fill = resolveScheduleFill(schedule);
-  const title = `${fill ? fill.name : "Peptide"} Reminder`;
-  const body = `Take ${formatDose(schedule.doseAmount, schedule.unitLabel)} and draw ${formatDrawMl(schedule.doseMl)} from the constituted vial.`;
-
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(title, {
-      body,
-      icon: "./icon.svg",
-    });
-  } else {
-    window.alert(`${title}\n\n${body}`);
-  }
-}
-
-function renderNotificationState(forcedPermission) {
-  if (hasMedianOneSignal()) {
-    elements.notificationStatus.textContent =
-      "Median native push is available. Connect OneSignal and a backend to make reminders work even when the app is closed.";
-    return;
-  }
-
-  if (!("Notification" in window)) {
-    elements.notificationStatus.textContent = "This device does not support browser notifications.";
-    return;
-  }
-
-  const permission = forcedPermission || Notification.permission;
-  if (permission === "granted") {
-    elements.notificationStatus.textContent = "Notifications are enabled for upcoming reminders.";
-  } else if (permission === "denied") {
-    elements.notificationStatus.textContent = "Notifications are blocked. Browser alerts will be used instead.";
-  } else {
-    elements.notificationStatus.textContent =
-      "Notifications are not enabled yet. Turn them on for cleaner reminder popups.";
-  }
-}
-
-function updateUnitLabels() {
-  const unitLabel = getCurrentUnitLabel();
-  elements.vialAmountLabel.textContent = `Amount in vial (${unitLabel})`;
-  elements.doseAmountLabel.textContent = `Desired dose (${unitLabel})`;
-  elements.modalDoseLabel.textContent = `Dosage amount (${unitLabel})`;
-  updateScheduleDoseLabel();
-}
-
-function updateWaterWarning() {
-  const maxWaterMl = Number(elements.maxWaterMl.value);
-  if (!isPositiveNumber(maxWaterMl)) {
-    elements.waterWarning.textContent = "Enter a valid water ceiling in mL.";
-    elements.waterWarning.className = "form-message warning";
-    return;
-  }
-
-  if (maxWaterMl > DEFAULT_MAX_WATER_ML) {
-    elements.waterWarning.textContent =
-      "More than 3 mL is allowed for easier draw amounts, but many vials cannot comfortably fit more than 3 mL at once.";
-    elements.waterWarning.className = "form-message warning";
-    return;
-  }
-
-  elements.waterWarning.textContent = "Staying at or under 3 mL is usually preferred for vial fit.";
-  elements.waterWarning.className = "form-message";
-}
-
-function applyTheme(theme) {
-  document.body.dataset.theme = theme;
-  elements.themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
-}
-
-function normalizeFill(fill) {
-  const vialAmount = Number(fill?.vialAmount ?? fill?.vialMg);
-  const waterMl = Number(fill?.waterMl);
-  const unitLabel = fill?.unitLabel || "mg";
-  const concentrationPerMl = isPositiveNumber(vialAmount) && isPositiveNumber(waterMl) ? vialAmount / waterMl : Number.NaN;
-  return {
-    savedId: fill?.savedId || crypto.randomUUID(),
-    name: fill?.name || fill?.fillName || fill?.label || fill?.peptideName || "Unnamed Peptide Fill",
-    vialAmount,
-    waterMl,
-    unitLabel,
-    concentrationPerMl,
-    syringeMax: isPositiveNumber(fill?.syringeMax) ? Number(fill.syringeMax) : null,
-    maxWaterMl: isPositiveNumber(fill?.maxWaterMl) ? Number(fill.maxWaterMl) : null,
-    recommendedDoseAmount: Number(fill?.recommendedDoseAmount ?? fill?.doseAmount ?? fill?.doseMg ?? 0),
-    savedAt: fill?.savedAt || new Date().toISOString(),
-  };
-}
-
-function normalizeSchedule(schedule) {
-  const doseAmount = Number(schedule?.doseAmount ?? schedule?.fill?.doseAmount ?? schedule?.fill?.doseMg);
-  const fillSnapshot = schedule?.fillSnapshot ? normalizeFill(schedule.fillSnapshot) : schedule?.fill ? normalizeFill(schedule.fill) : null;
-  const fallbackConcentration = fillSnapshot?.concentrationPerMl || Number.NaN;
-  const doseMl = Number(schedule?.doseMl ?? (isPositiveNumber(doseAmount) && isPositiveNumber(fallbackConcentration) ? doseAmount / fallbackConcentration : Number.NaN));
-  return {
-    id: schedule?.id || crypto.randomUUID(),
-    fillSavedId: schedule?.fillSavedId || schedule?.fillId || null,
-    doseAmount,
-    doseMl,
-    unitLabel: schedule?.unitLabel || fillSnapshot?.unitLabel || "mg",
-    intervalDays: Number(schedule?.intervalDays),
-    reminderTime: schedule?.reminderTime || "09:00",
-    startDate: schedule?.startDate || new Date().toISOString().split("T")[0],
-    createdAt: schedule?.createdAt || new Date().toISOString(),
-    lastTriggeredAt: schedule?.lastTriggeredAt || null,
-    fillSnapshot,
-  };
-}
-
-function isValidFill(fill) {
-  return fill && isPositiveNumber(fill.vialAmount) && isPositiveNumber(fill.waterMl) && isPositiveNumber(fill.concentrationPerMl);
-}
-
-function isValidSchedule(schedule) {
-  return Boolean(
-    schedule &&
-      (schedule.fillSavedId || schedule.fillSnapshot) &&
-      isPositiveNumber(schedule.doseAmount) &&
-      isPositiveNumber(schedule.doseMl) &&
-      schedule.doseMl >= MIN_DRAW_ML &&
-      Number.isInteger(schedule.intervalDays) &&
-      schedule.intervalDays >= 1 &&
-      schedule.startDate &&
-      schedule.reminderTime
-  );
-}
-
-function findFillById(savedId) {
-  return state.fills.find((fill) => fill.savedId === savedId) || null;
-}
-
-function resolveScheduleFill(schedule) {
-  return findFillById(schedule.fillSavedId) || schedule.fillSnapshot || null;
-}
-
-function getSchedulesForFill(savedId) {
-  return state.schedules.filter((schedule) => schedule.fillSavedId === savedId);
-}
-
-function getTakenOccurrences(schedule, fromDate) {
-  const start = combineDateAndTime(schedule.startDate, schedule.reminderTime);
-  if (!start || start > fromDate) {
-    return 0;
-  }
-  const elapsed = fromDate.getTime() - start.getTime();
-  return Math.floor(elapsed / (schedule.intervalDays * DAY_MS)) + 1;
-}
-
-function getNextOccurrence(schedule, fromDate) {
-  const start = combineDateAndTime(schedule.startDate, schedule.reminderTime);
-  if (!start) {
-    return null;
-  }
-  if (start > fromDate) {
-    return start;
-  }
-  const intervalMs = schedule.intervalDays * DAY_MS;
-  const elapsed = fromDate.getTime() - start.getTime();
-  const steps = Math.floor(elapsed / intervalMs) + 1;
-  return new Date(start.getTime() + steps * intervalMs);
-}
-
-function hasMedianOneSignal() {
-  return Boolean(window.median && window.median.onesignal);
-}
-
-function maybeRegisterNativePushIdentity() {
-  if (!hasMedianOneSignal()) {
-    return;
-  }
-
-  const prefix = APP_CONFIG.onesignalExternalIdPrefix || "peptide-calculator-v2";
-  const externalId = `${prefix}-${state.userId}`;
-  try {
-    if (typeof window.median.onesignal.login === "function") {
-      window.median.onesignal.login(externalId);
-    }
-  } catch (error) {
-    // Ignore bridge errors during web testing.
-  }
-}
-
-async function syncRemindersToBackend() {
-  if (!APP_CONFIG.backendBaseUrl) {
-    return;
-  }
-
-  const payload = {
-    userId: state.userId,
-    schedules: state.schedules
-      .map((schedule) => {
-        const fill = resolveScheduleFill(schedule);
-        if (!fill) {
-          return null;
-        }
-        return {
-          id: schedule.id,
-          fillSavedId: schedule.fillSavedId,
-          fillName: fill.name,
-          unitLabel: schedule.unitLabel,
-          doseAmount: schedule.doseAmount,
-          doseMl: schedule.doseMl,
-          intervalDays: schedule.intervalDays,
-          reminderTime: schedule.reminderTime,
-          startDate: schedule.startDate,
-          fill: {
-            vialAmount: fill.vialAmount,
-            waterMl: fill.waterMl,
-            concentrationPerMl: fill.concentrationPerMl,
-          },
-        };
-      })
-      .filter(Boolean),
-  };
-
-  try {
-    await fetch(`${APP_CONFIG.backendBaseUrl.replace(/\/$/, "")}/reminders/sync`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    // Keep the app usable even when the backend is not configured yet.
-  }
-}
-
-function setDefaultDates() {
-  const today = new Date().toISOString().split("T")[0];
-  if (!elements.startDate.value) {
-    elements.startDate.value = today;
-  }
-  if (!elements.saveFillStartDate.value) {
-    elements.saveFillStartDate.value = today;
-  }
-}
-
-function combineDateAndTime(dateString, timeString) {
-  if (!dateString || !timeString) {
-    return null;
-  }
-  const combined = new Date(`${dateString}T${timeString}:00`);
-  return Number.isNaN(combined.getTime()) ? null : combined;
-}
-
-function getCurrentUnitLabel() {
-  return elements.doseUnit.value || "mg";
-}
-
-function readStorage(key, fallback) {
-  try {
-    const value = window.localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch (error) {
-    return fallback;
-  }
-}
-
-function writeStorage(key, value) {
-  window.localStorage.setItem(key, JSON.stringify(value));
-}
-
-function isPositiveNumber(value) {
-  return Number.isFinite(Number(value)) && Number(value) > 0;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function roundToStep(value, step) {
-  return Number((Math.round(value / step) * step).toFixed(3));
-}
-
-function formatMl(value) {
-  return `${formatNumber(value)} mL`;
-}
-
-function formatDrawMl(value) {
-  return `${formatDrawNumber(value)} mL`;
-}
-
-function formatDose(value, unitLabel = "mg") {
-  return `${formatNumber(value)} ${unitLabel}`;
-}
-
-function formatUnits(value) {
-  return `${formatNumber(value)} units`;
-}
-
-function formatPercent(value) {
-  return `${Math.round(value)}%`;
-}
-
-function formatNumber(value) {
-  return Number(value).toFixed(2).replace(/\.00$/, "");
-}
-
-function formatDrawNumber(value) {
-  if (value >= 1) {
-    return Number(value).toFixed(2).replace(/\.00$/, "");
-  }
-  return Number(value).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
-}
-
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatDateTime(date) {
-  return new Date(date).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function formatTime(date) {
-  return new Date(date).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function buildFormulaSummary(vialAmount, waterMl, doseAmount, concentrationPerMl, doseMl, unitLabel) {
-  return (
-    `${formatNumber(vialAmount)} ${escapeHtml(unitLabel)} / ${formatNumber(waterMl)} mL = ` +
-    `${formatNumber(concentrationPerMl)} ${escapeHtml(unitLabel)}/mL. ` +
-    `${formatNumber(doseAmount)} ${escapeHtml(unitLabel)} / ${formatNumber(concentrationPerMl)} ${escapeHtml(unitLabel)}/mL = ` +
-    `${formatDrawNumber(doseMl)} mL (${formatNumber(doseMl * 100)} units).`
-  );
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
+              <h3>${fill ? escapeHtml(fill.name) : "Saved Dose
