@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: peptide-calculator-v2-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PUBLIC_APP_URL
+        value: https://lotustemplar.github.io/peptide-calculator-v2/
+      - key: ONESIGNAL_APP_ID
+        sync: false
+      - key: ONESIGNAL_API_KEY
+        sync: false
