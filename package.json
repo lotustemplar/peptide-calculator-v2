@@ -1,0 +1,13 @@
+{
+  "name": "peptide-calculator-v2",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Deployment wrapper for Peptide Calculator V2 backend",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "postinstall": "cd backend && npm install",
+    "start": "cd backend && npm start"
+  }
+}
