@@ -325,12 +325,24 @@ async function syncRemindersToBackend() {
       .replaceAll("'", "&#39;");
   }
 
+  function parseDateKeyLocal(dateValue) {
+    if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      const [year, month, day] = dateValue.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(dateValue);
+  }
+
   function formatDate(dateValue) {
+    const parsedDate = parseDateKeyLocal(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Invalid date";
+    }
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    }).format(new Date(dateValue));
+    }).format(parsedDate);
   }
 
   function formatDateTime(dateValue, timeValue) {
