@@ -1,7 +1,7 @@
 {
-  "name": "Peptide Calculator V2",
-  "short_name": "PeptideCalc",
-  "description": "Peptide fill planning, saved presets, and recurring dose reminders.",
+  "name": "FitGen Peptide Calculator",
+  "short_name": "FitGen",
+  "description": "FitGen peptide fill planning, saved presets, and recurring dose reminders.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f4efe6",
