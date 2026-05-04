@@ -254,7 +254,7 @@ body[data-theme="light"] .section-kicker {
 
 .brand-copy p,
 .section-heading p,
-.selected-fill p,
+.selectedFill p,
 .notice-text,
 .card-note,
 .subtle-line,
@@ -269,6 +269,10 @@ body[data-theme="light"] .section-kicker {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.schedule-form-hidden {
+  display: none !important;
 }
 
 .calculator-form label,
