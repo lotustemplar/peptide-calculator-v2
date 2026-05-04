@@ -1,11 +1,13 @@
 const RUNTIME_FIX_DEFAULT_MAX_WATER_ML = 3;
-const RUNTIME_FIX_MIN_DRAW_ML = 0.05;
-const RUNTIME_FIX_DISPLAY_OPTION_LIMIT = 12;
+const RUNTIME_FIX_MIN_DRAW_ML = 0.1;
+const RUNTIME_FIX_DRAW_STEP_ML = 0.05;
+const RUNTIME_FIX_DISPLAY_OPTION_LIMIT = 18;
 const RUNTIME_FIX_STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
   selectedFill: "peptide-calculator-v2-selected-fill",
   expandedFill: "peptide-calculator-v2-expanded-fill",
+  activeView: "peptide-calculator-v2-active-view",
 };
 
 function getPushExternalIdForSync() {
@@ -20,15 +22,22 @@ async function syncRemindersToBackend() {
   if (!window.APP_CONFIG?.backendBaseUrl) {
     return;
   }
-  if (typeof state === "undefined" || !Array.isArray(state?.schedules)) {
+
+  const schedules = typeof state !== "undefined" && Array.isArray(state?.schedules)
+    ? state.schedules
+    : JSON.parse(localStorage.getItem(RUNTIME_FIX_STORAGE_KEYS.schedules) || "[]");
+
+  if (!Array.isArray(schedules)) {
     return;
   }
 
   const payload = {
     userId: getPushExternalIdForSync(),
-    schedules: state.schedules
+    schedules: schedules
       .map((schedule) => {
-        const fill = typeof resolveScheduleFill === "function" ? resolveScheduleFill(schedule) : schedule?.fillSnapshot;
+        const fill = typeof resolveScheduleFill === "function"
+          ? resolveScheduleFill(schedule)
+          : schedule?.fillSnapshot;
         if (!fill) {
           return null;
         }
@@ -59,13 +68,11 @@ async function syncRemindersToBackend() {
   try {
     await fetch(`${window.APP_CONFIG.backendBaseUrl.replace(/\/$/, "")}/reminders/sync`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
   } catch (error) {
-    // Keep the app usable even when the backend is unavailable.
+    // Keep the app usable even if backend sync is unavailable.
   }
 }
 
@@ -85,6 +92,11 @@ async function syncRemindersToBackend() {
   const saveFillStartDate = document.getElementById("save-fill-start-date");
   const closeSaveFill = document.getElementById("close-save-fill");
   const cancelSaveFill = document.getElementById("cancel-save-fill");
+  const currentPeptides = document.getElementById("current-peptides");
+  const reminderList = document.getElementById("reminder-list");
+  const calendarList = document.getElementById("calendar-list");
+  const viewTabs = Array.from(document.querySelectorAll("[data-view-target]"));
+  const views = Array.from(document.querySelectorAll("[data-view]"));
 
   if (!form || !resultsGrid || !saveFillModal || !saveFillForm) {
     return;
@@ -92,14 +104,45 @@ async function syncRemindersToBackend() {
 
   let pendingOption = null;
 
-  function getInputs() {
-    return {
-      vialAmount: Number(document.getElementById("vial-mg")?.value),
-      doseAmount: Number(document.getElementById("dose-mg")?.value),
-      syringeMax: Number(document.getElementById("syringe-max")?.value),
-      maxWaterMl: Number(document.getElementById("max-water-ml")?.value),
-      unitLabel: document.getElementById("dose-unit")?.value || "mg",
-    };
+  function readJsonStorage(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function writeJsonStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function getFills() {
+    if (typeof state !== "undefined" && Array.isArray(state?.fills)) {
+      return state.fills;
+    }
+    return readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.fills, []);
+  }
+
+  function getSchedules() {
+    if (typeof state !== "undefined" && Array.isArray(state?.schedules)) {
+      return state.schedules;
+    }
+    return readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.schedules, []);
+  }
+
+  function writeFills(fills) {
+    if (typeof state !== "undefined") {
+      state.fills = fills;
+    }
+    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.fills, fills);
+  }
+
+  function writeSchedules(schedules) {
+    if (typeof state !== "undefined") {
+      state.schedules = schedules;
+    }
+    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.schedules, schedules);
   }
 
   function isPositiveNumber(value) {
@@ -110,48 +153,10 @@ async function syncRemindersToBackend() {
     return Math.round(value / step) * step;
   }
 
-  function buildWaterOptions(maxWaterMl) {
-    const options = [];
-    const upperBound = Math.max(maxWaterMl, 0.5);
-    for (let waterMl = 0.5; waterMl <= upperBound + 0.0001; waterMl += 0.05) {
-      options.push(Number(waterMl.toFixed(2)));
-    }
-    return options;
-  }
-
-  function scoreOption(waterMl, doseMl, syringeMax) {
-    const tenthPenalty = Math.abs(doseMl - roundToStep(doseMl, 0.1)) * 140;
-    const fiveUnitPenalty = Math.abs(doseMl - roundToStep(doseMl, 0.05)) * 90;
-    const comfortPenalty = Math.abs(doseMl - (doseMl < 0.5 ? 0.2 : 0.5)) * 10;
-    const syringePenalty = Math.abs((doseMl / syringeMax) - 0.35) * 6;
-    const overThreePenalty = waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? 4 + (waterMl - RUNTIME_FIX_DEFAULT_MAX_WATER_ML) * 4 : 0;
-    return tenthPenalty + fiveUnitPenalty + comfortPenalty + syringePenalty + overThreePenalty;
-  }
-
-  function describeDraw(doseMl, syringeMax, waterMl) {
-    if (Math.abs(doseMl - roundToStep(doseMl, 0.1)) < 1e-9) {
-      return "Clean tenth-of-a-mL draw. This should be especially easy to read on the syringe.";
-    }
-    if (Math.abs(doseMl - roundToStep(doseMl, 0.05)) < 1e-9) {
-      return "Clean 5-unit draw. This stays at the minimum readability threshold.";
-    }
-
-    const ratio = doseMl / syringeMax;
-    if (ratio <= 0.3) {
-      return waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML
-        ? "Small draw made easier by adding more water than usual."
-        : "Small draw with room in the syringe.";
-    }
-    if (ratio <= 0.75) {
-      return "Balanced draw volume that is usually easy to measure.";
-    }
-    return "Larger draw, but still inside your syringe limit.";
-  }
-
   function formatNumber(value) {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: value < 1 ? 2 : 0,
-      maximumFractionDigits: value < 1 ? 2 : 2,
+      maximumFractionDigits: 2,
     }).format(value);
   }
 
@@ -163,6 +168,10 @@ async function syncRemindersToBackend() {
     return `${Number(value).toFixed(2)} mL`;
   }
 
+  function formatDose(value, unitLabel) {
+    return `${formatNumber(value)} ${unitLabel}`;
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -172,12 +181,49 @@ async function syncRemindersToBackend() {
       .replaceAll("'", "&#39;");
   }
 
-  function buildFormulaSummary(vialAmount, waterMl, doseAmount, concentrationPerMl, doseMl, unitLabel) {
-    return `${formatNumber(vialAmount)} ${unitLabel} / ${formatMl(waterMl)} = ${formatNumber(concentrationPerMl)} ${unitLabel}/mL. ${formatNumber(doseAmount)} ${unitLabel} / ${formatNumber(concentrationPerMl)} ${unitLabel}/mL = ${formatDrawMl(doseMl)}.`;
+  function formatDate(dateValue) {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(dateValue));
   }
 
   function buildWaterLine(option) {
-    return `${formatMl(option.waterMl)} / ${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
+    return `${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
+  }
+
+  function getInputs() {
+    return {
+      vialAmount: Number(document.getElementById("vial-mg")?.value),
+      doseAmount: Number(document.getElementById("dose-mg")?.value),
+      syringeMax: Number(document.getElementById("syringe-max")?.value),
+      maxWaterMl: Number(document.getElementById("max-water-ml")?.value),
+      unitLabel: document.getElementById("dose-unit")?.value || "mg",
+    };
+  }
+
+  function buildTargetDraws(syringeMax) {
+    const upperBound = Math.min(Math.max(syringeMax, RUNTIME_FIX_MIN_DRAW_ML), 1);
+    const draws = [];
+    for (let draw = RUNTIME_FIX_MIN_DRAW_ML; draw <= upperBound + 0.0001; draw += RUNTIME_FIX_DRAW_STEP_ML) {
+      draws.push(Number(draw.toFixed(2)));
+    }
+    return draws;
+  }
+
+  function scoreOption(option) {
+    const preferredCenter = option.doseMl <= 0.3 ? 0.2 : 0.5;
+    const comfortPenalty = Math.abs(option.doseMl - preferredCenter) * 10;
+    const overThreePenalty = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? 5 + (option.waterMl - RUNTIME_FIX_DEFAULT_MAX_WATER_ML) * 4 : 0;
+    return comfortPenalty + overThreePenalty + option.doseMl;
+  }
+
+  function describeDraw(doseMl) {
+    if (Math.abs(doseMl - roundToStep(doseMl, 0.1)) < 1e-9) {
+      return "Clean tenth-of-a-mL draw.";
+    }
+    return "Rounded 0.05 mL draw for easier measuring.";
   }
 
   function computeOptions() {
@@ -191,35 +237,34 @@ async function syncRemindersToBackend() {
       return { error: "The desired dose cannot be larger than the total amount in the vial.", options: [] };
     }
 
-    const options = buildWaterOptions(maxWaterMl)
-      .map((waterMl) => {
-        const concentrationPerMl = vialAmount / waterMl;
-        const doseMl = doseAmount / concentrationPerMl;
-        if (!isPositiveNumber(concentrationPerMl) || !isPositiveNumber(doseMl) || doseMl < RUNTIME_FIX_MIN_DRAW_ML || doseMl > syringeMax) {
+    const options = buildTargetDraws(syringeMax)
+      .map((doseMl) => {
+        const waterMl = (vialAmount * doseMl) / doseAmount;
+        if (!isPositiveNumber(waterMl) || waterMl > maxWaterMl) {
           return null;
         }
 
         return {
-          id: `${vialAmount}-${doseAmount}-${syringeMax}-${maxWaterMl}-${waterMl}-${unitLabel}`,
+          id: `${vialAmount}-${doseAmount}-${syringeMax}-${maxWaterMl}-${doseMl}-${unitLabel}`,
           vialAmount,
           doseAmount,
           syringeMax,
           maxWaterMl,
-          waterMl,
+          waterMl: Number(waterMl.toFixed(2)),
           unitLabel,
-          concentrationPerMl,
+          concentrationPerMl: vialAmount / waterMl,
           doseMl,
-          score: scoreOption(waterMl, doseMl, syringeMax),
-          guidance: describeDraw(doseMl, syringeMax, waterMl),
+          guidance: describeDraw(doseMl),
         };
       })
       .filter(Boolean)
+      .map((option) => ({ ...option, score: scoreOption(option) }))
       .sort((left, right) => left.score - right.score)
       .slice(0, RUNTIME_FIX_DISPLAY_OPTION_LIMIT);
 
     if (!options.length) {
       return {
-        error: `No options fit within a ${formatMl(syringeMax)} syringe while keeping each draw at or above ${formatDrawMl(RUNTIME_FIX_MIN_DRAW_ML)}.`,
+        error: `No easy draw options fit within ${formatMl(maxWaterMl)} of BAC water and your ${formatMl(syringeMax)} syringe limit.`,
         options: [],
       };
     }
@@ -227,8 +272,146 @@ async function syncRemindersToBackend() {
     return { error: null, options };
   }
 
-  function writeJsonStorage(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+  function setActiveViewFallback(viewId) {
+    views.forEach((view) => {
+      view.classList.toggle("is-active", view.dataset.view === viewId);
+    });
+    viewTabs.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.viewTarget === viewId);
+    });
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.activeView, JSON.stringify(viewId));
+    if (typeof state !== "undefined") {
+      state.activeView = viewId;
+    }
+  }
+
+  function bindFallbackTabs() {
+    viewTabs.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setActiveViewFallback(button.dataset.viewTarget);
+      }, true);
+    });
+  }
+
+  function renderFallbackCabinet() {
+    if (!currentPeptides) {
+      return;
+    }
+    const fills = getFills();
+    const schedules = getSchedules();
+
+    if (!fills.length) {
+      currentPeptides.innerHTML = '<div class="empty-state">No fills saved yet.</div>';
+      return;
+    }
+
+    currentPeptides.innerHTML = fills.map((fill) => {
+      const fillSchedules = schedules.filter((schedule) => schedule.fillSavedId === fill.savedId);
+      const primarySchedule = fillSchedules[0] || null;
+      return `
+        <article class="cabinet-card">
+          <div class="card-topline">
+            <div>
+              <h3>${escapeHtml(fill.name)}</h3>
+              <p class="card-note"><span class="water-amount-emphasis">${formatMl(fill.waterMl)}</span> - BAC WATER AMOUNT</p>
+              <p class="card-note">${escapeHtml(buildWaterLine(fill))}</p>
+            </div>
+          </div>
+          ${primarySchedule ? `
+            <div class="result-metrics">
+              <div class="metric">
+                <span>Draw each dose</span>
+                <strong>${formatDrawMl(primarySchedule.doseMl)}</strong>
+              </div>
+              <div class="metric">
+                <span>Dose</span>
+                <strong>${formatDose(primarySchedule.doseAmount, fill.unitLabel)}</strong>
+              </div>
+            </div>
+          ` : '<div class="empty-state">No schedule saved for this fill yet.</div>'}
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderFallbackSchedules() {
+    if (!reminderList) {
+      return;
+    }
+    const fills = getFills();
+    const schedules = getSchedules();
+    if (!schedules.length) {
+      reminderList.innerHTML = '<div class="empty-state">No dosage plans saved yet.</div>';
+      return;
+    }
+
+    reminderList.innerHTML = schedules.map((schedule) => {
+      const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+      return `
+        <article class="list-card">
+          <div class="list-topline">
+            <div>
+              <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
+              <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+          <div class="schedule-metrics">
+            <div class="metric">
+              <span>Draw each dose</span>
+              <strong>${formatDrawMl(schedule.doseMl)}</strong>
+            </div>
+            <div class="metric">
+              <span>Reminder time</span>
+              <strong>${escapeHtml(schedule.reminderTime)}</strong>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderFallbackCalendar() {
+    if (!calendarList) {
+      return;
+    }
+    const fills = getFills();
+    const schedules = getSchedules();
+    if (!schedules.length) {
+      calendarList.innerHTML = '<div class="empty-state">No calendar items yet.</div>';
+      return;
+    }
+
+    calendarList.innerHTML = schedules.map((schedule) => {
+      const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+      return `
+        <article class="calendar-day">
+          <div class="list-topline">
+            <div>
+              <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
+              <p class="card-note">Starts ${formatDate(schedule.startDate)}</p>
+            </div>
+          </div>
+          <div class="schedule-metrics">
+            <div class="metric">
+              <span>Frequency</span>
+              <strong>Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</strong>
+            </div>
+            <div class="metric">
+              <span>Draw each dose</span>
+              <strong>${formatDrawMl(schedule.doseMl)}</strong>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderFallbackViews() {
+    renderFallbackCabinet();
+    renderFallbackSchedules();
+    renderFallbackCalendar();
   }
 
   function closeFallbackSaveFillModal() {
@@ -252,12 +435,12 @@ async function syncRemindersToBackend() {
     saveFillStartDate.value = document.getElementById("start-date")?.value || new Date().toISOString().split("T")[0];
     saveFillPreview.innerHTML = `
       <div class="preview-pill">
-        <span>Add this much BAC water</span>
-        <strong>${escapeHtml(buildWaterLine(option))}</strong>
+        <span class="water-amount-emphasis">${formatMl(option.waterMl)}</span>
+        <strong>BAC WATER AMOUNT</strong>
       </div>
       <div class="preview-pill">
-        <span>Draw each dose</span>
-        <strong>${formatDrawMl(option.doseMl)}</strong>
+        <span>${escapeHtml(buildWaterLine(option))}</span>
+        <strong>Draw each dose: ${formatDrawMl(option.doseMl)}</strong>
       </div>
     `;
     saveFillModal.classList.remove("is-hidden");
@@ -269,19 +452,17 @@ async function syncRemindersToBackend() {
     resultsGrid.querySelectorAll('[data-action="save-option"]').forEach((button) => {
       button.addEventListener("click", () => {
         const option = options.find((item) => item.id === button.dataset.id);
-        if (!option) {
-          return;
+        if (option) {
+          openFallbackSaveFillModal(option);
         }
-        openFallbackSaveFillModal(option);
       });
     });
   }
 
   function scrollToResults() {
-    if (!resultsCard) {
-      return;
+    if (resultsCard) {
+      resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function renderFallbackOptions(force = false) {
@@ -291,9 +472,8 @@ async function syncRemindersToBackend() {
     }
 
     const { error, options } = computeOptions();
-
     if (resultsSummary) {
-      resultsSummary.textContent = `These options prefer rounded draw amounts and reject anything under ${formatDrawMl(RUNTIME_FIX_MIN_DRAW_ML)}.`;
+      resultsSummary.textContent = "These options are built around easy draw amounts from 0.10 mL to 1.00 mL in 0.05 mL steps.";
     }
 
     if (error) {
@@ -301,38 +481,32 @@ async function syncRemindersToBackend() {
       return;
     }
 
-    resultsGrid.innerHTML = options
-      .map((option, index) => {
-        const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : "";
-        const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : "";
-        const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";
-        return `
-          <article class="${cardClass} ${index === 0 ? "recommended" : ""}">
-            <div class="card-topline">
-              <div>
-                <h3>Add this much BAC water</h3>
-                <p class="card-note">${escapeHtml(buildWaterLine(option))}</p>
-              </div>
-              ${recommendedBadge || cautionBadge}
+    resultsGrid.innerHTML = options.map((option, index) => {
+      const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : '';
+      const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : '';
+      const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? 'result-card caution' : 'result-card';
+      return `
+        <article class="${cardClass} ${index === 0 ? 'recommended' : ''}">
+          <div class="card-topline">
+            <div>
+              <h3><span class="water-amount-emphasis">${formatMl(option.waterMl)}</span> - BAC WATER AMOUNT</h3>
+              <p class="card-note">${escapeHtml(buildWaterLine(option))}</p>
             </div>
-
-            <div class="result-metrics">
-              <div class="metric">
-                <span>Draw each dose</span>
-                <strong>${formatDrawMl(option.doseMl)}</strong>
-              </div>
+            ${recommendedBadge || cautionBadge}
+          </div>
+          <div class="result-metrics">
+            <div class="metric">
+              <span>Draw each dose</span>
+              <strong>${formatDrawMl(option.doseMl)}</strong>
             </div>
-
-            <p class="card-note">${escapeHtml(option.guidance)}</p>
-            ${option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<p class="card-note safety-note">This option is above 3 mL. It may improve measurability, but vial space can become a practical limit.</p>' : ""}
-
-            <div class="card-actions">
-              <button class="primary-button" type="button" data-action="save-option" data-id="${option.id}">Save Fill</button>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
+          </div>
+          <p class="card-note">${escapeHtml(option.guidance)}</p>
+          <div class="card-actions">
+            <button class="primary-button" type="button" data-action="save-option" data-id="${option.id}">Save Fill</button>
+          </div>
+        </article>
+      `;
+    }).join("");
 
     attachSaveButtons(options);
   }
@@ -379,77 +553,57 @@ async function syncRemindersToBackend() {
       fillSnapshot: fill,
     };
 
+    const fills = [fill, ...getFills()];
+    const schedules = [schedule, ...getSchedules()];
+    writeFills(fills);
+    writeSchedules(schedules);
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.selectedFill, JSON.stringify(fill.savedId));
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.expandedFill, JSON.stringify(fill.savedId));
+
     if (typeof state !== "undefined") {
-      state.fills = [fill, ...(Array.isArray(state.fills) ? state.fills : [])];
-      state.schedules = [schedule, ...(Array.isArray(state.schedules) ? state.schedules : [])];
       state.selectedFillId = fill.savedId;
       state.expandedFillId = fill.savedId;
       state.latestOptions = [pendingOption];
     }
 
-    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.fills, typeof state !== "undefined" ? state.fills : [fill]);
-    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.schedules, typeof state !== "undefined" ? state.schedules : [schedule]);
-    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.selectedFill, JSON.stringify(fill.savedId));
-    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.expandedFill, JSON.stringify(fill.savedId));
-
     closeFallbackSaveFillModal();
-
-    if (typeof renderAll === "function") {
-      renderAll();
-    }
-    if (typeof setActiveView === "function") {
-      setActiveView("cabinet-view");
-    }
-    if (typeof queueNextReminder === "function") {
-      queueNextReminder();
-    }
-
+    renderFallbackViews();
+    setActiveViewFallback("cabinet-view");
     syncRemindersToBackend();
   }
 
-  form.addEventListener(
-    "submit",
-    (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      renderFallbackOptions(true);
-      window.setTimeout(scrollToResults, 20);
-    },
-    true,
-  );
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    renderFallbackOptions(true);
+    window.setTimeout(scrollToResults, 20);
+  }, true);
 
-  saveFillForm.addEventListener(
-    "submit",
-    (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      saveFallbackFill();
-    },
-    true,
-  );
+  saveFillForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    saveFallbackFill();
+  }, true);
 
   [closeSaveFill, cancelSaveFill].forEach((button) => {
     button?.addEventListener("click", closeFallbackSaveFillModal, true);
   });
 
-  saveFillModal.addEventListener(
-    "click",
-    (event) => {
-      if (event.target instanceof HTMLElement && event.target.dataset.closeModal === "true") {
-        closeFallbackSaveFillModal();
-      }
-    },
-    true,
-  );
+  saveFillModal.addEventListener("click", (event) => {
+    if (event.target instanceof HTMLElement && event.target.dataset.closeModal === "true") {
+      closeFallbackSaveFillModal();
+    }
+  }, true);
 
   ["vial-mg", "dose-mg", "dose-unit", "syringe-max", "max-water-ml"].forEach((id) => {
-    document.getElementById(id)?.addEventListener("input", () => {
-      window.setTimeout(() => renderFallbackOptions(true), 0);
-    });
-    document.getElementById(id)?.addEventListener("change", () => {
-      window.setTimeout(() => renderFallbackOptions(true), 0);
-    });
+    const element = document.getElementById(id);
+    element?.addEventListener("input", () => window.setTimeout(() => renderFallbackOptions(true), 0));
+    element?.addEventListener("change", () => window.setTimeout(() => renderFallbackOptions(true), 0));
   });
 
+  bindFallbackTabs();
+  renderFallbackViews();
+  const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
+  setActiveViewFallback(savedView);
   window.setTimeout(() => renderFallbackOptions(false), 50);
 })();
