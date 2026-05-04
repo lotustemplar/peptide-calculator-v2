@@ -151,7 +151,7 @@ async function syncRemindersToBackend() {
   function formatNumber(value) {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: value < 1 ? 2 : 0,
-      maximumFractionDigits: value < 1 ? 3 : 2,
+      maximumFractionDigits: value < 1 ? 2 : 2,
     }).format(value);
   }
 
@@ -160,11 +160,7 @@ async function syncRemindersToBackend() {
   }
 
   function formatDrawMl(value) {
-    return `${value < 1 ? Number(value).toFixed(3) : Number(value).toFixed(2)} mL`;
-  }
-
-  function formatUnits(value) {
-    return `${Math.round(value)} units`;
+    return `${Number(value).toFixed(2)} mL`;
   }
 
   function escapeHtml(value) {
@@ -178,6 +174,10 @@ async function syncRemindersToBackend() {
 
   function buildFormulaSummary(vialAmount, waterMl, doseAmount, concentrationPerMl, doseMl, unitLabel) {
     return `${formatNumber(vialAmount)} ${unitLabel} / ${formatMl(waterMl)} = ${formatNumber(concentrationPerMl)} ${unitLabel}/mL. ${formatNumber(doseAmount)} ${unitLabel} / ${formatNumber(concentrationPerMl)} ${unitLabel}/mL = ${formatDrawMl(doseMl)}.`;
+  }
+
+  function buildWaterLine(option) {
+    return `${formatMl(option.waterMl)} / ${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
   }
 
   function computeOptions() {
@@ -209,7 +209,6 @@ async function syncRemindersToBackend() {
           unitLabel,
           concentrationPerMl,
           doseMl,
-          insulinUnits: doseMl * 100,
           score: scoreOption(waterMl, doseMl, syringeMax),
           guidance: describeDraw(doseMl, syringeMax, waterMl),
         };
@@ -254,19 +253,11 @@ async function syncRemindersToBackend() {
     saveFillPreview.innerHTML = `
       <div class="preview-pill">
         <span>Add this much BAC water</span>
-        <strong>${formatMl(option.waterMl)}</strong>
+        <strong>${escapeHtml(buildWaterLine(option))}</strong>
       </div>
       <div class="preview-pill">
         <span>Draw each dose</span>
         <strong>${formatDrawMl(option.doseMl)}</strong>
-      </div>
-      <div class="preview-pill">
-        <span>Concentration</span>
-        <strong>${formatNumber(option.concentrationPerMl)} ${escapeHtml(option.unitLabel)}/mL</strong>
-      </div>
-      <div class="preview-pill">
-        <span>1 mL syringe units</span>
-        <strong>${formatUnits(option.insulinUnits)}</strong>
       </div>
     `;
     saveFillModal.classList.remove("is-hidden");
@@ -319,28 +310,20 @@ async function syncRemindersToBackend() {
           <article class="${cardClass} ${index === 0 ? "recommended" : ""}">
             <div class="card-topline">
               <div>
-                <h3>${formatMl(option.waterMl)} bacteriostatic water</h3>
-                <p class="card-note">${escapeHtml(option.guidance)}</p>
+                <h3>Add this much BAC water</h3>
+                <p class="card-note">${escapeHtml(buildWaterLine(option))}</p>
               </div>
               ${recommendedBadge || cautionBadge}
             </div>
 
             <div class="result-metrics">
               <div class="metric">
-                <span>Draw per dose</span>
+                <span>Draw each dose</span>
                 <strong>${formatDrawMl(option.doseMl)}</strong>
-              </div>
-              <div class="metric">
-                <span>Concentration</span>
-                <strong>${formatNumber(option.concentrationPerMl)} ${escapeHtml(option.unitLabel)}/mL</strong>
-              </div>
-              <div class="metric">
-                <span>1 mL syringe units</span>
-                <strong>${formatUnits(option.insulinUnits)}</strong>
               </div>
             </div>
 
-            <p class="card-note">${escapeHtml(buildFormulaSummary(option.vialAmount, option.waterMl, option.doseAmount, option.concentrationPerMl, option.doseMl, option.unitLabel))}</p>
+            <p class="card-note">${escapeHtml(option.guidance)}</p>
             ${option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<p class="card-note safety-note">This option is above 3 mL. It may improve measurability, but vial space can become a practical limit.</p>' : ""}
 
             <div class="card-actions">
