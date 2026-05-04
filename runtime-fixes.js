@@ -103,6 +103,88 @@ async function syncRemindersToBackend() {
   }
 
   let pendingOption = null;
+  injectFallbackStyles();
+
+  function injectFallbackStyles() {
+    if (document.getElementById("runtime-fixes-style")) {
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "runtime-fixes-style";
+    style.textContent = `
+      .water-amount-emphasis {
+        color: var(--teal);
+        font-family: "Sora", sans-serif;
+        font-size: 1.18rem;
+        font-weight: 700;
+      }
+      .cabinet-actions-fallback {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .vial-row-fallback {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+        margin: 14px 0;
+      }
+      .vial-visual-fallback {
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+      }
+      .vial-shell-fallback {
+        position: relative;
+        width: 66px;
+        height: 140px;
+        border-radius: 22px 22px 16px 16px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+        overflow: hidden;
+      }
+      body[data-theme="light"] .vial-shell-fallback {
+        border-color: rgba(16, 39, 37, 0.14);
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(232,240,236,0.9));
+      }
+      .vial-shell-fallback::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.05);
+      }
+      .vial-liquid-fallback {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        border-radius: 0 0 14px 14px;
+        background: linear-gradient(180deg, rgba(63,214,197,0.96), rgba(63,214,197,0.28));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+      }
+      .vial-remaining-label {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .vial-copy-fallback {
+        display: grid;
+        gap: 6px;
+      }
+      .vial-copy-fallback strong {
+        font-family: "Sora", sans-serif;
+      }
+      @media (max-width: 720px) {
+        .vial-row-fallback {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function readJsonStorage(key, fallback) {
     try {
@@ -189,6 +271,14 @@ async function syncRemindersToBackend() {
     }).format(new Date(dateValue));
   }
 
+  function formatDateTime(dateValue, timeValue) {
+    return `${formatDate(dateValue)} at ${timeValue}`;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
   function buildWaterLine(option) {
     return `${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
   }
@@ -272,6 +362,53 @@ async function syncRemindersToBackend() {
     return { error: null, options };
   }
 
+  function getStartDateTime(schedule) {
+    const date = schedule.startDate || new Date().toISOString().split("T")[0];
+    const time = schedule.reminderTime || "09:00";
+    return new Date(`${date}T${time}:00`);
+  }
+
+  function getTakenCount(schedule, now) {
+    const start = getStartDateTime(schedule);
+    const intervalMs = Number(schedule.intervalDays || 1) * 24 * 60 * 60 * 1000;
+    if (!Number.isFinite(start.getTime()) || intervalMs <= 0 || now < start) {
+      return 0;
+    }
+    return Math.floor((now.getTime() - start.getTime()) / intervalMs) + 1;
+  }
+
+  function getNextDue(schedule, now) {
+    const start = getStartDateTime(schedule);
+    const intervalMs = Number(schedule.intervalDays || 1) * 24 * 60 * 60 * 1000;
+    if (!Number.isFinite(start.getTime()) || intervalMs <= 0) {
+      return start;
+    }
+    if (now <= start) {
+      return start;
+    }
+    const intervalsPassed = Math.floor((now.getTime() - start.getTime()) / intervalMs) + 1;
+    return new Date(start.getTime() + intervalsPassed * intervalMs);
+  }
+
+  function getFillUsage(fill, schedules) {
+    const now = new Date();
+    const totalAmount = Number(fill.vialAmount || 0);
+    const totalConsumed = schedules.reduce((sum, schedule) => sum + (getTakenCount(schedule, now) * Number(schedule.doseAmount || 0)), 0);
+    const remainingAmount = Math.max(totalAmount - totalConsumed, 0);
+    const concentrationPerMl = Number(fill.concentrationPerMl || (fill.vialAmount / fill.waterMl) || 0);
+    const remainingVolumeMl = concentrationPerMl > 0 ? remainingAmount / concentrationPerMl : 0;
+    const primaryDose = Number(schedules[0]?.doseAmount || fill.recommendedDoseAmount || 0);
+    const dosesLeft = primaryDose > 0 ? Math.floor(remainingAmount / primaryDose) : null;
+    const nextDue = schedules.length ? getNextDue(schedules[0], now) : null;
+    return {
+      remainingAmount,
+      remainingVolumeMl,
+      percentRemaining: totalAmount > 0 ? clamp((remainingAmount / totalAmount) * 100, 0, 100) : 0,
+      dosesLeft,
+      nextDue,
+    };
+  }
+
   function setActiveViewFallback(viewId) {
     views.forEach((view) => {
       view.classList.toggle("is-active", view.dataset.view === viewId);
@@ -299,6 +436,7 @@ async function syncRemindersToBackend() {
     if (!currentPeptides) {
       return;
     }
+
     const fills = getFills();
     const schedules = getSchedules();
 
@@ -310,6 +448,7 @@ async function syncRemindersToBackend() {
     currentPeptides.innerHTML = fills.map((fill) => {
       const fillSchedules = schedules.filter((schedule) => schedule.fillSavedId === fill.savedId);
       const primarySchedule = fillSchedules[0] || null;
+      const usage = getFillUsage(fill, fillSchedules);
       return `
         <article class="cabinet-card">
           <div class="card-topline">
@@ -317,6 +456,20 @@ async function syncRemindersToBackend() {
               <h3>${escapeHtml(fill.name)}</h3>
               <p class="card-note"><span class="water-amount-emphasis">${formatMl(fill.waterMl)}</span> - BAC WATER AMOUNT</p>
               <p class="card-note">${escapeHtml(buildWaterLine(fill))}</p>
+            </div>
+          </div>
+          <div class="vial-row-fallback">
+            <div class="vial-visual-fallback">
+              <div class="vial-shell-fallback">
+                <div class="vial-liquid-fallback" style="height:${usage.percentRemaining}%"></div>
+              </div>
+              <span class="vial-remaining-label">${formatNumber(usage.percentRemaining)}% left</span>
+            </div>
+            <div class="vial-copy-fallback">
+              <strong>${formatDose(usage.remainingAmount, fill.unitLabel)} remaining</strong>
+              <span class="card-note">${formatMl(usage.remainingVolumeMl)} left in the vial</span>
+              <span class="card-note">${usage.dosesLeft === null ? "No dose plan yet." : `${usage.dosesLeft} doses left`}</span>
+              ${usage.nextDue ? `<span class="card-note">Next dose ${formatDateTime(usage.nextDue, usage.nextDue.toTimeString().slice(0,5))}</span>` : ""}
             </div>
           </div>
           ${primarySchedule ? `
@@ -329,17 +482,33 @@ async function syncRemindersToBackend() {
                 <span>Dose</span>
                 <strong>${formatDose(primarySchedule.doseAmount, fill.unitLabel)}</strong>
               </div>
+              <div class="metric">
+                <span>Frequency</span>
+                <strong>Every ${primarySchedule.intervalDays} day${primarySchedule.intervalDays === 1 ? "" : "s"}</strong>
+              </div>
             </div>
           ` : '<div class="empty-state">No schedule saved for this fill yet.</div>'}
+          <div class="cabinet-actions-fallback">
+            <button class="mini-button" type="button" data-action="edit-fill" data-id="${fill.savedId}">Edit</button>
+            <button class="mini-button" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
+          </div>
         </article>
       `;
     }).join("");
+
+    currentPeptides.querySelectorAll('[data-action="edit-fill"]').forEach((button) => {
+      button.addEventListener("click", () => editFillRecord(button.dataset.id));
+    });
+    currentPeptides.querySelectorAll('[data-action="delete-fill"]').forEach((button) => {
+      button.addEventListener("click", () => deleteFillRecord(button.dataset.id));
+    });
   }
 
   function renderFallbackSchedules() {
     if (!reminderList) {
       return;
     }
+
     const fills = getFills();
     const schedules = getSchedules();
     if (!schedules.length) {
@@ -376,6 +545,7 @@ async function syncRemindersToBackend() {
     if (!calendarList) {
       return;
     }
+
     const fills = getFills();
     const schedules = getSchedules();
     if (!schedules.length) {
@@ -412,6 +582,115 @@ async function syncRemindersToBackend() {
     renderFallbackCabinet();
     renderFallbackSchedules();
     renderFallbackCalendar();
+  }
+
+  function persistState(fills, schedules) {
+    writeFills(fills);
+    writeSchedules(schedules);
+    renderFallbackViews();
+    syncRemindersToBackend();
+  }
+
+  function editFillRecord(fillId) {
+    const fills = getFills();
+    const schedules = getSchedules();
+    const fillIndex = fills.findIndex((fill) => fill.savedId === fillId);
+    if (fillIndex === -1) {
+      return;
+    }
+
+    const fill = { ...fills[fillIndex] };
+    const linkedSchedules = schedules.filter((schedule) => schedule.fillSavedId === fillId);
+    const primarySchedule = linkedSchedules[0] || null;
+
+    const nextName = window.prompt("Fill name", fill.name);
+    if (nextName === null) {
+      return;
+    }
+
+    const nextWaterRaw = window.prompt("BAC water amount (mL)", String(fill.waterMl));
+    if (nextWaterRaw === null) {
+      return;
+    }
+
+    const nextDoseRaw = window.prompt(
+      `Dose amount (${fill.unitLabel})`,
+      String(primarySchedule?.doseAmount || fill.recommendedDoseAmount || ""),
+    );
+    if (nextDoseRaw === null) {
+      return;
+    }
+
+    const nextIntervalRaw = window.prompt("Every X days", String(primarySchedule?.intervalDays || 7));
+    if (nextIntervalRaw === null) {
+      return;
+    }
+
+    const nextTime = window.prompt("Reminder time (HH:MM)", primarySchedule?.reminderTime || "09:00");
+    if (nextTime === null) {
+      return;
+    }
+
+    const nextStart = window.prompt("Start date (YYYY-MM-DD)", primarySchedule?.startDate || new Date().toISOString().split("T")[0]);
+    if (nextStart === null) {
+      return;
+    }
+
+    const nextWaterMl = Number(nextWaterRaw);
+    const nextDoseAmount = Number(nextDoseRaw);
+    const nextIntervalDays = Number(nextIntervalRaw);
+    const nextConcentration = fill.vialAmount / nextWaterMl;
+    const nextDoseMl = nextDoseAmount / nextConcentration;
+
+    if (!isPositiveNumber(nextWaterMl) || !isPositiveNumber(nextDoseAmount) || !Number.isInteger(nextIntervalDays) || nextIntervalDays < 1) {
+      window.alert("Please enter valid fill values.");
+      return;
+    }
+
+    if (!isPositiveNumber(nextDoseMl) || nextDoseMl < RUNTIME_FIX_MIN_DRAW_ML || nextDoseMl > Number(fill.syringeMax || 1)) {
+      window.alert(`That dose would require ${formatDrawMl(nextDoseMl)}, which is outside the supported draw range.`);
+      return;
+    }
+
+    fill.name = nextName.trim() || fill.name;
+    fill.waterMl = Number(nextWaterMl.toFixed(2));
+    fill.concentrationPerMl = nextConcentration;
+    fill.recommendedDoseAmount = nextDoseAmount;
+    fill.maxWaterMl = Math.max(fill.maxWaterMl || 0, fill.waterMl);
+    fills[fillIndex] = fill;
+
+    const updatedSchedules = schedules.map((schedule) => {
+      if (schedule.fillSavedId !== fillId) {
+        return schedule;
+      }
+      return {
+        ...schedule,
+        doseAmount: nextDoseAmount,
+        doseMl: nextDoseMl,
+        intervalDays: nextIntervalDays,
+        reminderTime: nextTime,
+        startDate: nextStart,
+        unitLabel: fill.unitLabel,
+        fillSnapshot: fill,
+      };
+    });
+
+    persistState(fills, updatedSchedules);
+  }
+
+  function deleteFillRecord(fillId) {
+    const fill = getFills().find((item) => item.savedId === fillId);
+    if (!fill) {
+      return;
+    }
+
+    if (!window.confirm(`Delete ${fill.name} and its linked schedule?`)) {
+      return;
+    }
+
+    const fills = getFills().filter((item) => item.savedId !== fillId);
+    const schedules = getSchedules().filter((item) => item.fillSavedId !== fillId);
+    persistState(fills, schedules);
   }
 
   function closeFallbackSaveFillModal() {
@@ -482,11 +761,11 @@ async function syncRemindersToBackend() {
     }
 
     resultsGrid.innerHTML = options.map((option, index) => {
-      const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : '';
-      const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : '';
-      const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? 'result-card caution' : 'result-card';
+      const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : "";
+      const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : "";
+      const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";
       return `
-        <article class="${cardClass} ${index === 0 ? 'recommended' : ''}">
+        <article class="${cardClass} ${index === 0 ? "recommended" : ""}">
           <div class="card-topline">
             <div>
               <h3><span class="water-amount-emphasis">${formatMl(option.waterMl)}</span> - BAC WATER AMOUNT</h3>
