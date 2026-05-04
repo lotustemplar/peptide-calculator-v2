@@ -6,8 +6,8 @@ const RUNTIME_FIX_STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
   selectedFill: "peptide-calculator-v2-selected-fill",
-  expandedFill: "peptide-calculator-v2-expanded-fill",
   activeView: "peptide-calculator-v2-active-view",
+  dailyPromptSeen: "peptide-calculator-v2-daily-prompt-seen",
 };
 
 function getPushExternalIdForSync() {
@@ -35,9 +35,7 @@ async function syncRemindersToBackend() {
     userId: getPushExternalIdForSync(),
     schedules: schedules
       .map((schedule) => {
-        const fill = typeof resolveScheduleFill === "function"
-          ? resolveScheduleFill(schedule)
-          : schedule?.fillSnapshot;
+        const fill = schedule?.fillSnapshot;
         if (!fill) {
           return null;
         }
@@ -71,7 +69,7 @@ async function syncRemindersToBackend() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-  } catch (error) {
+  } catch {
     // Keep the app usable even if backend sync is unavailable.
   }
 }
@@ -97,8 +95,10 @@ async function syncRemindersToBackend() {
   const calendarList = document.getElementById("calendar-list");
   const viewTabs = Array.from(document.querySelectorAll("[data-view-target]"));
   const views = Array.from(document.querySelectorAll("[data-view]"));
+  const scheduleView = document.getElementById("schedule-view");
+  const scheduleButton = viewTabs.find((button) => button.dataset.viewTarget === "schedule-view");
 
-  if (!form || !resultsGrid || !saveFillModal || !saveFillForm) {
+  if (!form || !resultsGrid || !saveFillModal || !saveFillForm || !currentPeptides || !reminderList || !calendarList) {
     return;
   }
 
@@ -116,10 +116,11 @@ async function syncRemindersToBackend() {
       .water-amount-emphasis {
         color: var(--teal);
         font-family: "Sora", sans-serif;
-        font-size: 1.18rem;
+        font-size: 1.2rem;
         font-weight: 700;
       }
-      .cabinet-actions-fallback {
+      .cabinet-actions-fallback,
+      .today-schedule-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
@@ -140,14 +141,14 @@ async function syncRemindersToBackend() {
       .vial-shell-fallback {
         position: relative;
         width: 66px;
-        height: 140px;
+        height: 142px;
         border-radius: 22px 22px 16px 16px;
         border: 1px solid rgba(255,255,255,0.14);
         background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
         overflow: hidden;
       }
       body[data-theme="light"] .vial-shell-fallback {
-        border-color: rgba(16, 39, 37, 0.14);
+        border-color: rgba(16,39,37,0.14);
         background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(232,240,236,0.9));
       }
       .vial-shell-fallback::before {
@@ -166,6 +167,15 @@ async function syncRemindersToBackend() {
         background: linear-gradient(180deg, rgba(63,214,197,0.96), rgba(63,214,197,0.28));
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
       }
+      .vial-threshold-fallback {
+        position: absolute;
+        left: 6px;
+        right: 6px;
+        height: 2px;
+        border-radius: 999px;
+        background: rgba(255,130,115,0.95);
+        box-shadow: 0 0 0 4px rgba(255,130,115,0.12);
+      }
       .vial-remaining-label {
         color: var(--muted);
         font-size: 0.82rem;
@@ -176,6 +186,47 @@ async function syncRemindersToBackend() {
       }
       .vial-copy-fallback strong {
         font-family: "Sora", sans-serif;
+      }
+      .tab-button.has-alert {
+        color: #ff8a80;
+        font-weight: 700;
+      }
+      .tab-button.has-alert.is-active {
+        color: #ffd3cf;
+      }
+      .today-schedule-banner {
+        margin: 0 0 16px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255,130,115,0.14);
+        border: 1px solid rgba(255,130,115,0.2);
+      }
+      .today-schedule-banner h3 {
+        margin: 0 0 8px;
+        font-family: "Sora", sans-serif;
+        color: #ffb8b1;
+      }
+      .today-schedule-banner p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .today-schedule-card {
+        margin-top: 12px;
+        padding: 14px;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      body[data-theme="light"] .today-schedule-card {
+        background: rgba(255,255,255,0.88);
+        border-color: rgba(16,39,37,0.08);
+      }
+      .today-schedule-card h4 {
+        margin: 0 0 6px;
+        font-family: "Sora", sans-serif;
+      }
+      .today-schedule-card p {
+        margin: 0;
       }
       @media (max-width: 720px) {
         .vial-row-fallback {
@@ -199,14 +250,14 @@ async function syncRemindersToBackend() {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function getFills() {
+  function readFills() {
     if (typeof state !== "undefined" && Array.isArray(state?.fills)) {
       return state.fills;
     }
     return readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.fills, []);
   }
 
-  function getSchedules() {
+  function readSchedules() {
     if (typeof state !== "undefined" && Array.isArray(state?.schedules)) {
       return state.schedules;
     }
@@ -227,12 +278,23 @@ async function syncRemindersToBackend() {
     writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.schedules, schedules);
   }
 
+  function persistState(fills, schedules) {
+    writeFills(fills);
+    writeSchedules(schedules);
+    renderAllFallback();
+    syncRemindersToBackend();
+  }
+
   function isPositiveNumber(value) {
     return Number.isFinite(value) && value > 0;
   }
 
   function roundToStep(value, step) {
     return Math.round(value / step) * step;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
   }
 
   function formatNumber(value) {
@@ -275,12 +337,11 @@ async function syncRemindersToBackend() {
     return `${formatDate(dateValue)} at ${timeValue}`;
   }
 
-  function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  function buildWaterLine(option) {
-    return `${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
+  function todayKey() {
+    const now = new Date();
+    const month = `${now.getMonth() + 1}`.padStart(2, "0");
+    const day = `${now.getDate()}`.padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
   }
 
   function getInputs() {
@@ -291,6 +352,10 @@ async function syncRemindersToBackend() {
       maxWaterMl: Number(document.getElementById("max-water-ml")?.value),
       unitLabel: document.getElementById("dose-unit")?.value || "mg",
     };
+  }
+
+  function buildWaterLine(option) {
+    return `${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
   }
 
   function buildTargetDraws(syringeMax) {
@@ -363,49 +428,90 @@ async function syncRemindersToBackend() {
   }
 
   function getStartDateTime(schedule) {
-    const date = schedule.startDate || new Date().toISOString().split("T")[0];
+    const date = schedule.startDate || todayKey();
     const time = schedule.reminderTime || "09:00";
     return new Date(`${date}T${time}:00`);
   }
 
-  function getTakenCount(schedule, now) {
-    const start = getStartDateTime(schedule);
-    const intervalMs = Number(schedule.intervalDays || 1) * 24 * 60 * 60 * 1000;
-    if (!Number.isFinite(start.getTime()) || intervalMs <= 0 || now < start) {
-      return 0;
-    }
-    return Math.floor((now.getTime() - start.getTime()) / intervalMs) + 1;
+  function normalizeSchedule(schedule) {
+    return {
+      ...schedule,
+      takenDates: Array.isArray(schedule.takenDates) ? schedule.takenDates : [],
+    };
   }
 
-  function getNextDue(schedule, now) {
+  function isScheduleDueOnDate(schedule, dateStr) {
     const start = getStartDateTime(schedule);
-    const intervalMs = Number(schedule.intervalDays || 1) * 24 * 60 * 60 * 1000;
-    if (!Number.isFinite(start.getTime()) || intervalMs <= 0) {
-      return start;
+    const check = new Date(`${dateStr}T00:00:00`);
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const checkDay = new Date(check.getFullYear(), check.getMonth(), check.getDate());
+    const diffDays = Math.floor((checkDay.getTime() - startDay.getTime()) / (24 * 60 * 60 * 1000));
+    return diffDays >= 0 && diffDays % Number(schedule.intervalDays || 1) === 0;
+  }
+
+  function getTakenCount(schedule) {
+    return normalizeSchedule(schedule).takenDates.length;
+  }
+
+  function getNextDue(schedule, fromDateStr = todayKey()) {
+    for (let i = 0; i < 365; i += 1) {
+      const probe = new Date(`${fromDateStr}T00:00:00`);
+      probe.setDate(probe.getDate() + i);
+      const year = probe.getFullYear();
+      const month = `${probe.getMonth() + 1}`.padStart(2, "0");
+      const day = `${probe.getDate()}`.padStart(2, "0");
+      const probeKey = `${year}-${month}-${day}`;
+      if (isScheduleDueOnDate(schedule, probeKey) && !normalizeSchedule(schedule).takenDates.includes(probeKey)) {
+        return probeKey;
+      }
     }
-    if (now <= start) {
-      return start;
+    return null;
+  }
+
+  function getTodayDueSchedules() {
+    const fills = readFills();
+    return readSchedules()
+      .map(normalizeSchedule)
+      .map((schedule) => {
+        const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+        return { schedule, fill };
+      })
+      .filter(({ schedule, fill }) => fill && isScheduleDueOnDate(schedule, todayKey()) && !schedule.takenDates.includes(todayKey()));
+  }
+
+  function maybeShowDailyBrowserPrompt(count) {
+    if (!("Notification" in window) || Notification.permission !== "granted" || count <= 0) {
+      return;
     }
-    const intervalsPassed = Math.floor((now.getTime() - start.getTime()) / intervalMs) + 1;
-    return new Date(start.getTime() + intervalsPassed * intervalMs);
+    const seen = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.dailyPromptSeen, null);
+    if (seen === todayKey()) {
+      return;
+    }
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.dailyPromptSeen, JSON.stringify(todayKey()));
+    try {
+      new Notification(`Schedule (${count})`, {
+        body: `You have ${count} peptide dose${count === 1 ? "" : "s"} due today.`,
+      });
+    } catch {
+      // Ignore notification failures.
+    }
   }
 
   function getFillUsage(fill, schedules) {
-    const now = new Date();
     const totalAmount = Number(fill.vialAmount || 0);
-    const totalConsumed = schedules.reduce((sum, schedule) => sum + (getTakenCount(schedule, now) * Number(schedule.doseAmount || 0)), 0);
+    const totalConsumed = schedules.reduce((sum, schedule) => sum + (getTakenCount(schedule) * Number(schedule.doseAmount || 0)), 0);
     const remainingAmount = Math.max(totalAmount - totalConsumed, 0);
     const concentrationPerMl = Number(fill.concentrationPerMl || (fill.vialAmount / fill.waterMl) || 0);
     const remainingVolumeMl = concentrationPerMl > 0 ? remainingAmount / concentrationPerMl : 0;
     const primaryDose = Number(schedules[0]?.doseAmount || fill.recommendedDoseAmount || 0);
     const dosesLeft = primaryDose > 0 ? Math.floor(remainingAmount / primaryDose) : null;
-    const nextDue = schedules.length ? getNextDue(schedules[0], now) : null;
+    const nextDueKey = schedules.length ? getNextDue(schedules[0]) : null;
     return {
       remainingAmount,
       remainingVolumeMl,
       percentRemaining: totalAmount > 0 ? clamp((remainingAmount / totalAmount) * 100, 0, 100) : 0,
       dosesLeft,
-      nextDue,
+      nextDueKey,
     };
   }
 
@@ -432,13 +538,19 @@ async function syncRemindersToBackend() {
     });
   }
 
-  function renderFallbackCabinet() {
-    if (!currentPeptides) {
+  function renderScheduleIndicator() {
+    if (!scheduleButton) {
       return;
     }
+    const todayCount = getTodayDueSchedules().length;
+    scheduleButton.textContent = todayCount > 0 ? `Schedule (${todayCount})` : "Schedule";
+    scheduleButton.classList.toggle("has-alert", todayCount > 0);
+    maybeShowDailyBrowserPrompt(todayCount);
+  }
 
-    const fills = getFills();
-    const schedules = getSchedules();
+  function renderFallbackCabinet() {
+    const fills = readFills();
+    const schedules = readSchedules().map(normalizeSchedule);
 
     if (!fills.length) {
       currentPeptides.innerHTML = '<div class="empty-state">No fills saved yet.</div>';
@@ -449,6 +561,7 @@ async function syncRemindersToBackend() {
       const fillSchedules = schedules.filter((schedule) => schedule.fillSavedId === fill.savedId);
       const primarySchedule = fillSchedules[0] || null;
       const usage = getFillUsage(fill, fillSchedules);
+      const reorderPercent = usage.dosesLeft !== null && usage.dosesLeft <= 4 ? 40 : 0;
       return `
         <article class="cabinet-card">
           <div class="card-topline">
@@ -462,6 +575,7 @@ async function syncRemindersToBackend() {
             <div class="vial-visual-fallback">
               <div class="vial-shell-fallback">
                 <div class="vial-liquid-fallback" style="height:${usage.percentRemaining}%"></div>
+                ${reorderPercent ? `<div class="vial-threshold-fallback" style="bottom:${reorderPercent}%"></div>` : ""}
               </div>
               <span class="vial-remaining-label">${formatNumber(usage.percentRemaining)}% left</span>
             </div>
@@ -469,7 +583,8 @@ async function syncRemindersToBackend() {
               <strong>${formatDose(usage.remainingAmount, fill.unitLabel)} remaining</strong>
               <span class="card-note">${formatMl(usage.remainingVolumeMl)} left in the vial</span>
               <span class="card-note">${usage.dosesLeft === null ? "No dose plan yet." : `${usage.dosesLeft} doses left`}</span>
-              ${usage.nextDue ? `<span class="card-note">Next dose ${formatDateTime(usage.nextDue, usage.nextDue.toTimeString().slice(0,5))}</span>` : ""}
+              ${usage.nextDueKey ? `<span class="card-note">Next dose ${formatDateTime(usage.nextDueKey, primarySchedule?.reminderTime || "09:00")}</span>` : ""}
+              ${usage.dosesLeft !== null && usage.dosesLeft <= 4 ? '<span class="reorder-note">4 doses or fewer remain. Re-order soon.</span>' : ""}
             </div>
           </div>
           ${primarySchedule ? `
@@ -505,49 +620,64 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackSchedules() {
-    if (!reminderList) {
-      return;
-    }
+    const fills = readFills();
+    const schedules = readSchedules().map(normalizeSchedule);
+    const todayDue = getTodayDueSchedules();
 
-    const fills = getFills();
-    const schedules = getSchedules();
-    if (!schedules.length) {
-      reminderList.innerHTML = '<div class="empty-state">No dosage plans saved yet.</div>';
-      return;
-    }
+    const bannerHtml = todayDue.length
+      ? `
+        <div class="today-schedule-banner">
+          <h3>Schedule (${todayDue.length})</h3>
+          <p>${todayDue.length} peptide dose${todayDue.length === 1 ? "" : "s"} due today.</p>
+          ${todayDue.map(({ schedule, fill }) => `
+            <div class="today-schedule-card">
+              <h4>${escapeHtml(fill.name)}</h4>
+              <p>${formatDose(schedule.doseAmount, schedule.unitLabel)} at ${escapeHtml(schedule.reminderTime)}. Draw ${formatDrawMl(schedule.doseMl)}.</p>
+              <div class="today-schedule-actions">
+                <button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}">Mark as taken</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `
+      : '<div class="empty-state">No peptides are due today.</div>';
 
-    reminderList.innerHTML = schedules.map((schedule) => {
-      const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
-      return `
-        <article class="list-card">
-          <div class="list-topline">
-            <div>
-              <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
-              <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</p>
-            </div>
-          </div>
-          <div class="schedule-metrics">
-            <div class="metric">
-              <span>Draw each dose</span>
-              <strong>${formatDrawMl(schedule.doseMl)}</strong>
-            </div>
-            <div class="metric">
-              <span>Reminder time</span>
-              <strong>${escapeHtml(schedule.reminderTime)}</strong>
-            </div>
-          </div>
-        </article>
-      `;
-    }).join("");
+    const listHtml = schedules.length
+      ? schedules.map((schedule) => {
+          const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+          return `
+            <article class="list-card">
+              <div class="list-topline">
+                <div>
+                  <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
+                  <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</p>
+                </div>
+              </div>
+              <div class="schedule-metrics">
+                <div class="metric">
+                  <span>Draw each dose</span>
+                  <strong>${formatDrawMl(schedule.doseMl)}</strong>
+                </div>
+                <div class="metric">
+                  <span>Reminder time</span>
+                  <strong>${escapeHtml(schedule.reminderTime)}</strong>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join("")
+      : '<div class="empty-state">No dosage plans saved yet.</div>';
+
+    reminderList.innerHTML = `${bannerHtml}${listHtml}`;
+
+    reminderList.querySelectorAll('[data-action="mark-taken"]').forEach((button) => {
+      button.addEventListener("click", () => markScheduleTaken(button.dataset.id));
+    });
   }
 
   function renderFallbackCalendar() {
-    if (!calendarList) {
-      return;
-    }
-
-    const fills = getFills();
-    const schedules = getSchedules();
+    const fills = readFills();
+    const schedules = readSchedules().map(normalizeSchedule);
     if (!schedules.length) {
       calendarList.innerHTML = '<div class="empty-state">No calendar items yet.</div>';
       return;
@@ -555,12 +685,13 @@ async function syncRemindersToBackend() {
 
     calendarList.innerHTML = schedules.map((schedule) => {
       const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+      const nextDueKey = getNextDue(schedule);
       return `
         <article class="calendar-day">
           <div class="list-topline">
             <div>
               <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
-              <p class="card-note">Starts ${formatDate(schedule.startDate)}</p>
+              <p class="card-note">Next due ${nextDueKey ? formatDateTime(nextDueKey, schedule.reminderTime) : "scheduled"}</p>
             </div>
           </div>
           <div class="schedule-metrics">
@@ -578,22 +709,30 @@ async function syncRemindersToBackend() {
     }).join("");
   }
 
-  function renderFallbackViews() {
+  function renderAllFallback() {
+    renderScheduleIndicator();
     renderFallbackCabinet();
     renderFallbackSchedules();
     renderFallbackCalendar();
   }
 
-  function persistState(fills, schedules) {
-    writeFills(fills);
-    writeSchedules(schedules);
-    renderFallbackViews();
-    syncRemindersToBackend();
+  function markScheduleTaken(scheduleId) {
+    const schedules = readSchedules().map(normalizeSchedule);
+    const index = schedules.findIndex((schedule) => schedule.id === scheduleId);
+    if (index === -1) {
+      return;
+    }
+    const schedule = schedules[index];
+    if (!schedule.takenDates.includes(todayKey())) {
+      schedule.takenDates = [...schedule.takenDates, todayKey()];
+      schedules[index] = schedule;
+      persistState(readFills(), schedules);
+    }
   }
 
   function editFillRecord(fillId) {
-    const fills = getFills();
-    const schedules = getSchedules();
+    const fills = readFills();
+    const schedules = readSchedules().map(normalizeSchedule);
     const fillIndex = fills.findIndex((fill) => fill.savedId === fillId);
     if (fillIndex === -1) {
       return;
@@ -607,31 +746,23 @@ async function syncRemindersToBackend() {
     if (nextName === null) {
       return;
     }
-
     const nextWaterRaw = window.prompt("BAC water amount (mL)", String(fill.waterMl));
     if (nextWaterRaw === null) {
       return;
     }
-
-    const nextDoseRaw = window.prompt(
-      `Dose amount (${fill.unitLabel})`,
-      String(primarySchedule?.doseAmount || fill.recommendedDoseAmount || ""),
-    );
+    const nextDoseRaw = window.prompt(`Dose amount (${fill.unitLabel})`, String(primarySchedule?.doseAmount || fill.recommendedDoseAmount || ""));
     if (nextDoseRaw === null) {
       return;
     }
-
     const nextIntervalRaw = window.prompt("Every X days", String(primarySchedule?.intervalDays || 7));
     if (nextIntervalRaw === null) {
       return;
     }
-
     const nextTime = window.prompt("Reminder time (HH:MM)", primarySchedule?.reminderTime || "09:00");
     if (nextTime === null) {
       return;
     }
-
-    const nextStart = window.prompt("Start date (YYYY-MM-DD)", primarySchedule?.startDate || new Date().toISOString().split("T")[0]);
+    const nextStart = window.prompt("Start date (YYYY-MM-DD)", primarySchedule?.startDate || todayKey());
     if (nextStart === null) {
       return;
     }
@@ -646,7 +777,6 @@ async function syncRemindersToBackend() {
       window.alert("Please enter valid fill values.");
       return;
     }
-
     if (!isPositiveNumber(nextDoseMl) || nextDoseMl < RUNTIME_FIX_MIN_DRAW_ML || nextDoseMl > Number(fill.syringeMax || 1)) {
       window.alert(`That dose would require ${formatDrawMl(nextDoseMl)}, which is outside the supported draw range.`);
       return;
@@ -670,7 +800,6 @@ async function syncRemindersToBackend() {
         intervalDays: nextIntervalDays,
         reminderTime: nextTime,
         startDate: nextStart,
-        unitLabel: fill.unitLabel,
         fillSnapshot: fill,
       };
     });
@@ -679,17 +808,15 @@ async function syncRemindersToBackend() {
   }
 
   function deleteFillRecord(fillId) {
-    const fill = getFills().find((item) => item.savedId === fillId);
+    const fill = readFills().find((item) => item.savedId === fillId);
     if (!fill) {
       return;
     }
-
     if (!window.confirm(`Delete ${fill.name} and its linked schedule?`)) {
       return;
     }
-
-    const fills = getFills().filter((item) => item.savedId !== fillId);
-    const schedules = getSchedules().filter((item) => item.fillSavedId !== fillId);
+    const fills = readFills().filter((item) => item.savedId !== fillId);
+    const schedules = readSchedules().filter((item) => item.fillSavedId !== fillId);
     persistState(fills, schedules);
   }
 
@@ -711,7 +838,7 @@ async function syncRemindersToBackend() {
     modalDoseDisplay.value = `${formatNumber(option.doseAmount)} ${option.unitLabel}`;
     saveFillInterval.value = document.getElementById("interval-days")?.value || "7";
     saveFillTime.value = document.getElementById("reminder-time")?.value || "09:00";
-    saveFillStartDate.value = document.getElementById("start-date")?.value || new Date().toISOString().split("T")[0];
+    saveFillStartDate.value = document.getElementById("start-date")?.value || todayKey();
     saveFillPreview.innerHTML = `
       <div class="preview-pill">
         <span class="water-amount-emphasis">${formatMl(option.waterMl)}</span>
@@ -827,26 +954,22 @@ async function syncRemindersToBackend() {
       intervalDays,
       reminderTime,
       startDate,
-      createdAt: new Date().toISOString(),
-      lastTriggeredAt: null,
+      takenDates: [],
       fillSnapshot: fill,
     };
 
-    const fills = [fill, ...getFills()];
-    const schedules = [schedule, ...getSchedules()];
+    const fills = [fill, ...readFills()];
+    const schedules = [schedule, ...readSchedules().map(normalizeSchedule)];
     writeFills(fills);
     writeSchedules(schedules);
     localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.selectedFill, JSON.stringify(fill.savedId));
-    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.expandedFill, JSON.stringify(fill.savedId));
-
     if (typeof state !== "undefined") {
       state.selectedFillId = fill.savedId;
-      state.expandedFillId = fill.savedId;
       state.latestOptions = [pendingOption];
     }
 
     closeFallbackSaveFillModal();
-    renderFallbackViews();
+    renderAllFallback();
     setActiveViewFallback("cabinet-view");
     syncRemindersToBackend();
   }
@@ -881,7 +1004,7 @@ async function syncRemindersToBackend() {
   });
 
   bindFallbackTabs();
-  renderFallbackViews();
+  renderAllFallback();
   const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
   setActiveViewFallback(savedView);
   window.setTimeout(() => renderFallbackOptions(false), 50);
