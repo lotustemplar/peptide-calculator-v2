@@ -1,6 +1,12 @@
 const RUNTIME_FIX_DEFAULT_MAX_WATER_ML = 3;
 const RUNTIME_FIX_MIN_DRAW_ML = 0.05;
 const RUNTIME_FIX_DISPLAY_OPTION_LIMIT = 12;
+const RUNTIME_FIX_STORAGE_KEYS = {
+  fills: "peptide-calculator-v2-fills",
+  schedules: "peptide-calculator-v2-schedules",
+  selectedFill: "peptide-calculator-v2-selected-fill",
+  expandedFill: "peptide-calculator-v2-expanded-fill",
+};
 
 function getPushExternalIdForSync() {
   const prefix = (window.APP_CONFIG && window.APP_CONFIG.onesignalExternalIdPrefix) || "peptide-calculator-v2";
@@ -68,10 +74,23 @@ async function syncRemindersToBackend() {
   const resultsGrid = document.getElementById("results-grid");
   const resultsSummary = document.getElementById("results-summary");
   const resultsCard = resultsGrid?.closest(".results-card");
+  const saveFillModal = document.getElementById("save-fill-modal");
+  const saveFillForm = document.getElementById("save-fill-form");
+  const saveFillPreview = document.getElementById("save-fill-preview");
+  const saveFillName = document.getElementById("save-fill-name");
+  const modalDoseLabel = document.getElementById("modal-dose-label");
+  const modalDoseDisplay = document.getElementById("modal-dose-display");
+  const saveFillInterval = document.getElementById("save-fill-interval");
+  const saveFillTime = document.getElementById("save-fill-time");
+  const saveFillStartDate = document.getElementById("save-fill-start-date");
+  const closeSaveFill = document.getElementById("close-save-fill");
+  const cancelSaveFill = document.getElementById("cancel-save-fill");
 
-  if (!form || !resultsGrid) {
+  if (!form || !resultsGrid || !saveFillModal || !saveFillForm) {
     return;
   }
+
+  let pendingOption = null;
 
   function getInputs() {
     return {
@@ -209,15 +228,60 @@ async function syncRemindersToBackend() {
     return { error: null, options };
   }
 
+  function writeJsonStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function closeFallbackSaveFillModal() {
+    pendingOption = null;
+    saveFillModal.classList.add("is-hidden");
+    saveFillModal.setAttribute("aria-hidden", "true");
+  }
+
+  function openFallbackSaveFillModal(option) {
+    pendingOption = option;
+    if (typeof state !== "undefined") {
+      state.latestOptions = [option];
+      state.pendingSaveOptionId = option.id;
+    }
+
+    saveFillName.value = "";
+    modalDoseLabel.textContent = `Dosage amount (${option.unitLabel})`;
+    modalDoseDisplay.value = `${formatNumber(option.doseAmount)} ${option.unitLabel}`;
+    saveFillInterval.value = document.getElementById("interval-days")?.value || "7";
+    saveFillTime.value = document.getElementById("reminder-time")?.value || "09:00";
+    saveFillStartDate.value = document.getElementById("start-date")?.value || new Date().toISOString().split("T")[0];
+    saveFillPreview.innerHTML = `
+      <div class="preview-pill">
+        <span>Add this much BAC water</span>
+        <strong>${formatMl(option.waterMl)}</strong>
+      </div>
+      <div class="preview-pill">
+        <span>Draw each dose</span>
+        <strong>${formatDrawMl(option.doseMl)}</strong>
+      </div>
+      <div class="preview-pill">
+        <span>Concentration</span>
+        <strong>${formatNumber(option.concentrationPerMl)} ${escapeHtml(option.unitLabel)}/mL</strong>
+      </div>
+      <div class="preview-pill">
+        <span>1 mL syringe units</span>
+        <strong>${formatUnits(option.insulinUnits)}</strong>
+      </div>
+    `;
+    saveFillModal.classList.remove("is-hidden");
+    saveFillModal.setAttribute("aria-hidden", "false");
+    saveFillName.focus();
+  }
+
   function attachSaveButtons(options) {
     resultsGrid.querySelectorAll('[data-action="save-option"]').forEach((button) => {
       button.addEventListener("click", () => {
-        if (typeof state !== "undefined") {
-          state.latestOptions = options;
+        const option = options.find((item) => item.id === button.dataset.id);
+        if (!option) {
+          return;
         }
-        if (typeof openSaveFillModal === "function") {
-          openSaveFillModal(button.dataset.id);
-        }
+        openFallbackSaveFillModal(option);
       });
     });
   }
@@ -290,6 +354,76 @@ async function syncRemindersToBackend() {
     attachSaveButtons(options);
   }
 
+  function saveFallbackFill() {
+    if (!pendingOption) {
+      return;
+    }
+
+    const name = saveFillName.value.trim() || "Unnamed Peptide Fill";
+    const intervalDays = Number(saveFillInterval.value);
+    const reminderTime = saveFillTime.value;
+    const startDate = saveFillStartDate.value;
+
+    if (!Number.isInteger(intervalDays) || intervalDays < 1 || !reminderTime || !startDate) {
+      window.alert("Please enter a valid schedule before saving the fill.");
+      return;
+    }
+
+    const fill = {
+      savedId: crypto.randomUUID(),
+      name,
+      vialAmount: pendingOption.vialAmount,
+      waterMl: pendingOption.waterMl,
+      unitLabel: pendingOption.unitLabel,
+      syringeMax: pendingOption.syringeMax,
+      maxWaterMl: pendingOption.maxWaterMl,
+      recommendedDoseAmount: pendingOption.doseAmount,
+      concentrationPerMl: pendingOption.concentrationPerMl,
+      savedAt: new Date().toISOString(),
+    };
+
+    const schedule = {
+      id: crypto.randomUUID(),
+      fillSavedId: fill.savedId,
+      doseAmount: pendingOption.doseAmount,
+      doseMl: pendingOption.doseMl,
+      unitLabel: fill.unitLabel,
+      intervalDays,
+      reminderTime,
+      startDate,
+      createdAt: new Date().toISOString(),
+      lastTriggeredAt: null,
+      fillSnapshot: fill,
+    };
+
+    if (typeof state !== "undefined") {
+      state.fills = [fill, ...(Array.isArray(state.fills) ? state.fills : [])];
+      state.schedules = [schedule, ...(Array.isArray(state.schedules) ? state.schedules : [])];
+      state.selectedFillId = fill.savedId;
+      state.expandedFillId = fill.savedId;
+      state.latestOptions = [pendingOption];
+    }
+
+    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.fills, typeof state !== "undefined" ? state.fills : [fill]);
+    writeJsonStorage(RUNTIME_FIX_STORAGE_KEYS.schedules, typeof state !== "undefined" ? state.schedules : [schedule]);
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.selectedFill, JSON.stringify(fill.savedId));
+    localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.expandedFill, JSON.stringify(fill.savedId));
+
+    closeFallbackSaveFillModal();
+
+    if (typeof renderAll === "function") {
+      renderAll();
+    }
+    if (typeof setActiveView === "function") {
+      setActiveView("cabinet-view");
+    }
+    if (typeof queueNextReminder === "function") {
+      queueNextReminder();
+    }
+
+    syncRemindersToBackend();
+  }
+
   form.addEventListener(
     "submit",
     (event) => {
@@ -297,6 +431,30 @@ async function syncRemindersToBackend() {
       event.stopImmediatePropagation();
       renderFallbackOptions(true);
       window.setTimeout(scrollToResults, 20);
+    },
+    true,
+  );
+
+  saveFillForm.addEventListener(
+    "submit",
+    (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      saveFallbackFill();
+    },
+    true,
+  );
+
+  [closeSaveFill, cancelSaveFill].forEach((button) => {
+    button?.addEventListener("click", closeFallbackSaveFillModal, true);
+  });
+
+  saveFillModal.addEventListener(
+    "click",
+    (event) => {
+      if (event.target instanceof HTMLElement && event.target.dataset.closeModal === "true") {
+        closeFallbackSaveFillModal();
+      }
     },
     true,
   );
