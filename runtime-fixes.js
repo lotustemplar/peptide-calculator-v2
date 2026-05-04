@@ -93,9 +93,11 @@ async function syncRemindersToBackend() {
   const currentPeptides = document.getElementById("current-peptides");
   const reminderList = document.getElementById("reminder-list");
   const calendarList = document.getElementById("calendar-list");
+  const enableNotificationsButton = document.getElementById("enable-notifications");
+  const notificationStatus = document.getElementById("notification-status");
+  const scheduleFormShell = document.querySelector(".schedule-form-hidden");
   const viewTabs = Array.from(document.querySelectorAll("[data-view-target]"));
   const views = Array.from(document.querySelectorAll("[data-view]"));
-  const scheduleView = document.getElementById("schedule-view");
   const scheduleButton = viewTabs.find((button) => button.dataset.viewTarget === "schedule-view");
 
   if (!form || !resultsGrid || !saveFillModal || !saveFillForm || !currentPeptides || !reminderList || !calendarList) {
@@ -104,6 +106,7 @@ async function syncRemindersToBackend() {
 
   let pendingOption = null;
   injectFallbackStyles();
+  hideLegacyScheduleEditor();
 
   function injectFallbackStyles() {
     if (document.getElementById("runtime-fixes-style")) {
@@ -120,7 +123,8 @@ async function syncRemindersToBackend() {
         font-weight: 700;
       }
       .cabinet-actions-fallback,
-      .today-schedule-actions {
+      .today-schedule-actions,
+      .notification-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
@@ -228,6 +232,26 @@ async function syncRemindersToBackend() {
       .today-schedule-card p {
         margin: 0;
       }
+      .schedule-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 700;
+      }
+      .schedule-status-pill.is-ready {
+        background: rgba(63,214,197,0.14);
+        color: var(--mint);
+      }
+      .schedule-status-pill.is-complete {
+        background: rgba(255,255,255,0.08);
+        color: var(--muted);
+      }
       @media (max-width: 720px) {
         .vial-row-fallback {
           grid-template-columns: 1fr;
@@ -235,6 +259,12 @@ async function syncRemindersToBackend() {
       }
     `;
     document.head.appendChild(style);
+  }
+
+  function hideLegacyScheduleEditor() {
+    if (scheduleFormShell) {
+      scheduleFormShell.hidden = true;
+    }
   }
 
   function readJsonStorage(key, fallback) {
@@ -439,6 +469,78 @@ async function syncRemindersToBackend() {
     return { error: null, options };
   }
 
+  function hasMedianOneSignal() {
+    return Boolean(window.median?.onesignal?.promptForPushNotifications);
+  }
+
+  function renderNotificationState(permission) {
+    if (!notificationStatus || !enableNotificationsButton) {
+      return;
+    }
+
+    if (hasMedianOneSignal()) {
+      notificationStatus.textContent = "Native push is available through the Median app. Tap once to allow alerts on this device.";
+      enableNotificationsButton.textContent = "Enable Notifications";
+      return;
+    }
+
+    if (!("Notification" in window)) {
+      notificationStatus.textContent = "This device does not support browser notifications.";
+      enableNotificationsButton.textContent = "Notifications Unavailable";
+      enableNotificationsButton.disabled = true;
+      return;
+    }
+
+    const currentPermission = permission || Notification.permission;
+    if (currentPermission === "granted") {
+      notificationStatus.textContent = "Notifications are enabled for this device.";
+      enableNotificationsButton.textContent = "Notifications Enabled";
+      return;
+    }
+
+    if (currentPermission === "denied") {
+      notificationStatus.textContent = "Notifications are blocked for this device. Re-enable them in browser or app settings.";
+      enableNotificationsButton.textContent = "Notifications Blocked";
+      return;
+    }
+
+    notificationStatus.textContent = "Turn on alerts so the app can remind you when today's peptides are due.";
+    enableNotificationsButton.textContent = "Enable Notifications";
+  }
+
+  async function requestNotificationPermission(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+
+    if (!enableNotificationsButton) {
+      return;
+    }
+
+    if (hasMedianOneSignal()) {
+      try {
+        window.median.onesignal.promptForPushNotifications();
+        notificationStatus.textContent = "Native push permission request sent. Check the device prompt.";
+      } catch {
+        notificationStatus.textContent = "Native push could not be requested right now.";
+      }
+      return;
+    }
+
+    if (!("Notification" in window)) {
+      renderNotificationState();
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      renderNotificationState(permission);
+    } catch {
+      notificationStatus.textContent = "Notification permission could not be requested right now.";
+    }
+  }
+
   function getStartDateTime(schedule) {
     const date = schedule.startDate || todayKey();
     const time = schedule.reminderTime || "09:00";
@@ -550,6 +652,14 @@ async function syncRemindersToBackend() {
     });
   }
 
+  function bindNotificationButton() {
+    if (!enableNotificationsButton) {
+      return;
+    }
+    enableNotificationsButton.addEventListener("click", requestNotificationPermission, true);
+    renderNotificationState();
+  }
+
   function renderScheduleIndicator() {
     if (!scheduleButton) {
       return;
@@ -639,7 +749,7 @@ async function syncRemindersToBackend() {
     const bannerHtml = todayDue.length
       ? `
         <div class="today-schedule-banner">
-          <h3>Schedule (${todayDue.length})</h3>
+          <h3>Due Today</h3>
           <p>${todayDue.length} peptide dose${todayDue.length === 1 ? "" : "s"} due today.</p>
           ${todayDue.map(({ schedule, fill }) => `
             <div class="today-schedule-card">
@@ -657,6 +767,9 @@ async function syncRemindersToBackend() {
     const listHtml = schedules.length
       ? schedules.map((schedule) => {
           const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+          const nextDueKey = getNextDue(schedule);
+          const takenToday = schedule.takenDates.includes(todayKey());
+          const dueToday = isScheduleDueOnDate(schedule, todayKey());
           return `
             <article class="list-card">
               <div class="list-topline">
@@ -664,6 +777,7 @@ async function syncRemindersToBackend() {
                   <h3>${escapeHtml(fill?.name || "Saved Fill")}</h3>
                   <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</p>
                 </div>
+                <span class="schedule-status-pill ${takenToday ? "is-complete" : dueToday ? "is-ready" : ""}">${takenToday ? "Taken today" : dueToday ? "Due today" : "Upcoming"}</span>
               </div>
               <div class="schedule-metrics">
                 <div class="metric">
@@ -671,14 +785,19 @@ async function syncRemindersToBackend() {
                   <strong>${formatDrawMl(schedule.doseMl)}</strong>
                 </div>
                 <div class="metric">
-                  <span>Reminder time</span>
-                  <strong>${escapeHtml(schedule.reminderTime)}</strong>
+                  <span>Next dose</span>
+                  <strong>${nextDueKey ? formatDateTime(nextDueKey, schedule.reminderTime) : "Scheduled"}</strong>
                 </div>
               </div>
+              ${dueToday && !takenToday ? `
+                <div class="today-schedule-actions">
+                  <button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}">Mark as taken</button>
+                </div>
+              ` : ""}
             </article>
           `;
         }).join("")
-      : '<div class="empty-state">No dosage plans saved yet.</div>';
+      : '<div class="empty-state">No schedules saved yet. Save a fill first.</div>';
 
     reminderList.innerHTML = `${bannerHtml}${listHtml}`;
 
@@ -726,6 +845,7 @@ async function syncRemindersToBackend() {
     renderFallbackCabinet();
     renderFallbackSchedules();
     renderFallbackCalendar();
+    renderNotificationState();
   }
 
   function markScheduleTaken(scheduleId) {
@@ -1016,6 +1136,7 @@ async function syncRemindersToBackend() {
   });
 
   bindFallbackTabs();
+  bindNotificationButton();
   renderAllFallback();
   const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
   setActiveViewFallback(savedView);
