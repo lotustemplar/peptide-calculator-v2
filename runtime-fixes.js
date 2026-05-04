@@ -67,6 +67,7 @@ async function syncRemindersToBackend() {
   const form = document.getElementById("calculator-form");
   const resultsGrid = document.getElementById("results-grid");
   const resultsSummary = document.getElementById("results-summary");
+  const resultsCard = resultsGrid?.closest(".results-card");
 
   if (!form || !resultsGrid) {
     return;
@@ -221,6 +222,13 @@ async function syncRemindersToBackend() {
     });
   }
 
+  function scrollToResults() {
+    if (!resultsCard) {
+      return;
+    }
+    resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function renderFallbackOptions(force = false) {
     const hasRenderedCards = resultsGrid.querySelector(".result-card");
     if (!force && hasRenderedCards) {
@@ -282,9 +290,16 @@ async function syncRemindersToBackend() {
     attachSaveButtons(options);
   }
 
-  form.addEventListener("submit", () => {
-    window.setTimeout(() => renderFallbackOptions(true), 0);
-  });
+  form.addEventListener(
+    "submit",
+    (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      renderFallbackOptions(true);
+      window.setTimeout(scrollToResults, 20);
+    },
+    true,
+  );
 
   ["vial-mg", "dose-mg", "dose-unit", "syringe-max", "max-water-ml"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", () => {
