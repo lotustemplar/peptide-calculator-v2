@@ -1,12 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
-  <title>Peptide Calculator V2</title>
+  <title>FitGen Peptide Calculator</title>
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f766e"/>
-      <stop offset="100%" stop-color="#ff7d5c"/>
+    <linearGradient id="shieldOuter" x1="24" y1="18" x2="104" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1db4ff"/>
+      <stop offset="1" stop-color="#0a4ecf"/>
     </linearGradient>
+    <linearGradient id="shieldInner" x1="38" y1="28" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d7ecff"/>
+    </linearGradient>
+    <linearGradient id="wingLeft" x1="14" y1="18" x2="55" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#92ef33"/>
+      <stop offset="1" stop-color="#3fa312"/>
+    </linearGradient>
+    <linearGradient id="wingRight" x1="73" y1="18" x2="114" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#26b6ff"/>
+      <stop offset="1" stop-color="#1268df"/>
+    </linearGradient>
+    <linearGradient id="dnaBlue" x1="56" y1="28" x2="71" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a8cff"/>
+      <stop offset="1" stop-color="#0c4ed8"/>
+    </linearGradient>
+    <linearGradient id="dnaGreen" x1="73" y1="28" x2="56" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#77d82a"/>
+      <stop offset="1" stop-color="#2d8b12"/>
+    </linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
-  <path d="M37 29h20c18.225 0 33 14.775 33 33S75.225 95 57 95H37V29Zm18.5 50c9.665 0 17.5-7.835 17.5-17.5S65.165 44 55.5 44H53v35h2.5Z" fill="#fff7ef"/>
-  <path d="M77 33h14v62H77z" fill="#15312f" opacity=".16"/>
+
+  <g filter="url(#softGlow)">
+    <path d="M58 24c-12-8-26-12-42-12 8 13 20 21 35 23 6 1 10-2 14-11Z" fill="url(#wingLeft)"/>
+    <path d="M70 24c12-8 26-12 42-12-8 13-20 21-35 23-6 1-10-2-14-11Z" fill="url(#wingRight)"/>
+  </g>
+
+  <circle cx="64" cy="18" r="6" fill="#1787f3"/>
+  <rect x="61" y="23" width="6" height="16" rx="3" fill="#1679ea"/>
+
+  <path d="M64 24c-12 0-24 4-34 11v23c0 25 15 46 34 56 19-10 34-31 34-56V35C88 28 76 24 64 24Z" fill="url(#shieldOuter)" stroke="#0b62d8" stroke-width="3"/>
+  <path d="M64 34c-9 0-17 3-24 8v16c0 18 9 34 24 43 15-9 24-25 24-43V42c-7-5-15-8-24-8Z" fill="url(#shieldInner)"/>
+
+  <path d="M57 33c11 7 14 18 9 28-5 11-4 21 7 39" fill="none" stroke="url(#dnaBlue)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M71 33c-11 7-14 18-9 28 5 11 4 21-7 39" fill="none" stroke="url(#dnaGreen)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M57 40h14M55 53h18M54 67h20M55 80h18M58 93h12" fill="none" stroke="#0f5fd8" stroke-width="2.6" stroke-linecap="round" opacity="0.65"/>
+
+  <path d="M91 43h6v-6h8v6h6v8h-6v6h-8v-6h-6Z" fill="#ffffff"/>
 </svg>
