@@ -1,7 +1,9 @@
 const RUNTIME_FIX_DEFAULT_MAX_WATER_ML = 3;
 const RUNTIME_FIX_MIN_DRAW_ML = 0.1;
+const RUNTIME_FIX_ABSOLUTE_MIN_DRAW_ML = 0.05;
 const RUNTIME_FIX_DRAW_STEP_ML = 0.05;
 const RUNTIME_FIX_DISPLAY_OPTION_LIMIT = 18;
+const RUNTIME_FIX_NOTIFICATION_MAX_DELAY_MS = 2147483647;
 const RUNTIME_FIX_STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
@@ -105,6 +107,7 @@ async function syncRemindersToBackend() {
   }
 
   let pendingOption = null;
+  let runtimeReminderTimer = null;
   injectFallbackStyles();
   hideLegacyScheduleEditor();
 
@@ -400,7 +403,7 @@ async function syncRemindersToBackend() {
     return `${formatNumber(option.concentrationPerMl)} ${option.unitLabel}/mL concentration`;
   }
 
-  function buildTargetDraws(syringeMax) {
+  function buildCleanTargetDraws(syringeMax) {
     const upperBound = Math.min(Math.max(syringeMax, RUNTIME_FIX_MIN_DRAW_ML), 1);
     const draws = [];
     for (let draw = RUNTIME_FIX_MIN_DRAW_ML; draw <= upperBound + 0.0001; draw += RUNTIME_FIX_DRAW_STEP_ML) {
@@ -409,11 +412,22 @@ async function syncRemindersToBackend() {
     return draws;
   }
 
+  function buildPrecisionWaterSteps(maxWaterMl) {
+    const steps = [];
+    for (let waterMl = 0.5; waterMl <= maxWaterMl + 0.0001; waterMl += 0.05) {
+      steps.push(Number(waterMl.toFixed(2)));
+    }
+    return steps;
+  }
+
   function scoreOption(option) {
     const preferredCenter = option.doseMl <= 0.3 ? 0.2 : 0.5;
     const comfortPenalty = Math.abs(option.doseMl - preferredCenter) * 10;
     const overThreePenalty = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? 5 + (option.waterMl - RUNTIME_FIX_DEFAULT_MAX_WATER_ML) * 4 : 0;
-    return comfortPenalty + overThreePenalty + option.doseMl;
+    const precisionPenalty = option.isPrecisionFallback
+      ? Math.abs(option.doseMl - roundToStep(option.doseMl, RUNTIME_FIX_DRAW_STEP_ML)) * 140
+      : 0;
+    return comfortPenalty + overThreePenalty + option.doseMl + precisionPenalty;
   }
 
   function describeDraw(doseMl) {
@@ -423,54 +437,174 @@ async function syncRemindersToBackend() {
     return "Rounded 0.05 mL draw for easier measuring.";
   }
 
+  function describePrecisionDraw(doseMl) {
+    return `Precision draw of ${formatDrawMl(doseMl)} because no clean 0.05 mL option fits inside your current limits.`;
+  }
+
+  function createOptionFromDrawTarget({ vialAmount, doseAmount, syringeMax, maxWaterMl, unitLabel, doseMl }) {
+    const waterMl = (vialAmount * doseMl) / doseAmount;
+    if (!isPositiveNumber(waterMl) || waterMl > maxWaterMl) {
+      return null;
+    }
+
+    return {
+      id: `${vialAmount}-${doseAmount}-${syringeMax}-${maxWaterMl}-${doseMl}-${unitLabel}-clean`,
+      vialAmount,
+      doseAmount,
+      syringeMax,
+      maxWaterMl,
+      waterMl: Number(waterMl.toFixed(2)),
+      unitLabel,
+      concentrationPerMl: vialAmount / waterMl,
+      doseMl,
+      guidance: describeDraw(doseMl),
+      isPrecisionFallback: false,
+    };
+  }
+
+  function createOptionFromWaterTarget({ vialAmount, doseAmount, syringeMax, maxWaterMl, unitLabel, waterMl }) {
+    const concentrationPerMl = vialAmount / waterMl;
+    const doseMl = doseAmount / concentrationPerMl;
+    if (!isPositiveNumber(doseMl) || doseMl < RUNTIME_FIX_ABSOLUTE_MIN_DRAW_ML || doseMl > syringeMax) {
+      return null;
+    }
+
+    return {
+      id: `${vialAmount}-${doseAmount}-${syringeMax}-${maxWaterMl}-${waterMl}-${unitLabel}-precision`,
+      vialAmount,
+      doseAmount,
+      syringeMax,
+      maxWaterMl,
+      waterMl: Number(waterMl.toFixed(2)),
+      unitLabel,
+      concentrationPerMl,
+      doseMl: Number(doseMl.toFixed(2)),
+      guidance: describePrecisionDraw(Number(doseMl.toFixed(2))),
+      isPrecisionFallback: true,
+    };
+  }
+
   function computeOptions() {
     const { vialAmount, doseAmount, syringeMax, maxWaterMl, unitLabel } = getInputs();
 
     if (!isPositiveNumber(vialAmount) || !isPositiveNumber(doseAmount) || !isPositiveNumber(syringeMax) || !isPositiveNumber(maxWaterMl)) {
-      return { error: "Enter valid values to see fill options.", options: [] };
+      return { error: "Enter valid values to see fill options.", options: [], mode: "empty" };
     }
 
     if (doseAmount > vialAmount) {
-      return { error: "The desired dose cannot be larger than the total amount in the vial.", options: [] };
+      return { error: "The desired dose cannot be larger than the total amount in the vial.", options: [], mode: "empty" };
     }
 
-    const options = buildTargetDraws(syringeMax)
-      .map((doseMl) => {
-        const waterMl = (vialAmount * doseMl) / doseAmount;
-        if (!isPositiveNumber(waterMl) || waterMl > maxWaterMl) {
-          return null;
-        }
-
-        return {
-          id: `${vialAmount}-${doseAmount}-${syringeMax}-${maxWaterMl}-${doseMl}-${unitLabel}`,
-          vialAmount,
-          doseAmount,
-          syringeMax,
-          maxWaterMl,
-          waterMl: Number(waterMl.toFixed(2)),
-          unitLabel,
-          concentrationPerMl: vialAmount / waterMl,
-          doseMl,
-          guidance: describeDraw(doseMl),
-        };
-      })
+    const cleanOptions = buildCleanTargetDraws(syringeMax)
+      .map((doseMl) => createOptionFromDrawTarget({ vialAmount, doseAmount, syringeMax, maxWaterMl, unitLabel, doseMl }))
       .filter(Boolean)
       .map((option) => ({ ...option, score: scoreOption(option) }))
       .sort((left, right) => left.score - right.score)
       .slice(0, RUNTIME_FIX_DISPLAY_OPTION_LIMIT);
 
-    if (!options.length) {
-      return {
-        error: `No easy draw options fit within ${formatMl(maxWaterMl)} of BAC water and your ${formatMl(syringeMax)} syringe limit.`,
-        options: [],
-      };
+    if (cleanOptions.length) {
+      return { error: null, options: cleanOptions, mode: "clean" };
     }
 
-    return { error: null, options };
+    const precisionOptions = Array.from(
+      new Map(
+        buildPrecisionWaterSteps(maxWaterMl)
+          .map((waterMl) => createOptionFromWaterTarget({ vialAmount, doseAmount, syringeMax, maxWaterMl, unitLabel, waterMl }))
+          .filter(Boolean)
+          .map((option) => [`${option.waterMl.toFixed(2)}-${option.doseMl.toFixed(2)}`, option])
+      ).values()
+    )
+      .map((option) => ({ ...option, score: scoreOption(option) }))
+      .sort((left, right) => left.score - right.score)
+      .slice(0, RUNTIME_FIX_DISPLAY_OPTION_LIMIT);
+
+    if (precisionOptions.length) {
+      return { error: null, options: precisionOptions, mode: "precision" };
+    }
+
+    return {
+      error: `No valid draw options fit within ${formatMl(maxWaterMl)} of BAC water and your ${formatMl(syringeMax)} syringe limit.`,
+      options: [],
+      mode: "empty",
+    };
   }
 
   function hasMedianOneSignal() {
     return Boolean(window.median?.onesignal?.promptForPushNotifications);
+  }
+
+  function fireBrowserNotification(title, body) {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+      return;
+    }
+
+    try {
+      new Notification(title, { body });
+    } catch {
+      // Ignore notification failures.
+    }
+  }
+
+  function getNextPendingReminder() {
+    const fills = readFills();
+    const now = Date.now();
+    const candidates = readSchedules()
+      .map(normalizeSchedule)
+      .map((schedule) => {
+        const nextDueKey = getNextDue(schedule);
+        if (!nextDueKey) {
+          return null;
+        }
+        const reminderTime = schedule.reminderTime || "09:00";
+        const dueAt = new Date(`${nextDueKey}T${reminderTime}:00`);
+        if (Number.isNaN(dueAt.getTime()) || dueAt.getTime() <= now) {
+          return null;
+        }
+        const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
+        return { schedule, fill, dueAt, nextDueKey };
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
+
+    return candidates[0] || null;
+  }
+
+  function queueUpcomingBrowserReminder() {
+    if (runtimeReminderTimer) {
+      window.clearTimeout(runtimeReminderTimer);
+      runtimeReminderTimer = null;
+    }
+
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+      return;
+    }
+
+    const nextReminder = getNextPendingReminder();
+    if (!nextReminder) {
+      return;
+    }
+
+    const delay = nextReminder.dueAt.getTime() - Date.now();
+    if (!(delay > 0) || delay > RUNTIME_FIX_NOTIFICATION_MAX_DELAY_MS) {
+      return;
+    }
+
+    runtimeReminderTimer = window.setTimeout(() => {
+      const dueToday = getTodayDueSchedules();
+      if (dueToday.length) {
+        fireBrowserNotification(
+          `Schedule (${dueToday.length})`,
+          `You have ${dueToday.length} peptide dose${dueToday.length === 1 ? "" : "s"} due today.`
+        );
+      } else if (nextReminder.fill) {
+        fireBrowserNotification(
+          `${nextReminder.fill.name} dose due`,
+          `Take ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)} and draw ${formatDrawMl(nextReminder.schedule.doseMl)}.`
+        );
+      }
+      renderScheduleIndicator();
+      queueUpcomingBrowserReminder();
+    }, delay);
   }
 
   function renderNotificationState(permission) {
@@ -481,6 +615,7 @@ async function syncRemindersToBackend() {
     if (hasMedianOneSignal()) {
       notificationStatus.textContent = "Native push is available through the Median app. Tap once to allow alerts on this device.";
       enableNotificationsButton.textContent = "Enable Notifications";
+      enableNotificationsButton.disabled = false;
       return;
     }
 
@@ -492,6 +627,8 @@ async function syncRemindersToBackend() {
     }
 
     const currentPermission = permission || Notification.permission;
+    enableNotificationsButton.disabled = false;
+
     if (currentPermission === "granted") {
       notificationStatus.textContent = "Notifications are enabled for this device.";
       enableNotificationsButton.textContent = "Notifications Enabled";
@@ -536,6 +673,10 @@ async function syncRemindersToBackend() {
     try {
       const permission = await Notification.requestPermission();
       renderNotificationState(permission);
+      if (permission === "granted") {
+        maybeShowDailyBrowserPrompt(getTodayDueSchedules().length);
+        queueUpcomingBrowserReminder();
+      }
     } catch {
       notificationStatus.textContent = "Notification permission could not be requested right now.";
     }
@@ -602,13 +743,10 @@ async function syncRemindersToBackend() {
       return;
     }
     localStorage.setItem(RUNTIME_FIX_STORAGE_KEYS.dailyPromptSeen, JSON.stringify(todayKey()));
-    try {
-      new Notification(`Schedule (${count})`, {
-        body: `You have ${count} peptide dose${count === 1 ? "" : "s"} due today.`,
-      });
-    } catch {
-      // Ignore notification failures.
-    }
+    fireBrowserNotification(
+      `Schedule (${count})`,
+      `You have ${count} peptide dose${count === 1 ? "" : "s"} due today.`
+    );
   }
 
   function getFillUsage(fill, schedules) {
@@ -846,6 +984,7 @@ async function syncRemindersToBackend() {
     renderFallbackSchedules();
     renderFallbackCalendar();
     renderNotificationState();
+    queueUpcomingBrowserReminder();
   }
 
   function markScheduleTaken(scheduleId) {
@@ -909,7 +1048,7 @@ async function syncRemindersToBackend() {
       window.alert("Please enter valid fill values.");
       return;
     }
-    if (!isPositiveNumber(nextDoseMl) || nextDoseMl < RUNTIME_FIX_MIN_DRAW_ML || nextDoseMl > Number(fill.syringeMax || 1)) {
+    if (!isPositiveNumber(nextDoseMl) || nextDoseMl < RUNTIME_FIX_ABSOLUTE_MIN_DRAW_ML || nextDoseMl > Number(fill.syringeMax || 1)) {
       window.alert(`That dose would require ${formatDrawMl(nextDoseMl)}, which is outside the supported draw range.`);
       return;
     }
@@ -928,7 +1067,7 @@ async function syncRemindersToBackend() {
       return {
         ...schedule,
         doseAmount: nextDoseAmount,
-        doseMl: nextDoseMl,
+        doseMl: Number(nextDoseMl.toFixed(2)),
         intervalDays: nextIntervalDays,
         reminderTime: nextTime,
         startDate: nextStart,
@@ -1009,9 +1148,11 @@ async function syncRemindersToBackend() {
       return;
     }
 
-    const { error, options } = computeOptions();
+    const { error, options, mode } = computeOptions();
     if (resultsSummary) {
-      resultsSummary.textContent = "These options are built around easy draw amounts from 0.10 mL to 1.00 mL in 0.05 mL steps.";
+      resultsSummary.textContent = mode === "precision"
+        ? "Showing precision draw options because no clean 0.05 mL draw fits inside your current limits."
+        : "These options are built around easy draw amounts from 0.10 mL to 1.00 mL in 0.05 mL steps.";
     }
 
     if (error) {
@@ -1021,6 +1162,7 @@ async function syncRemindersToBackend() {
 
     resultsGrid.innerHTML = options.map((option, index) => {
       const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : "";
+      const precisionBadge = option.isPrecisionFallback ? '<span class="badge warning">Precision</span>' : "";
       const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : "";
       const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";
       return `
@@ -1030,7 +1172,7 @@ async function syncRemindersToBackend() {
               <h3><span class="water-amount-emphasis">${formatMl(option.waterMl)}</span> - BAC WATER AMOUNT</h3>
               <p class="card-note">${escapeHtml(buildWaterLine(option))}</p>
             </div>
-            ${recommendedBadge || cautionBadge}
+            ${recommendedBadge || precisionBadge || cautionBadge}
           </div>
           <div class="result-metrics">
             <div class="metric">
