@@ -12,7 +12,7 @@ const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || "";
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || "";
 const PUBLIC_APP_URL =
   process.env.PUBLIC_APP_URL || "https://lotustemplar.github.io/peptide-calculator-v2/";
-const POLL_INTERVAL_MS = 60 * 1000;
+const POLL_INTERVAL_MS = 10 * 1000;
 
 const resolvedDbPath = path.resolve(process.cwd(), DATABASE_PATH);
 fs.mkdirSync(path.dirname(resolvedDbPath), { recursive: true });
@@ -131,6 +131,9 @@ app.post("/reminders/sync", (request, response) => {
     });
 
     replaceUserReminders();
+    dispatchDueReminders().catch((error) => {
+      console.error("Immediate reminder dispatch failed", error);
+    });
 
     response.json({
       ok: true,
