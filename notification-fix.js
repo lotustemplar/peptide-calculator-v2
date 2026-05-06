@@ -86,6 +86,31 @@
     return userId ? `${EXTERNAL_ID_PREFIX}-${userId}` : null;
   }
 
+  function getSubscriptionIdFromInfo(oneSignalInfo) {
+    if (!oneSignalInfo || typeof oneSignalInfo !== "object") {
+      return null;
+    }
+
+    if (oneSignalInfo.subscription && typeof oneSignalInfo.subscription === "object") {
+      if (typeof oneSignalInfo.subscription.id === "string" && oneSignalInfo.subscription.id) {
+        return oneSignalInfo.subscription.id;
+      }
+      if (typeof oneSignalInfo.subscription.subscriptionId === "string" && oneSignalInfo.subscription.subscriptionId) {
+        return oneSignalInfo.subscription.subscriptionId;
+      }
+    }
+
+    if (typeof oneSignalInfo.oneSignalUserId === "string" && oneSignalInfo.oneSignalUserId) {
+      return oneSignalInfo.oneSignalUserId;
+    }
+
+    if (typeof oneSignalInfo.subscriptionId === "string" && oneSignalInfo.subscriptionId) {
+      return oneSignalInfo.subscriptionId;
+    }
+
+    return null;
+  }
+
   function parseLocalDateTime(dateString, timeString) {
     if (typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       const [year, month, day] = dateString.split("-").map(Number);
@@ -127,6 +152,7 @@
       return null;
     }
 
+    const subscriptionId = getSubscriptionIdFromInfo(window.__fitgenOneSignalInfo || null);
     const schedules = readSchedulesForSync();
     if (!Array.isArray(schedules)) {
       return null;
@@ -134,6 +160,7 @@
 
     return {
       userId,
+      subscriptionId,
       schedules: schedules
         .map((schedule) => {
           const fill = schedule?.fillSnapshot;
@@ -148,6 +175,7 @@
             reminderTime: schedule.reminderTime,
             intervalDays: schedule.intervalDays,
             nextSendAt: computeScheduleNextSendAt(schedule),
+            subscriptionId,
             fill: {
               peptideName: fill.name,
               fillName: fill.name,
@@ -204,32 +232,43 @@
     try {
       if (typeof bridge.login === "function") {
         await bridge.login(externalId);
-        return true;
-      }
-      if (bridge.externalUserId && typeof bridge.externalUserId.set === "function") {
+      } else if (bridge.externalUserId && typeof bridge.externalUserId.set === "function") {
         await bridge.externalUserId.set({ externalId });
-        return true;
       }
+
+      if (typeof bridge.enableForegroundNotifications === "function") {
+        bridge.enableForegroundNotifications(true);
+      }
+      return true;
     } catch {
       return false;
     }
-
-    return true;
   }
 
   async function loadNativeOneSignalInfo() {
     const bridge = getNativeOneSignalBridge();
-    if (!bridge || typeof bridge.info !== "function") {
+    if (!bridge) {
       return window.__fitgenOneSignalInfo || null;
     }
 
     try {
-      const info = await bridge.info();
-      window.__fitgenOneSignalInfo = info;
-      return info;
+      if (typeof bridge.onesignalInfo === "function") {
+        const info = await bridge.onesignalInfo();
+        window.__fitgenOneSignalInfo = info;
+        return info;
+      }
+      if (typeof bridge.info === "function") {
+        const info = await bridge.info({ callback: "median_onesignal_info" });
+        if (info && typeof info === "object") {
+          window.__fitgenOneSignalInfo = info;
+          return info;
+        }
+      }
     } catch {
       return window.__fitgenOneSignalInfo || null;
     }
+
+    return window.__fitgenOneSignalInfo || null;
   }
 
   function isNativePushEnabled(oneSignalInfo) {
@@ -331,12 +370,11 @@
         } else {
           await nativeBridge.promptForPushNotifications();
         }
-        await ensureNativeIdentity();
-        await loadNativeOneSignalInfo();
+        await refreshNativePushState();
         await syncRemindersToBackendPatched();
         renderNotificationStateOverride("Native notification permission request sent. Check the device prompt.");
         window.setTimeout(() => {
-          refreshNativePushState();
+          refreshNativePushState().then(() => syncRemindersToBackendPatched());
         }, 2500);
       } catch {
         renderNotificationStateOverride("Native notification permission could not be requested right now.");
@@ -375,6 +413,7 @@
         previous();
       }
       await refreshNativePushState();
+      await syncRemindersToBackendPatched();
     };
   }
 
@@ -383,17 +422,17 @@
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      refreshNativePushState();
+      refreshNativePushState().then(() => syncRemindersToBackendPatched());
     }
   });
 
   window.addEventListener("pageshow", () => {
-    refreshNativePushState();
+    refreshNativePushState().then(() => syncRemindersToBackendPatched());
   });
 
   const pollTimer = window.setInterval(() => {
     hideThemeToggle();
-    refreshNativePushState();
+    refreshNativePushState().then(() => syncRemindersToBackendPatched());
     pollCount += 1;
     if (pollCount >= 180) {
       window.clearInterval(pollTimer);
@@ -401,5 +440,5 @@
   }, 2000);
 
   hideThemeToggle();
-  refreshNativePushState();
+  refreshNativePushState().then(() => syncRemindersToBackendPatched());
 })();
