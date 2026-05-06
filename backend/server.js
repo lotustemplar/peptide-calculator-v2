@@ -13,6 +13,7 @@ const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || "";
 const PUBLIC_APP_URL =
   process.env.PUBLIC_APP_URL || "https://lotustemplar.github.io/peptide-calculator-v2/";
 const POLL_INTERVAL_MS = 10 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const resolvedDbPath = path.resolve(process.cwd(), DATABASE_PATH);
 fs.mkdirSync(path.dirname(resolvedDbPath), { recursive: true });
@@ -103,12 +104,9 @@ app.post("/reminders/sync", (request, response) => {
       `);
 
       for (const schedule of payload.schedules) {
-        const nextSendAt = computeNextOccurrence(
-          schedule.startDate,
-          schedule.reminderTime,
-          schedule.intervalDays,
-          new Date()
-        );
+        const nextSendAt = schedule.nextSendAt
+          ? parseIsoDate(schedule.nextSendAt, "nextSendAt")
+          : computeNextOccurrence(schedule.startDate, schedule.reminderTime, schedule.intervalDays, new Date());
 
         insertReminder.run({
           id: schedule.id,
@@ -182,12 +180,7 @@ async function dispatchDueReminders() {
     await sendOneSignalNotification(reminder);
 
     const firedAt = new Date();
-    const nextSendAt = computeNextOccurrence(
-      reminder.start_date,
-      reminder.reminder_time,
-      reminder.interval_days,
-      firedAt
-    );
+    const nextSendAt = computeFollowingOccurrence(reminder.next_send_at, reminder.interval_days, firedAt);
 
     db.prepare(
       `
@@ -248,10 +241,22 @@ function computeNextOccurrence(startDate, reminderTime, intervalDays, fromDate) 
     return start;
   }
 
-  const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
+  const intervalMs = Number(intervalDays) * DAY_MS;
   const elapsed = fromDate.getTime() - start.getTime();
   const steps = Math.floor(elapsed / intervalMs) + 1;
   return new Date(start.getTime() + steps * intervalMs);
+}
+
+function computeFollowingOccurrence(previousDueAtIso, intervalDays, fromDate) {
+  const intervalMs = Math.max(1, Number(intervalDays) || 1) * DAY_MS;
+  const parsedDueAt = parseIsoDate(previousDueAtIso, "next_send_at");
+  let nextDueAt = new Date(parsedDueAt.getTime() + intervalMs);
+
+  while (nextDueAt <= fromDate) {
+    nextDueAt = new Date(nextDueAt.getTime() + intervalMs);
+  }
+
+  return nextDueAt;
 }
 
 function combineDateAndTime(dateString, timeString) {
@@ -260,6 +265,14 @@ function combineDateAndTime(dateString, timeString) {
     throw new Error(`Invalid reminder date or time: ${dateString} ${timeString}`);
   }
   return combined;
+}
+
+function parseIsoDate(value, label) {
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw new Error(`Invalid ${label}: ${value}`);
+  }
+  return parsedDate;
 }
 
 function validateSyncPayload(body) {
@@ -300,6 +313,7 @@ function validateSchedule(schedule) {
     startDate: String(schedule.startDate),
     reminderTime: String(schedule.reminderTime),
     intervalDays: Number(schedule.intervalDays),
+    nextSendAt: schedule.nextSendAt ? String(schedule.nextSendAt) : null,
     fill: {
       peptideName: String(schedule.fill.peptideName || "Unnamed Peptide"),
       fillName: String(schedule.fill.fillName || "Peptide Fill"),
