@@ -25,6 +25,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS reminders (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    subscription_id TEXT,
     name TEXT NOT NULL,
     start_date TEXT NOT NULL,
     reminder_time TEXT NOT NULL,
@@ -44,6 +45,14 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id);
   CREATE INDEX IF NOT EXISTS idx_reminders_next_send_at ON reminders(next_send_at);
 `);
+
+try {
+  db.prepare("ALTER TABLE reminders ADD COLUMN subscription_id TEXT").run();
+} catch (error) {
+  if (!String(error.message || "").includes("duplicate column name")) {
+    throw error;
+  }
+}
 
 const app = express();
 app.use(cors());
@@ -69,6 +78,7 @@ app.post("/reminders/sync", (request, response) => {
         INSERT INTO reminders (
           id,
           user_id,
+          subscription_id,
           name,
           start_date,
           reminder_time,
@@ -86,6 +96,7 @@ app.post("/reminders/sync", (request, response) => {
         ) VALUES (
           @id,
           @user_id,
+          @subscription_id,
           @name,
           @start_date,
           @reminder_time,
@@ -111,6 +122,7 @@ app.post("/reminders/sync", (request, response) => {
         insertReminder.run({
           id: schedule.id,
           user_id: payload.userId,
+          subscription_id: schedule.subscriptionId || payload.subscriptionId || null,
           name: schedule.name,
           start_date: schedule.startDate,
           reminder_time: schedule.reminderTime,
@@ -137,6 +149,7 @@ app.post("/reminders/sync", (request, response) => {
       ok: true,
       syncedSchedules: payload.schedules.length,
       userId: payload.userId,
+      subscriptionId: payload.subscriptionId || null,
     });
   } catch (error) {
     response.status(400).json({
@@ -203,9 +216,6 @@ async function sendOneSignalNotification(reminder) {
   const payload = {
     app_id: ONESIGNAL_APP_ID,
     target_channel: "push",
-    include_aliases: {
-      external_id: [reminder.user_id],
-    },
     headings: {
       en: title,
     },
@@ -216,9 +226,17 @@ async function sendOneSignalNotification(reminder) {
       reminderId: reminder.id,
       peptideName: reminder.peptide_name,
       fillName: reminder.fill_name,
+      targetUrl: `${PUBLIC_APP_URL}?openReminder=${encodeURIComponent(reminder.id)}#calendar-card`,
     },
-    url: `${PUBLIC_APP_URL}?openReminder=${encodeURIComponent(reminder.id)}#calendar-card`,
   };
+
+  if (reminder.subscription_id) {
+    payload.include_subscription_ids = [reminder.subscription_id];
+  } else {
+    payload.include_aliases = {
+      external_id: [reminder.user_id],
+    };
+  }
 
   const result = await fetch("https://api.onesignal.com/notifications", {
     method: "POST",
@@ -290,6 +308,7 @@ function validateSyncPayload(body) {
 
   return {
     userId: body.userId,
+    subscriptionId: body.subscriptionId ? String(body.subscriptionId) : null,
     schedules: body.schedules.map(validateSchedule),
   };
 }
@@ -314,6 +333,7 @@ function validateSchedule(schedule) {
     reminderTime: String(schedule.reminderTime),
     intervalDays: Number(schedule.intervalDays),
     nextSendAt: schedule.nextSendAt ? String(schedule.nextSendAt) : null,
+    subscriptionId: schedule.subscriptionId ? String(schedule.subscriptionId) : null,
     fill: {
       peptideName: String(schedule.fill.peptideName || "Unnamed Peptide"),
       fillName: String(schedule.fill.fillName || "Peptide Fill"),
