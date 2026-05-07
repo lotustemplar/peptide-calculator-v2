@@ -860,6 +860,72 @@ body[data-theme="light"] .empty-state {
   margin-top: 4px;
 }
 
+/* ── Medications ─────────────────────────────────────────── */
+.med-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.med-form input,
+.med-form select {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.med-form input[placeholder="Medication name (e.g. Retatrutide)"] {
+  flex: 2 1 200px;
+}
+
+.med-form .primary-button {
+  flex-shrink: 0;
+}
+
+.med-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.med-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.med-name {
+  font-family: "Sora", sans-serif;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.med-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* ── Cabinet toolbar (export/import) ─────────────────────── */
 .cabinet-toolbar {
   display: flex;

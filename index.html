@@ -143,6 +143,28 @@
         </section>
 
         <section class="app-view" id="cabinet-view" data-view="cabinet-view">
+
+          <section class="card" id="medications-card">
+            <div class="section-heading compact">
+              <span class="section-kicker">My Medications</span>
+              <h2>Saved prescriptions</h2>
+              <p>Store your peptide prescriptions here. Hit Load to pre-fill the calculator instantly. Export backs these up too.</p>
+            </div>
+
+            <form id="add-medication-form" class="med-form">
+              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" required>
+              <input id="med-dose" name="medDose" type="number" min="0.01" step="0.01" placeholder="Dose" required>
+              <select id="med-unit" name="medUnit">
+                <option value="mg" selected>mg</option>
+                <option value="IU">IU</option>
+              </select>
+              <input id="med-interval" name="medInterval" type="number" min="1" step="1" value="7" placeholder="Every X days">
+              <button class="primary-button" type="submit">Save</button>
+            </form>
+
+            <div id="medications-list" class="stack-list"></div>
+          </section>
+
           <section class="card full-height-card" id="cabinet-card">
             <div class="section-heading compact">
               <span class="section-kicker">Peptide Cabinet</span>

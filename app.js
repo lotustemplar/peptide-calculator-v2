@@ -6,6 +6,7 @@ const REMINDER_LOOKAHEAD_MS = 2147483647;
 const STORAGE_KEYS = {
   fills: "peptide-calculator-v2-fills",
   schedules: "peptide-calculator-v2-schedules",
+  medications: "peptide-calculator-v2-medications",
   selectedFill: "peptide-calculator-v2-selected-fill",
   userId: "peptide-calculator-v2-user-id",
   expandedFill: "peptide-calculator-v2-expanded-fill",
@@ -60,6 +61,7 @@ const elements = {
 const state = {
   fills: readStorage(STORAGE_KEYS.fills, []).map(normalizeFill).filter(isValidFill),
   schedules: readStorage(STORAGE_KEYS.schedules, []).map(normalizeSchedule).filter(isValidSchedule),
+  medications: readStorage(STORAGE_KEYS.medications, []),
   selectedFillId: readStorage(STORAGE_KEYS.selectedFill, null),
   expandedFillId: readStorage(STORAGE_KEYS.expandedFill, null),
   theme: readStorage(STORAGE_KEYS.theme, "dark"),
@@ -191,6 +193,24 @@ function bindEvents() {
       }
     });
   }
+
+  const addMedForm = document.getElementById("add-medication-form");
+  if (addMedForm) {
+    addMedForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = document.getElementById("med-name").value.trim();
+      const dose = parseFloat(document.getElementById("med-dose").value);
+      const unit = document.getElementById("med-unit").value;
+      const interval = parseInt(document.getElementById("med-interval").value, 10);
+      if (!name || !dose || dose <= 0) return;
+      const med = { id: crypto.randomUUID(), name, dose, unit, interval: interval || 7 };
+      state.medications.push(med);
+      writeStorage(STORAGE_KEYS.medications, state.medications);
+      addMedForm.reset();
+      document.getElementById("med-unit").value = "mg";
+      renderMedications();
+    });
+  }
 }
 
 function initWizard() {
@@ -223,6 +243,7 @@ function exportData() {
   const backup = {
     version: 1,
     exportedAt: new Date().toISOString(),
+    medications: state.medications,
     fills: state.fills,
     schedules: state.schedules,
   };
@@ -244,9 +265,10 @@ function importData(file) {
       const backup = JSON.parse(event.target.result);
       const fills = Array.isArray(backup.fills) ? backup.fills.map(normalizeFill).filter(isValidFill) : [];
       const schedules = Array.isArray(backup.schedules) ? backup.schedules.map(normalizeSchedule).filter(isValidSchedule) : [];
+      const medications = Array.isArray(backup.medications) ? backup.medications.filter((m) => m && m.id && m.name) : [];
 
-      if (!fills.length && !schedules.length) {
-        window.alert("No valid fills or schedules found in the backup file.");
+      if (!fills.length && !schedules.length && !medications.length) {
+        window.alert("No valid data found in the backup file.");
         return;
       }
 
@@ -254,13 +276,21 @@ function importData(file) {
       const newFills = fills.filter((f) => !existingFillIds.has(f.savedId));
       const existingScheduleIds = new Set(state.schedules.map((s) => s.id));
       const newSchedules = schedules.filter((s) => !existingScheduleIds.has(s.id));
+      const existingMedIds = new Set(state.medications.map((m) => m.id));
+      const newMeds = medications.filter((m) => !existingMedIds.has(m.id));
 
       state.fills.push(...newFills);
       state.schedules.push(...newSchedules);
+      state.medications.push(...newMeds);
       writeStorage(STORAGE_KEYS.fills, state.fills);
       writeStorage(STORAGE_KEYS.schedules, state.schedules);
+      writeStorage(STORAGE_KEYS.medications, state.medications);
       renderAll();
-      window.alert(`Imported ${newFills.length} fill(s) and ${newSchedules.length} schedule(s).`);
+      const parts = [];
+      if (newMeds.length) parts.push(`${newMeds.length} medication(s)`);
+      if (newFills.length) parts.push(`${newFills.length} fill(s)`);
+      if (newSchedules.length) parts.push(`${newSchedules.length} schedule(s)`);
+      window.alert(`Imported: ${parts.join(", ")}.`);
     } catch {
       window.alert("Could not read the backup file. Make sure it is a valid FitGen JSON export.");
     }
@@ -273,9 +303,54 @@ function renderAll() {
   renderSelectedFill();
   renderFillSourceOptions();
   renderCurrentPeptides();
+  renderMedications();
   renderSchedules();
   renderCalendar();
   renderNotificationState();
+}
+
+function renderMedications() {
+  const container = document.getElementById("medications-list");
+  if (!container) return;
+
+  if (!state.medications.length) {
+    container.innerHTML = '<p class="empty-state">No medications saved yet.</p>';
+    return;
+  }
+
+  container.innerHTML = state.medications.map((med) => `
+    <article class="med-card">
+      <div class="med-info">
+        <strong class="med-name">${escapeHtml(med.name)}</strong>
+        <span class="med-meta">${formatNumber(med.dose)} ${escapeHtml(med.unit)} · every ${med.interval} day${med.interval === 1 ? "" : "s"}</span>
+      </div>
+      <div class="med-actions">
+        <button class="mini-button" type="button" data-action="load-med" data-id="${med.id}">Load</button>
+        <button class="mini-button" type="button" data-action="delete-med" data-id="${med.id}">Delete</button>
+      </div>
+    </article>
+  `).join("");
+
+  container.querySelectorAll('[data-action="load-med"]').forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const med = state.medications.find((m) => m.id === btn.dataset.id);
+      if (!med) return;
+      elements.doseUnit.value = med.unit;
+      elements.doseAmount.value = med.dose;
+      updateUnitLabels();
+      renderCalculator();
+      setActiveView("calculator-view");
+      goToWizardStep(1);
+    });
+  });
+
+  container.querySelectorAll('[data-action="delete-med"]').forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.medications = state.medications.filter((m) => m.id !== btn.dataset.id);
+      writeStorage(STORAGE_KEYS.medications, state.medications);
+      renderMedications();
+    });
+  });
 }
 
 function setActiveView(viewId, persist = true) {
