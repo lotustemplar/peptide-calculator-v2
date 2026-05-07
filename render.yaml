@@ -6,9 +6,15 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
+    disk:
+      name: reminders-data
+      mountPath: /app/data
+      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: DATABASE_PATH
+        value: /app/data/reminders.db
       - key: PUBLIC_APP_URL
         value: https://lotustemplar.github.io/peptide-calculator-v2/
       - key: ONESIGNAL_APP_ID
