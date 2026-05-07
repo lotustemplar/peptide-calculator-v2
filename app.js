@@ -239,7 +239,7 @@ function goToWizardStep(step) {
   });
 }
 
-function exportData() {
+async function exportData() {
   const backup = {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -247,15 +247,76 @@ function exportData() {
     fills: state.fills,
     schedules: state.schedules,
   };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `fitgen-backup-${new Date().toISOString().split("T")[0]}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const json = JSON.stringify(backup, null, 2);
+  const filename = `fitgen-backup-${new Date().toISOString().split("T")[0]}.json`;
+
+  // Web Share API — works natively on Android/iOS (share sheet: save to files, email, etc.)
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([json], filename, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "FitGen Backup" });
+        return;
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        // share failed, fall through
+      } else {
+        return; // user cancelled — do nothing
+      }
+    }
+  }
+
+  // Desktop browser download fallback
+  try {
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return;
+  } catch {
+    // fall through
+  }
+
+  // Last resort — show the JSON so the user can copy it manually
+  showExportFallbackModal(json);
+}
+
+function showExportFallbackModal(json) {
+  const existing = document.getElementById("export-fallback-modal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "export-fallback-modal";
+  modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);padding:16px";
+  modal.innerHTML = `
+    <div style="background:var(--surface-strong);border-radius:var(--radius-lg);padding:20px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;max-height:80vh">
+      <h3 style="margin:0;font-family:'Sora',sans-serif">Copy your backup</h3>
+      <p style="margin:0;color:var(--muted);font-size:0.88rem">Select all the text below, copy it, and paste it into a notes app or email to save it.</p>
+      <textarea readonly style="flex:1;min-height:200px;background:var(--surface-muted);border:1px solid var(--line);border-radius:var(--radius-md);padding:10px;color:var(--ink);font-size:0.78rem;font-family:monospace;resize:none">${json}</textarea>
+      <div style="display:flex;gap:10px">
+        <button class="primary-button" id="export-copy-btn" style="flex:1">Copy to Clipboard</button>
+        <button class="secondary-button" id="export-close-btn" style="flex:1">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("export-copy-btn").addEventListener("click", () => {
+    navigator.clipboard.writeText(json).then(() => {
+      document.getElementById("export-copy-btn").textContent = "Copied!";
+    }).catch(() => {
+      modal.querySelector("textarea").select();
+    });
+  });
+
+  document.getElementById("export-close-btn").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
 }
 
 function importData(file) {
