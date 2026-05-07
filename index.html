@@ -51,43 +51,79 @@
                 <p>Choose the vial amount, dose, syringe size, and BAC water ceiling. The app will rank the easiest draw options first.</p>
               </div>
 
-              <form id="calculator-form" class="calculator-form">
-                <label>
-                  <span>Vial unit</span>
-                  <select id="dose-unit" name="doseUnit">
-                    <option value="mg" selected>mg</option>
-                    <option value="IU">IU</option>
-                  </select>
-                </label>
+              <form id="calculator-form" class="wizard-form">
 
-                <label>
-                  <span id="vial-amount-label">Amount in vial (mg)</span>
-                  <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
-                </label>
-
-                <label>
-                  <span id="dose-amount-label">Desired dose (mg)</span>
-                  <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="3">
-                </label>
-
-                <label>
-                  <span>Max syringe size (mL)</span>
-                  <input id="syringe-max" name="syringeMax" type="number" min="0.05" step="0.05" value="1">
-                </label>
-
-                <label>
-                  <span>Maximum bacteriostatic water (mL)</span>
-                  <input id="max-water-ml" name="maxWaterMl" type="number" min="0.5" step="0.05" value="3">
-                </label>
-
-                <div class="form-message" id="water-warning">
-                  Staying at or under 3 mL is usually preferred for vial fit.
+                <!-- Step progress indicator -->
+                <div class="wizard-track" aria-label="Step progress">
+                  <div class="wizard-dot is-active" data-dot="1">1</div>
+                  <div class="wizard-line"></div>
+                  <div class="wizard-dot" data-dot="2">2</div>
+                  <div class="wizard-line"></div>
+                  <div class="wizard-dot" data-dot="3">3</div>
                 </div>
 
-                <div class="form-actions">
-                  <button class="primary-button" type="submit">Generate Options</button>
-                  <button class="secondary-button" type="button" id="reset-form">Reset</button>
+                <!-- Step 1: Vial -->
+                <div class="wizard-pane is-active" id="wizard-pane-1">
+                  <img src="./assets/wizard-step-1.png" class="wizard-img" alt="Vial with amount label">
+                  <h3 class="wizard-step-title">What's in your vial?</h3>
+                  <div class="wizard-fields">
+                    <label>
+                      <span>Vial unit</span>
+                      <select id="dose-unit" name="doseUnit">
+                        <option value="mg" selected>mg</option>
+                        <option value="IU">IU</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span id="vial-amount-label">Amount in vial (mg)</span>
+                      <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
+                    </label>
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="primary-button wizard-next-btn" type="button" data-next="2">Next →</button>
+                  </div>
                 </div>
+
+                <!-- Step 2: Dose -->
+                <div class="wizard-pane" id="wizard-pane-2">
+                  <img src="./assets/wizard-step-2.png" class="wizard-img" alt="Syringe with dosage amount label">
+                  <h3 class="wizard-step-title">What's your desired dose?</h3>
+                  <div class="wizard-fields wizard-fields--single">
+                    <label>
+                      <span id="dose-amount-label">Desired dose (mg)</span>
+                      <input id="dose-mg" name="doseMg" type="number" min="0.01" step="0.01" value="3">
+                    </label>
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="secondary-button wizard-back-btn" type="button" data-back="1">← Back</button>
+                    <button class="primary-button wizard-next-btn" type="button" data-next="3">Next →</button>
+                  </div>
+                </div>
+
+                <!-- Step 3: Syringe & water -->
+                <div class="wizard-pane" id="wizard-pane-3">
+                  <img src="./assets/wizard-step-3.png" class="wizard-img" alt="Syringe with max mL label">
+                  <h3 class="wizard-step-title">Syringe &amp; water setup</h3>
+                  <div class="wizard-fields">
+                    <label>
+                      <span>Max syringe size (mL)</span>
+                      <input id="syringe-max" name="syringeMax" type="number" min="0.05" step="0.05" value="1">
+                    </label>
+                    <label>
+                      <span>Max BAC water (mL)</span>
+                      <input id="max-water-ml" name="maxWaterMl" type="number" min="0.5" step="0.05" value="3">
+                    </label>
+                  </div>
+                  <div class="form-message" id="water-warning">
+                    Staying at or under 3 mL is usually preferred for vial fit.
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="secondary-button wizard-back-btn" type="button" data-back="2">← Back</button>
+                    <button class="primary-button" type="submit">Generate</button>
+                    <button class="secondary-button" type="button" id="reset-form">Reset</button>
+                  </div>
+                </div>
+
               </form>
 
               <div class="selected-fill" id="selected-fill">
@@ -112,6 +148,11 @@
               <span class="section-kicker">Peptide Cabinet</span>
               <h2>Track fills, remaining vial volume, and reorder timing</h2>
               <p>Each fill stores the BAC water setup. Each saved dose plan tells you how much to take and how much to draw.</p>
+            </div>
+            <div class="cabinet-toolbar">
+              <button class="secondary-button" type="button" id="export-data">Export Backup</button>
+              <button class="secondary-button" type="button" id="import-data-btn">Import Backup</button>
+              <input type="file" id="import-data-input" accept=".json" style="display:none" aria-hidden="true">
             </div>
             <div id="current-peptides" class="stack-list"></div>
           </section>
