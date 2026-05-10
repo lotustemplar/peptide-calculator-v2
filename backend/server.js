@@ -10,9 +10,11 @@ const PORT = Number(process.env.PORT || 8787);
 const DATABASE_PATH = process.env.DATABASE_PATH || "./data/reminders.db";
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || "";
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || "";
-const PUBLIC_APP_URL =
-  process.env.PUBLIC_APP_URL || "https://lotustemplar.github.io/peptide-calculator-v2/";
-const POLL_INTERVAL_MS = 10 * 1000;
+const ONESIGNAL_API_BASE = "https://api.onesignal.com";
+
+// Number of future occurrences to pre-schedule with OneSignal.
+// 26 = roughly 6 months of weekly doses, or ~4 weeks of daily doses.
+const MAX_SCHEDULED_OCCURRENCES = 26;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const resolvedDbPath = path.resolve(process.cwd(), DATABASE_PATH);
@@ -22,140 +24,144 @@ const db = new Database(resolvedDbPath);
 db.pragma("journal_mode = WAL");
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS reminders (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    subscription_id TEXT,
-    name TEXT NOT NULL,
-    start_date TEXT NOT NULL,
-    reminder_time TEXT NOT NULL,
-    interval_days INTEGER NOT NULL,
-    peptide_name TEXT NOT NULL,
-    fill_name TEXT NOT NULL,
-    water_ml REAL NOT NULL,
-    dose_mg REAL NOT NULL,
-    dose_ml REAL NOT NULL,
-    vial_mg REAL NOT NULL,
-    next_send_at TEXT NOT NULL,
-    last_sent_at TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+  CREATE TABLE IF NOT EXISTS scheduled_notifications (
+    onesignal_id TEXT PRIMARY KEY,
+    user_id      TEXT NOT NULL,
+    schedule_id  TEXT NOT NULL,
+    send_at      TEXT NOT NULL,
+    created_at   TEXT NOT NULL
   );
 
-  CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id);
-  CREATE INDEX IF NOT EXISTS idx_reminders_next_send_at ON reminders(next_send_at);
+  CREATE INDEX IF NOT EXISTS idx_sn_user_id     ON scheduled_notifications(user_id);
+  CREATE INDEX IF NOT EXISTS idx_sn_schedule_id ON scheduled_notifications(schedule_id);
 `);
-
-try {
-  db.prepare("ALTER TABLE reminders ADD COLUMN subscription_id TEXT").run();
-} catch (error) {
-  if (!String(error.message || "").includes("duplicate column name")) {
-    throw error;
-  }
-}
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/health", (_request, response) => {
-  response.json({
+// ── Health ────────────────────────────────────────────────────────────────────
+app.get("/health", (_req, res) => {
+  res.json({
     ok: true,
     onesignalConfigured: Boolean(ONESIGNAL_APP_ID && ONESIGNAL_API_KEY),
     time: new Date().toISOString(),
   });
 });
 
-app.post("/reminders/sync", (request, response) => {
+// ── Debug: see what's stored for a user ──────────────────────────────────────
+app.get("/debug/:userId", (req, res) => {
+  const rows = db
+    .prepare(
+      "SELECT onesignal_id, schedule_id, send_at FROM scheduled_notifications WHERE user_id = ? ORDER BY send_at"
+    )
+    .all(req.params.userId);
+
+  res.json({
+    ok: true,
+    serverTime: new Date().toISOString(),
+    onesignalConfigured: Boolean(ONESIGNAL_APP_ID && ONESIGNAL_API_KEY),
+    scheduledCount: rows.length,
+    scheduled: rows,
+  });
+});
+
+// ── Sync: cancel old → pre-schedule new occurrences with OneSignal ────────────
+app.post("/reminders/sync", async (req, res) => {
   try {
-    const payload = validateSyncPayload(request.body);
-    const nowIso = new Date().toISOString();
+    const payload = validateSyncPayload(req.body);
 
-    const replaceUserReminders = db.transaction(() => {
-      db.prepare("DELETE FROM reminders WHERE user_id = ?").run(payload.userId);
+    // Cancel every previously scheduled OneSignal notification for this user
+    const existing = db
+      .prepare("SELECT onesignal_id FROM scheduled_notifications WHERE user_id = ?")
+      .all(payload.userId);
 
-      const insertReminder = db.prepare(`
-        INSERT INTO reminders (
-          id,
-          user_id,
-          subscription_id,
-          name,
-          start_date,
-          reminder_time,
-          interval_days,
-          peptide_name,
-          fill_name,
-          water_ml,
-          dose_mg,
-          dose_ml,
-          vial_mg,
-          next_send_at,
-          last_sent_at,
-          created_at,
-          updated_at
-        ) VALUES (
-          @id,
-          @user_id,
-          @subscription_id,
-          @name,
-          @start_date,
-          @reminder_time,
-          @interval_days,
-          @peptide_name,
-          @fill_name,
-          @water_ml,
-          @dose_mg,
-          @dose_ml,
-          @vial_mg,
-          @next_send_at,
-          NULL,
-          @created_at,
-          @updated_at
-        )
-      `);
+    for (const { onesignal_id } of existing) {
+      await cancelOneSignalNotification(onesignal_id).catch(() => {});
+    }
+    db.prepare("DELETE FROM scheduled_notifications WHERE user_id = ?").run(payload.userId);
 
-      for (const schedule of payload.schedules) {
-        const nextSendAt = schedule.nextSendAt
-          ? parseIsoDate(schedule.nextSendAt, "nextSendAt")
-          : computeNextOccurrence(schedule.startDate, schedule.reminderTime, schedule.intervalDays, new Date());
+    if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+      return res.json({ ok: true, note: "OneSignal not configured — notifications skipped" });
+    }
 
-        insertReminder.run({
-          id: schedule.id,
-          user_id: payload.userId,
-          subscription_id: schedule.subscriptionId || payload.subscriptionId || null,
-          name: schedule.name,
-          start_date: schedule.startDate,
-          reminder_time: schedule.reminderTime,
-          interval_days: schedule.intervalDays,
-          peptide_name: schedule.fill.peptideName,
-          fill_name: schedule.fill.fillName,
-          water_ml: schedule.fill.waterMl,
-          dose_mg: schedule.fill.doseMg,
-          dose_ml: schedule.fill.doseMl,
-          vial_mg: schedule.fill.vialMg,
-          next_send_at: nextSendAt.toISOString(),
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
+    const now = new Date();
+    const nowIso = now.toISOString();
+    let scheduled = 0;
+
+    for (const schedule of payload.schedules) {
+      const occurrences = computeNextOccurrences(
+        schedule.startDate,
+        schedule.reminderTime,
+        schedule.intervalDays,
+        now,
+        MAX_SCHEDULED_OCCURRENCES
+      );
+
+      for (const sendAt of occurrences) {
+        try {
+          const notifId = await createOneSignalNotification({
+            subscriptionId: schedule.subscriptionId || payload.subscriptionId,
+            externalId: payload.userId,
+            title: `${schedule.fill.peptideName} Reminder`,
+            message:
+              `Time for ${formatNumber(schedule.fill.doseMg)} ${schedule.fill.unitLabel || "mg"} — ` +
+              `draw ${formatDrawNumber(schedule.fill.doseMl)} mL from the constituted vial.`,
+            sendAt,
+          });
+
+          db.prepare(
+            "INSERT INTO scheduled_notifications (onesignal_id, user_id, schedule_id, send_at, created_at) VALUES (?, ?, ?, ?, ?)"
+          ).run(notifId, payload.userId, schedule.id, sendAt.toISOString(), nowIso);
+
+          scheduled++;
+        } catch (err) {
+          console.error("Failed to schedule occurrence:", err.message);
+        }
       }
-    });
+    }
 
-    replaceUserReminders();
-    dispatchDueReminders().catch((error) => {
-      console.error("Immediate reminder dispatch failed", error);
-    });
+    console.log(
+      `[sync] userId=${payload.userId} schedules=${payload.schedules.length} notificationsScheduled=${scheduled}`
+    );
 
-    response.json({
+    res.json({
       ok: true,
-      syncedSchedules: payload.schedules.length,
+      scheduledCount: scheduled,
       userId: payload.userId,
-      subscriptionId: payload.subscriptionId || null,
     });
-  } catch (error) {
-    response.status(400).json({
-      ok: false,
-      error: error.message || "Invalid payload",
+  } catch (err) {
+    console.error("[sync] error:", err.message);
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ── Test push: fire a push RIGHT NOW for debugging ────────────────────────────
+app.post("/test-push", async (req, res) => {
+  try {
+    const { subscriptionId, externalId, title, message } = req.body || {};
+
+    if (!subscriptionId && !externalId) {
+      return res.status(400).json({ ok: false, error: "subscriptionId or externalId required" });
+    }
+
+    if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+      return res.status(503).json({ ok: false, error: "OneSignal not configured on this server" });
+    }
+
+    const notifId = await createOneSignalNotification({
+      subscriptionId,
+      externalId,
+      title: title || "FitGen Test Push",
+      message: message || "If you see this, push notifications are working!",
+      sendAt: null, // send immediately
     });
+
+    console.log(`[test-push] sent ${notifId} → ${subscriptionId || externalId}`);
+    res.json({ ok: true, notificationId: notifId });
+  } catch (err) {
+    console.error("[test-push] error:", err.message);
+    res.status(502).json({ ok: false, error: err.message });
   }
 });
 
@@ -163,82 +169,29 @@ app.listen(PORT, () => {
   console.log(`Peptide Calculator backend listening on port ${PORT}`);
 });
 
-setInterval(() => {
-  dispatchDueReminders().catch((error) => {
-    console.error("Reminder dispatch failed", error);
-  });
-}, POLL_INTERVAL_MS);
-
-dispatchDueReminders().catch((error) => {
-  console.error("Initial reminder dispatch failed", error);
-});
-
-async function dispatchDueReminders() {
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
-    return;
-  }
-
-  const dueReminders = db
-    .prepare(
-      `
-        SELECT *
-        FROM reminders
-        WHERE next_send_at <= ?
-        ORDER BY next_send_at ASC
-      `
-    )
-    .all(new Date().toISOString());
-
-  for (const reminder of dueReminders) {
-    await sendOneSignalNotification(reminder);
-
-    const firedAt = new Date();
-    const nextSendAt = computeFollowingOccurrence(reminder.next_send_at, reminder.interval_days, firedAt);
-
-    db.prepare(
-      `
-        UPDATE reminders
-        SET last_sent_at = ?,
-            next_send_at = ?,
-            updated_at = ?
-        WHERE id = ?
-      `
-    ).run(firedAt.toISOString(), nextSendAt.toISOString(), firedAt.toISOString(), reminder.id);
-  }
-}
-
-async function sendOneSignalNotification(reminder) {
-  const title = `${reminder.peptide_name} Reminder`;
-  const contents =
-    `${reminder.fill_name}: take ${formatNumber(reminder.dose_mg)} mg and ` +
-    `draw ${formatDrawNumber(reminder.dose_ml)} mL from the constituted vial.`;
-
+// ── OneSignal helpers ─────────────────────────────────────────────────────────
+async function createOneSignalNotification({ subscriptionId, externalId, title, message, sendAt }) {
   const payload = {
     app_id: ONESIGNAL_APP_ID,
     target_channel: "push",
-    headings: {
-      en: title,
-    },
-    contents: {
-      en: contents,
-    },
-    data: {
-      reminderId: reminder.id,
-      peptideName: reminder.peptide_name,
-      fillName: reminder.fill_name,
-      targetUrl: `${PUBLIC_APP_URL}?openReminder=${encodeURIComponent(reminder.id)}#calendar-card`,
-    },
+    headings: { en: title },
+    contents: { en: message },
   };
 
-  if (reminder.subscription_id) {
-    payload.include_subscription_ids = [reminder.subscription_id];
-  } else {
-    payload.include_aliases = {
-      external_id: [reminder.user_id],
-    };
+  if (sendAt) {
+    payload.send_after = sendAt.toISOString();
   }
 
-  const result = await fetch("https://api.onesignal.com/notifications", {
+  if (subscriptionId) {
+    payload.include_subscription_ids = [subscriptionId];
+  } else if (externalId) {
+    payload.include_aliases = { external_id: [externalId] };
+    payload.target_channel = "push";
+  } else {
+    throw new Error("No targeting info provided");
+  }
+
+  const res = await fetch(`${ONESIGNAL_API_BASE}/notifications`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -247,112 +200,112 @@ async function sendOneSignalNotification(reminder) {
     body: JSON.stringify(payload),
   });
 
-  if (!result.ok) {
-    const body = await result.text();
-    throw new Error(`OneSignal request failed: ${result.status} ${body}`);
+  const data = await res.json();
+
+  if (!res.ok || data.errors) {
+    throw new Error(JSON.stringify(data.errors || data));
+  }
+
+  return data.id;
+}
+
+async function cancelOneSignalNotification(notifId) {
+  const res = await fetch(
+    `${ONESIGNAL_API_BASE}/notifications/${notifId}?app_id=${encodeURIComponent(ONESIGNAL_APP_ID)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Key ${ONESIGNAL_API_KEY}` },
+    }
+  );
+
+  // 404 = already delivered, that's fine
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text();
+    throw new Error(`Cancel failed ${res.status}: ${text}`);
   }
 }
 
-function computeNextOccurrence(startDate, reminderTime, intervalDays, fromDate) {
-  const start = combineDateAndTime(startDate, reminderTime);
-  if (start > fromDate) {
-    return start;
-  }
+// ── Schedule math ─────────────────────────────────────────────────────────────
+function computeNextOccurrences(startDate, reminderTime, intervalDays, fromDate, count) {
+  // Parse start as LOCAL time on the client — the ISO string already encodes UTC offset
+  // because the client sent nextSendAt in ISO format. Fall back to manual parse if needed.
+  const start = parseDateTimeAsUTC(startDate, reminderTime);
+  if (!start) return [];
 
-  const intervalMs = Number(intervalDays) * DAY_MS;
-  const elapsed = fromDate.getTime() - start.getTime();
-  const steps = Math.floor(elapsed / intervalMs) + 1;
-  return new Date(start.getTime() + steps * intervalMs);
-}
-
-function computeFollowingOccurrence(previousDueAtIso, intervalDays, fromDate) {
   const intervalMs = Math.max(1, Number(intervalDays) || 1) * DAY_MS;
-  const parsedDueAt = parseIsoDate(previousDueAtIso, "next_send_at");
-  let nextDueAt = new Date(parsedDueAt.getTime() + intervalMs);
+  const occurrences = [];
 
-  while (nextDueAt <= fromDate) {
-    nextDueAt = new Date(nextDueAt.getTime() + intervalMs);
+  // Find the first occurrence strictly after fromDate
+  let next = new Date(start.getTime());
+  while (next <= fromDate) {
+    next = new Date(next.getTime() + intervalMs);
   }
 
-  return nextDueAt;
-}
-
-function combineDateAndTime(dateString, timeString) {
-  const combined = new Date(`${dateString}T${timeString}:00`);
-  if (Number.isNaN(combined.getTime())) {
-    throw new Error(`Invalid reminder date or time: ${dateString} ${timeString}`);
+  while (occurrences.length < count) {
+    occurrences.push(new Date(next.getTime()));
+    next = new Date(next.getTime() + intervalMs);
   }
-  return combined;
+
+  return occurrences;
 }
 
-function parseIsoDate(value, label) {
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    throw new Error(`Invalid ${label}: ${value}`);
+// Treat the date+time string as UTC (since that's how JS clients encode local times
+// when they use new Date(year, month-1, day, h, m).toISOString())
+// Actually: the client sends nextSendAt as a proper ISO string already.
+// startDate/reminderTime are only used as fallback when nextSendAt is missing.
+// For safety, append 'Z' only if no timezone is present.
+function parseDateTimeAsUTC(dateString, timeString) {
+  try {
+    // Try ISO first
+    const iso = `${dateString}T${timeString || "09:00"}:00Z`;
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
   }
-  return parsedDate;
 }
 
+// ── Payload validation ────────────────────────────────────────────────────────
 function validateSyncPayload(body) {
-  if (!body || typeof body !== "object") {
-    throw new Error("Payload must be an object.");
-  }
-
-  if (!body.userId || typeof body.userId !== "string") {
-    throw new Error("userId is required.");
-  }
-
-  if (!Array.isArray(body.schedules)) {
-    throw new Error("schedules must be an array.");
-  }
+  if (!body || typeof body !== "object") throw new Error("Payload must be an object.");
+  if (!body.userId || typeof body.userId !== "string") throw new Error("userId is required.");
+  if (!Array.isArray(body.schedules)) throw new Error("schedules must be an array.");
 
   return {
     userId: body.userId,
     subscriptionId: body.subscriptionId ? String(body.subscriptionId) : null,
-    schedules: body.schedules.map(validateSchedule),
+    schedules: body.schedules.map((s) => {
+      if (!s || !s.id || !s.startDate || !s.reminderTime) {
+        throw new Error("Schedule missing required fields.");
+      }
+      if (!s.fill || typeof s.fill !== "object") throw new Error("Schedule fill is required.");
+      return {
+        id: String(s.id),
+        name: String(s.name || "Reminder"),
+        startDate: String(s.startDate),
+        reminderTime: String(s.reminderTime),
+        intervalDays: Number(s.intervalDays) || 7,
+        subscriptionId: s.subscriptionId ? String(s.subscriptionId) : null,
+        fill: {
+          peptideName: String(s.fill.peptideName || "Peptide"),
+          fillName: String(s.fill.fillName || "Fill"),
+          waterMl: Number(s.fill.waterMl) || 0,
+          doseMg: Number(s.fill.doseMg) || 0,
+          doseMl: Number(s.fill.doseMl) || 0,
+          vialMg: Number(s.fill.vialMg) || 0,
+          unitLabel: String(s.fill.unitLabel || "mg"),
+        },
+      };
+    }),
   };
 }
 
-function validateSchedule(schedule) {
-  if (!schedule || typeof schedule !== "object") {
-    throw new Error("Each schedule must be an object.");
-  }
-
-  if (!schedule.id || !schedule.name || !schedule.startDate || !schedule.reminderTime) {
-    throw new Error("Schedule is missing required fields.");
-  }
-
-  if (!schedule.fill || typeof schedule.fill !== "object") {
-    throw new Error("Schedule fill is required.");
-  }
-
-  return {
-    id: String(schedule.id),
-    name: String(schedule.name),
-    startDate: String(schedule.startDate),
-    reminderTime: String(schedule.reminderTime),
-    intervalDays: Number(schedule.intervalDays),
-    nextSendAt: schedule.nextSendAt ? String(schedule.nextSendAt) : null,
-    subscriptionId: schedule.subscriptionId ? String(schedule.subscriptionId) : null,
-    fill: {
-      peptideName: String(schedule.fill.peptideName || "Unnamed Peptide"),
-      fillName: String(schedule.fill.fillName || "Peptide Fill"),
-      waterMl: Number(schedule.fill.waterMl),
-      doseMg: Number(schedule.fill.doseMg),
-      doseMl: Number(schedule.fill.doseMl),
-      vialMg: Number(schedule.fill.vialMg),
-    },
-  };
+function formatNumber(v) {
+  return Number(v).toFixed(2).replace(/\.00$/, "");
 }
 
-function formatNumber(value) {
-  return Number(value).toFixed(2).replace(/\.00$/, "");
-}
-
-function formatDrawNumber(value) {
-  if (value >= 1) {
-    return Number(value).toFixed(2).replace(/\.00$/, "");
-  }
-
-  return Number(value).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+function formatDrawNumber(v) {
+  return v >= 1
+    ? Number(v).toFixed(2).replace(/\.00$/, "")
+    : Number(v).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
 }

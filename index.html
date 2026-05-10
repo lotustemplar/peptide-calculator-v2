@@ -199,6 +199,26 @@
               </p>
             </div>
 
+            <div class="push-debug-card" id="push-debug-card">
+              <div class="push-debug-row">
+                <span class="push-debug-label">Subscription ID</span>
+                <span class="push-debug-value" id="push-debug-subid">—</span>
+              </div>
+              <div class="push-debug-row">
+                <span class="push-debug-label">Scheduled reminders</span>
+                <span class="push-debug-value" id="push-debug-count">—</span>
+              </div>
+              <div class="push-debug-row">
+                <span class="push-debug-label">Last sync</span>
+                <span class="push-debug-value" id="push-debug-sync">—</span>
+              </div>
+              <div class="push-debug-actions">
+                <button type="button" class="secondary-button" id="push-sync-now">Sync Now</button>
+                <button type="button" class="secondary-button" id="push-test-btn">Send Test Push</button>
+              </div>
+              <p class="push-debug-result" id="push-debug-result"></p>
+            </div>
+
             <div class="schedule-form-hidden" aria-hidden="true">
               <form id="dosage-form" class="reminder-form">
                 <label>

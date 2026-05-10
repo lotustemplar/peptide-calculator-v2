@@ -95,6 +95,7 @@ function initialize() {
   renderAll();
   maybeRegisterNativePushIdentity();
   queueNextReminder();
+  setTimeout(() => updatePushDebugPanel(), 3000);
 }
 
 function bindEvents() {
@@ -211,6 +212,98 @@ function bindEvents() {
       document.getElementById("med-unit").value = "mg";
       renderMedications();
     });
+  }
+
+  const syncNowBtn = document.getElementById("push-sync-now");
+  if (syncNowBtn) {
+    syncNowBtn.addEventListener("click", async () => {
+      setDebugResult("Syncing…");
+      await syncRemindersToBackend();
+      await updatePushDebugPanel();
+      setDebugResult("Sync complete.");
+    });
+  }
+
+  const testPushBtn = document.getElementById("push-test-btn");
+  if (testPushBtn) {
+    testPushBtn.addEventListener("click", sendTestPush);
+  }
+}
+
+function getActiveSubscriptionId() {
+  const info = window.__fitgenOneSignalInfo;
+  if (!info || typeof info !== "object") return null;
+  if (info.subscription) {
+    return info.subscription.id || info.subscription.subscriptionId || null;
+  }
+  return info.oneSignalUserId || info.subscriptionId || null;
+}
+
+async function updatePushDebugPanel() {
+  const subIdEl = document.getElementById("push-debug-subid");
+  const countEl = document.getElementById("push-debug-count");
+  const syncEl = document.getElementById("push-debug-sync");
+  if (!subIdEl) return;
+
+  const subId = getActiveSubscriptionId();
+  subIdEl.textContent = subId ? subId.slice(0, 12) + "…" : "Not captured yet";
+  subIdEl.style.color = subId ? "var(--teal)" : "var(--rose)";
+
+  if (!APP_CONFIG.backendBaseUrl) {
+    countEl.textContent = "No backend configured";
+    return;
+  }
+
+  try {
+    const prefix = APP_CONFIG.onesignalExternalIdPrefix || "peptide-calculator-v2";
+    const userId = `${prefix}-${state.userId}`;
+    const res = await fetch(`${APP_CONFIG.backendBaseUrl.replace(/\/$/, "")}/debug/${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    countEl.textContent = data.scheduledCount != null ? String(data.scheduledCount) : "—";
+    syncEl.textContent = new Date().toLocaleTimeString();
+  } catch {
+    countEl.textContent = "Backend unreachable";
+  }
+}
+
+function setDebugResult(text, isError = false) {
+  const el = document.getElementById("push-debug-result");
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? "var(--rose)" : "var(--teal)";
+}
+
+async function sendTestPush() {
+  if (!APP_CONFIG.backendBaseUrl) {
+    setDebugResult("No backend configured.", true);
+    return;
+  }
+
+  setDebugResult("Sending test push…");
+
+  const subId = getActiveSubscriptionId();
+  const prefix = APP_CONFIG.onesignalExternalIdPrefix || "peptide-calculator-v2";
+  const externalId = `${prefix}-${state.userId}`;
+
+  try {
+    const res = await fetch(`${APP_CONFIG.backendBaseUrl.replace(/\/$/, "")}/test-push`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subscriptionId: subId || null,
+        externalId,
+        title: "FitGen Test",
+        message: "Push notifications are working!",
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setDebugResult("Test push sent! Check your notifications.");
+    } else {
+      setDebugResult(`Backend error: ${data.error}`, true);
+    }
+  } catch (err) {
+    setDebugResult(`Request failed: ${err.message}`, true);
   }
 }
 

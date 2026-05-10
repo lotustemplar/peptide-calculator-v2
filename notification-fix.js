@@ -183,6 +183,7 @@
               doseMg: schedule.doseAmount,
               doseMl: schedule.doseMl,
               vialMg: fill.vialAmount,
+              unitLabel: fill.unitLabel || "mg",
             },
           };
         })
@@ -351,6 +352,9 @@
     await ensureNativeIdentity();
     await loadNativeOneSignalInfo();
     renderNotificationStateOverride(messageOverride);
+    if (typeof updatePushDebugPanel === "function") {
+      updatePushDebugPanel();
+    }
   }
 
   async function requestNotificationOverride(event) {
