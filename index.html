@@ -151,8 +151,10 @@
               <p>Store your peptide prescriptions here. Hit Load to pre-fill the calculator instantly. Export backs these up too.</p>
             </div>
 
+            <datalist id="peptide-suggestions"></datalist>
+
             <form id="add-medication-form" class="med-form">
-              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" required>
+              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" autocomplete="off" list="peptide-suggestions" required>
               <input id="med-dose" name="medDose" type="number" min="0.01" step="0.01" placeholder="Dose" required>
               <select id="med-unit" name="medUnit">
                 <option value="mg" selected>mg</option>
@@ -299,6 +301,7 @@
 
     <script src="./config.example.js"></script>
     <script src="./config.js"></script>
+    <script src="./peptide-list.js"></script>
     <script src="./app.js"></script>
     <script src="./runtime-fixes.js"></script>
     <script src="./notification-fix.js"></script>

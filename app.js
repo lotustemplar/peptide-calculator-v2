@@ -90,6 +90,7 @@ function initialize() {
   updateUnitLabels();
   updateWaterWarning();
   initWizard();
+  populatePeptideList();
   bindEvents();
   renderAll();
   maybeRegisterNativePushIdentity();
@@ -211,6 +212,13 @@ function bindEvents() {
       renderMedications();
     });
   }
+}
+
+function populatePeptideList() {
+  const datalist = document.getElementById("peptide-suggestions");
+  if (!datalist) return;
+  const list = (window.PEPTIDE_LIST || []).slice().sort((a, b) => a.localeCompare(b));
+  datalist.innerHTML = list.map((name) => `<option value="${escapeHtml(name)}">`).join("");
 }
 
 function initWizard() {
