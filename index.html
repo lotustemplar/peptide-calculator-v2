@@ -144,11 +144,41 @@
 
         <section class="app-view" id="cabinet-view" data-view="cabinet-view">
 
+          <!-- Backup & Restore ───────────────────────────── -->
+          <section class="card backup-card" id="backup-card">
+            <div class="backup-header">
+              <div>
+                <span class="section-kicker">Backup &amp; Restore</span>
+                <h2>Save everything before you uninstall</h2>
+                <p class="backup-desc">One file holds your medications, fills, and schedules. Export it now, import it any time to get back exactly where you were.</p>
+              </div>
+            </div>
+            <div class="backup-actions">
+              <button class="primary-button backup-btn" type="button" id="export-data">
+                <span class="backup-btn-icon">⬇</span>
+                <span>
+                  <strong>Export Backup</strong>
+                  <small>Downloads medications · fills · schedules</small>
+                </span>
+              </button>
+              <button class="secondary-button backup-btn" type="button" id="import-data-btn">
+                <span class="backup-btn-icon">⬆</span>
+                <span>
+                  <strong>Import Backup</strong>
+                  <small>Restore from a saved .json file</small>
+                </span>
+              </button>
+              <input type="file" id="import-data-input" accept=".json" style="display:none" aria-hidden="true">
+            </div>
+            <p class="backup-tip" id="backup-status"></p>
+          </section>
+
+          <!-- My Medications ─────────────────────────────── -->
           <section class="card" id="medications-card">
             <div class="section-heading compact">
               <span class="section-kicker">My Medications</span>
               <h2>Saved prescriptions</h2>
-              <p>Store your peptide prescriptions here. Hit Load to pre-fill the calculator instantly. Export backs these up too.</p>
+              <p>Store your peptide prescriptions here. Hit Load to pre-fill the calculator instantly.</p>
             </div>
 
             <datalist id="peptide-suggestions"></datalist>
@@ -167,57 +197,64 @@
             <div id="medications-list" class="stack-list"></div>
           </section>
 
+          <!-- Peptide Cabinet ─────────────────────────────── -->
           <section class="card full-height-card" id="cabinet-card">
             <div class="section-heading compact">
               <span class="section-kicker">Peptide Cabinet</span>
               <h2>Track fills, remaining vial volume, and reorder timing</h2>
               <p>Each fill stores the BAC water setup. Each saved dose plan tells you how much to take and how much to draw.</p>
             </div>
-            <div class="cabinet-toolbar">
-              <button class="secondary-button" type="button" id="export-data">Export Backup</button>
-              <button class="secondary-button" type="button" id="import-data-btn">Import Backup</button>
-              <input type="file" id="import-data-input" accept=".json" style="display:none" aria-hidden="true">
-            </div>
             <div id="current-peptides" class="stack-list"></div>
           </section>
         </section>
 
         <section class="app-view" id="schedule-view" data-view="schedule-view">
+
+          <!-- Notification Setup Card -->
+          <section class="card notif-setup-card" id="notif-setup-card">
+            <span class="section-kicker">Reminders</span>
+            <h2 class="notif-setup-title">Set up phone notifications</h2>
+            <p class="notif-setup-sub">Three steps — takes 30 seconds. Once done your phone reminds you automatically.</p>
+
+            <ol class="notif-steps">
+              <li class="notif-step" id="notif-step-1">
+                <div class="notif-step-num">1</div>
+                <div class="notif-step-body">
+                  <strong>Allow notifications on your phone</strong>
+                  <p>Tap the button below. Your phone will show a system prompt — tap <em>Allow</em>.</p>
+                  <button type="button" class="primary-button" id="enable-notifications">Allow Notifications</button>
+                  <p class="notif-step-status" id="notif-permission-status"></p>
+                </div>
+              </li>
+
+              <li class="notif-step" id="notif-step-2">
+                <div class="notif-step-num">2</div>
+                <div class="notif-step-body">
+                  <strong>Register this device</strong>
+                  <p>We link your phone’s push token so reminders reach <em>this</em> device.</p>
+                  <p class="notif-step-status" id="notif-device-status">Waiting for permission…</p>
+                </div>
+              </li>
+
+              <li class="notif-step" id="notif-step-3">
+                <div class="notif-step-num">3</div>
+                <div class="notif-step-body">
+                  <strong>Schedule your reminders</strong>
+                  <p>We push your dose times to our server so your phone alerts you even when the app is closed.</p>
+                  <p class="notif-step-status" id="notif-schedule-status">Waiting…</p>
+                  <div class="notif-step-actions">
+                    <button type="button" class="secondary-button" id="push-sync-now">Sync Now</button>
+                    <button type="button" class="secondary-button" id="push-test-btn">Send Test Push</button>
+                  </div>
+                </div>
+              </li>
+            </ol>
+
+            <!-- hidden wiring, kept for notification-fix.js compatibility -->
+            <p id="notification-status" style="display:none"></p>
+          </section>
+
           <section class="card full-height-card" id="dosage-card">
-            <div class="section-heading compact">
-              <span class="section-kicker">Today's Schedule</span>
-              <h2>See today’s doses and mark them as taken</h2>
-              <p>This screen is your daily checklist. Notifications and due doses live here so the flow stays simple.</p>
-            </div>
-
-            <div class="notice-row">
-              <button type="button" class="secondary-button" id="enable-notifications">
-                Enable Notifications
-              </button>
-              <p id="notification-status" class="notice-text">
-                Turn on alerts so the app can remind you when today’s peptides are due.
-              </p>
-            </div>
-
-            <div class="push-debug-card" id="push-debug-card">
-              <div class="push-debug-row">
-                <span class="push-debug-label">Subscription ID</span>
-                <span class="push-debug-value" id="push-debug-subid">—</span>
-              </div>
-              <div class="push-debug-row">
-                <span class="push-debug-label">Scheduled reminders</span>
-                <span class="push-debug-value" id="push-debug-count">—</span>
-              </div>
-              <div class="push-debug-row">
-                <span class="push-debug-label">Last sync</span>
-                <span class="push-debug-value" id="push-debug-sync">—</span>
-              </div>
-              <div class="push-debug-actions">
-                <button type="button" class="secondary-button" id="push-sync-now">Sync Now</button>
-                <button type="button" class="secondary-button" id="push-test-btn">Send Test Push</button>
-              </div>
-              <p class="push-debug-result" id="push-debug-result"></p>
-            </div>
 
             <div class="schedule-form-hidden" aria-hidden="true">
               <form id="dosage-form" class="reminder-form">

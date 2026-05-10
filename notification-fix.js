@@ -352,8 +352,8 @@
     await ensureNativeIdentity();
     await loadNativeOneSignalInfo();
     renderNotificationStateOverride(messageOverride);
-    if (typeof updatePushDebugPanel === "function") {
-      updatePushDebugPanel();
+    if (typeof updateNotifSetupCard === "function") {
+      updateNotifSetupCard();
     }
   }
 
