@@ -11,6 +11,7 @@ const DATABASE_PATH = process.env.DATABASE_PATH || "./data/reminders.db";
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || "";
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || "";
 const ONESIGNAL_API_BASE = "https://api.onesignal.com";
+const ONESIGNAL_AUTH_HEADER = `key ${ONESIGNAL_API_KEY}`;
 
 // Number of future occurrences to pre-schedule with OneSignal.
 // 26 = roughly 6 months of weekly doses, or ~4 weeks of daily doses.
@@ -195,7 +196,7 @@ async function createOneSignalNotification({ subscriptionId, externalId, title, 
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Key ${ONESIGNAL_API_KEY}`,
+      Authorization: ONESIGNAL_AUTH_HEADER,
     },
     body: JSON.stringify(payload),
   });
@@ -214,7 +215,7 @@ async function cancelOneSignalNotification(notifId) {
     `${ONESIGNAL_API_BASE}/notifications/${notifId}?app_id=${encodeURIComponent(ONESIGNAL_APP_ID)}`,
     {
       method: "DELETE",
-      headers: { Authorization: `Key ${ONESIGNAL_API_KEY}` },
+      headers: { Authorization: ONESIGNAL_AUTH_HEADER },
     }
   );
 
