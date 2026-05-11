@@ -41,7 +41,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-// ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
@@ -50,7 +49,6 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// ── Debug: see what's stored for a user ──────────────────────────────────────
 app.get("/debug/:userId", (req, res) => {
   const rows = db
     .prepare(
@@ -67,12 +65,10 @@ app.get("/debug/:userId", (req, res) => {
   });
 });
 
-// ── Sync: cancel old → pre-schedule new occurrences with OneSignal ────────────
 app.post("/reminders/sync", async (req, res) => {
   try {
     const payload = validateSyncPayload(req.body);
 
-    // Cancel every previously scheduled OneSignal notification for this user
     const existing = db
       .prepare("SELECT onesignal_id FROM scheduled_notifications WHERE user_id = ?")
       .all(payload.userId);
@@ -91,13 +87,15 @@ app.post("/reminders/sync", async (req, res) => {
     let scheduled = 0;
 
     for (const schedule of payload.schedules) {
-      const occurrences = computeNextOccurrences(
-        schedule.startDate,
-        schedule.reminderTime,
-        schedule.intervalDays,
-        now,
-        MAX_SCHEDULED_OCCURRENCES
-      );
+      const occurrences = schedule.nextSendAt
+        ? computeOccurrencesFromSeed(schedule.nextSendAt, schedule.intervalDays, now, MAX_SCHEDULED_OCCURRENCES)
+        : computeNextOccurrences(
+            schedule.startDate,
+            schedule.reminderTime,
+            schedule.intervalDays,
+            now,
+            MAX_SCHEDULED_OCCURRENCES
+          );
 
       for (const sendAt of occurrences) {
         try {
@@ -115,7 +113,7 @@ app.post("/reminders/sync", async (req, res) => {
             "INSERT INTO scheduled_notifications (onesignal_id, user_id, schedule_id, send_at, created_at) VALUES (?, ?, ?, ?, ?)"
           ).run(notifId, payload.userId, schedule.id, sendAt.toISOString(), nowIso);
 
-          scheduled++;
+          scheduled += 1;
         } catch (err) {
           console.error("Failed to schedule occurrence:", err.message);
         }
@@ -137,7 +135,6 @@ app.post("/reminders/sync", async (req, res) => {
   }
 });
 
-// ── Test push: fire a push RIGHT NOW for debugging ────────────────────────────
 app.post("/test-push", async (req, res) => {
   try {
     const { subscriptionId, externalId, title, message } = req.body || {};
@@ -155,7 +152,7 @@ app.post("/test-push", async (req, res) => {
       externalId,
       title: title || "FitGen Test Push",
       message: message || "If you see this, push notifications are working!",
-      sendAt: null, // send immediately
+      sendAt: null,
     });
 
     console.log(`[test-push] sent ${notifId} → ${subscriptionId || externalId}`);
@@ -170,7 +167,6 @@ app.listen(PORT, () => {
   console.log(`Peptide Calculator backend listening on port ${PORT}`);
 });
 
-// ── OneSignal helpers ─────────────────────────────────────────────────────────
 async function createOneSignalNotification({ subscriptionId, externalId, title, message, sendAt }) {
   const payload = {
     app_id: ONESIGNAL_APP_ID,
@@ -219,25 +215,22 @@ async function cancelOneSignalNotification(notifId) {
     }
   );
 
-  // 404 = already delivered, that's fine
   if (!res.ok && res.status !== 404) {
     const text = await res.text();
     throw new Error(`Cancel failed ${res.status}: ${text}`);
   }
 }
 
-// ── Schedule math ─────────────────────────────────────────────────────────────
-function computeNextOccurrences(startDate, reminderTime, intervalDays, fromDate, count) {
-  // Parse start as LOCAL time on the client — the ISO string already encodes UTC offset
-  // because the client sent nextSendAt in ISO format. Fall back to manual parse if needed.
-  const start = parseDateTimeAsUTC(startDate, reminderTime);
-  if (!start) return [];
+function computeOccurrencesFromSeed(nextSendAtIso, intervalDays, fromDate, count) {
+  const seed = new Date(nextSendAtIso);
+  if (Number.isNaN(seed.getTime())) {
+    return [];
+  }
 
   const intervalMs = Math.max(1, Number(intervalDays) || 1) * DAY_MS;
   const occurrences = [];
+  let next = new Date(seed.getTime());
 
-  // Find the first occurrence strictly after fromDate
-  let next = new Date(start.getTime());
   while (next <= fromDate) {
     next = new Date(next.getTime() + intervalMs);
   }
@@ -250,14 +243,28 @@ function computeNextOccurrences(startDate, reminderTime, intervalDays, fromDate,
   return occurrences;
 }
 
-// Treat the date+time string as UTC (since that's how JS clients encode local times
-// when they use new Date(year, month-1, day, h, m).toISOString())
-// Actually: the client sends nextSendAt as a proper ISO string already.
-// startDate/reminderTime are only used as fallback when nextSendAt is missing.
-// For safety, append 'Z' only if no timezone is present.
+function computeNextOccurrences(startDate, reminderTime, intervalDays, fromDate, count) {
+  const start = parseDateTimeAsUTC(startDate, reminderTime);
+  if (!start) return [];
+
+  const intervalMs = Math.max(1, Number(intervalDays) || 1) * DAY_MS;
+  const occurrences = [];
+  let next = new Date(start.getTime());
+
+  while (next <= fromDate) {
+    next = new Date(next.getTime() + intervalMs);
+  }
+
+  while (occurrences.length < count) {
+    occurrences.push(new Date(next.getTime()));
+    next = new Date(next.getTime() + intervalMs);
+  }
+
+  return occurrences;
+}
+
 function parseDateTimeAsUTC(dateString, timeString) {
   try {
-    // Try ISO first
     const iso = `${dateString}T${timeString || "09:00"}:00Z`;
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -266,7 +273,6 @@ function parseDateTimeAsUTC(dateString, timeString) {
   }
 }
 
-// ── Payload validation ────────────────────────────────────────────────────────
 function validateSyncPayload(body) {
   if (!body || typeof body !== "object") throw new Error("Payload must be an object.");
   if (!body.userId || typeof body.userId !== "string") throw new Error("userId is required.");
@@ -286,6 +292,7 @@ function validateSyncPayload(body) {
         startDate: String(s.startDate),
         reminderTime: String(s.reminderTime),
         intervalDays: Number(s.intervalDays) || 7,
+        nextSendAt: s.nextSendAt ? String(s.nextSendAt) : null,
         subscriptionId: s.subscriptionId ? String(s.subscriptionId) : null,
         fill: {
           peptideName: String(s.fill.peptideName || "Peptide"),
