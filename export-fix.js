@@ -70,19 +70,7 @@
     await navigator.share({
       files: [file],
       title: "FitGen Backup",
-      text: "FitGen Peptide Calculator backup",
-    });
-    return true;
-  }
-
-  async function tryShareText(json) {
-    if (!navigator.share) {
-      return false;
-    }
-
-    await navigator.share({
-      title: "FitGen Backup",
-      text: json,
+      text: "Save this backup JSON file so you can import it later.",
     });
     return true;
   }
@@ -96,7 +84,7 @@
       suggestedName: filename,
       types: [
         {
-          description: "JSON backup",
+          description: "FitGen backup JSON",
           accept: { "application/json": [".json"] },
         },
       ],
@@ -141,12 +129,12 @@
 
     modal.innerHTML = `
       <div style="width:min(760px,100%);max-height:90vh;overflow:auto;background:#0f1d2b;color:#eef5fb;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:20px;box-shadow:0 24px 56px rgba(0,0,0,0.28)">
-        <h3 style="margin:0 0 8px;font-family:Sora,sans-serif">Backup ready</h3>
-        <p style="margin:0 0 14px;color:#9cb0c6;line-height:1.5">If your phone did not open a save or share prompt, copy this backup now and paste it somewhere safe.</p>
+        <h3 style="margin:0 0 8px;font-family:Sora,sans-serif">Backup JSON ready</h3>
+        <p style="margin:0 0 14px;color:#9cb0c6;line-height:1.5">This app restores from a JSON backup file, not CSV. If your phone did not open a save prompt, use one of the options below and keep this file somewhere safe.</p>
         <textarea readonly style="width:100%;min-height:260px;border-radius:16px;border:1px solid rgba(255,255,255,0.12);background:#09131d;color:#eef5fb;padding:14px;font:12px/1.4 monospace">${json.replaceAll("<", "&lt;")}</textarea>
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
-          <button type="button" id="export-copy-btn" style="min-height:44px;padding:0 16px;border:none;border-radius:999px;background:linear-gradient(135deg,#3fd6c5 0%,#7fe4d8 100%);color:#041015;font-weight:700;cursor:pointer">Copy Backup</button>
-          <button type="button" id="export-download-btn" style="min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,0.12);border-radius:999px;background:rgba(255,255,255,0.06);color:#eef5fb;font-weight:600;cursor:pointer">Download File</button>
+          <button type="button" id="export-copy-btn" style="min-height:44px;padding:0 16px;border:none;border-radius:999px;background:linear-gradient(135deg,#3fd6c5 0%,#7fe4d8 100%);color:#041015;font-weight:700;cursor:pointer">Copy JSON Backup</button>
+          <button type="button" id="export-download-btn" style="min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,0.12);border-radius:999px;background:rgba(255,255,255,0.06);color:#eef5fb;font-weight:600;cursor:pointer">Download .json File</button>
           <button type="button" id="export-close-btn" style="min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,0.12);border-radius:999px;background:rgba(255,255,255,0.06);color:#eef5fb;font-weight:600;cursor:pointer">Close</button>
         </div>
       </div>
@@ -167,13 +155,13 @@
       } catch {
         textarea?.select();
         copyButton.textContent = "Select and Copy";
-        setStatus("Clipboard blocked. Select the text and copy it manually.", "error");
+        setStatus("Clipboard blocked. Select the JSON and copy it manually.", "error");
       }
     });
 
     downloadButton?.addEventListener("click", () => {
       tryDownloadLink(json, filename);
-      setStatus("Download started. If nothing happened, use Copy Backup instead.", null);
+      setStatus("Download started. If your phone still opens another app, use Copy JSON Backup instead.", null);
     });
 
     closeButton?.addEventListener("click", () => modal.remove());
@@ -189,11 +177,11 @@
     const json = JSON.stringify(backup, null, 2);
     const filename = `fitgen-backup-${new Date().toISOString().split("T")[0]}.json`;
 
-    setStatus("Preparing backup…", null);
+    setStatus("Preparing backup JSON…", null);
 
     try {
       if (await tryShareFile(json, filename)) {
-        setStatus("Backup ready. Use the share sheet to save it somewhere safe.", "success");
+        setStatus("Backup file ready. Save the .json file somewhere safe so you can import it later.", "success");
         return;
       }
     } catch (error) {
@@ -204,20 +192,8 @@
     }
 
     try {
-      if (isNativeLikeEnvironment() && (await tryShareText(json))) {
-        setStatus("Backup opened in the share sheet. Save or send it somewhere safe.", "success");
-        return;
-      }
-    } catch (error) {
-      if (error?.name === "AbortError") {
-        setStatus("Export cancelled.", null);
-        return;
-      }
-    }
-
-    try {
-      if (!isNativeLikeEnvironment() && (await tryFileSystemSave(json, filename))) {
-        setStatus("Backup saved.", "success");
+      if (await tryFileSystemSave(json, filename)) {
+        setStatus("Backup saved as a .json file.", "success");
         return;
       }
     } catch {
@@ -227,7 +203,7 @@
     try {
       if (!isNativeLikeEnvironment()) {
         tryDownloadLink(json, filename);
-        setStatus("Download started. If it did not appear, use the copy fallback.", "success");
+        setStatus("Download started. If it did not appear, use the JSON popup fallback.", "success");
         return;
       }
     } catch {
@@ -235,7 +211,7 @@
     }
 
     showExportFallbackModal(json, filename);
-    setStatus("Backup is ready below. Copy or download it from the popup.", "success");
+    setStatus("Backup JSON is ready below. Copy it or download the .json file from the popup.", "success");
   }
 
   window.exportData = exportDataFixed;
