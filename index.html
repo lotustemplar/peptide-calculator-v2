@@ -52,8 +52,6 @@
               </div>
 
               <form id="calculator-form" class="wizard-form">
-
-                <!-- Step progress indicator -->
                 <div class="wizard-track" aria-label="Step progress">
                   <div class="wizard-dot is-active" data-dot="1">1</div>
                   <div class="wizard-line"></div>
@@ -62,7 +60,6 @@
                   <div class="wizard-dot" data-dot="3">3</div>
                 </div>
 
-                <!-- Step 1: Vial -->
                 <div class="wizard-pane is-active" id="wizard-pane-1">
                   <img src="./assets/Wizard-Step-1.png" class="wizard-img" alt="Vial with amount label">
                   <h3 class="wizard-step-title">What's in your vial?</h3>
@@ -84,7 +81,6 @@
                   </div>
                 </div>
 
-                <!-- Step 2: Dose -->
                 <div class="wizard-pane" id="wizard-pane-2">
                   <img src="./assets/Wizard-Step-2.png" class="wizard-img" alt="Syringe with dosage amount label">
                   <h3 class="wizard-step-title">What's your desired dose?</h3>
@@ -100,7 +96,6 @@
                   </div>
                 </div>
 
-                <!-- Step 3: Syringe & water -->
                 <div class="wizard-pane" id="wizard-pane-3">
                   <img src="./assets/Wizard-Step-3.png" class="wizard-img" alt="Syringe with max mL label">
                   <h3 class="wizard-step-title">Syringe &amp; water setup</h3>
@@ -123,7 +118,6 @@
                     <button class="secondary-button" type="button" id="reset-form">Reset</button>
                   </div>
                 </div>
-
               </form>
 
               <div class="selected-fill" id="selected-fill">
@@ -143,8 +137,6 @@
         </section>
 
         <section class="app-view" id="cabinet-view" data-view="cabinet-view">
-
-          <!-- Backup & Restore ───────────────────────────── -->
           <section class="card backup-card" id="backup-card">
             <div class="backup-header">
               <div>
@@ -173,7 +165,6 @@
             <p class="backup-tip" id="backup-status"></p>
           </section>
 
-          <!-- My Medications ─────────────────────────────── -->
           <section class="card" id="medications-card">
             <div class="section-heading compact">
               <span class="section-kicker">My Medications</span>
@@ -181,10 +172,8 @@
               <p>Store your peptide prescriptions here. Hit Load to pre-fill the calculator instantly.</p>
             </div>
 
-            <datalist id="peptide-suggestions"></datalist>
-
             <form id="add-medication-form" class="med-form">
-              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" autocomplete="off" list="peptide-suggestions" required>
+              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" autocomplete="off" required>
               <input id="med-dose" name="medDose" type="number" min="0.01" step="0.01" placeholder="Dose" required>
               <select id="med-unit" name="medUnit">
                 <option value="mg" selected>mg</option>
@@ -197,7 +186,6 @@
             <div id="medications-list" class="stack-list"></div>
           </section>
 
-          <!-- Peptide Cabinet ───────────────────────────── -->
           <section class="card full-height-card" id="cabinet-card">
             <div class="section-heading compact">
               <span class="section-kicker">Peptide Cabinet</span>
@@ -209,20 +197,18 @@
         </section>
 
         <section class="app-view" id="schedule-view" data-view="schedule-view">
-
-          <!-- Notification Setup Card -->
           <section class="card notif-setup-card" id="notif-setup-card">
-            <span class="section-kicker">Reminders</span>
-            <h2 class="notif-setup-title">Set up phone notifications</h2>
-            <p class="notif-setup-sub">Three steps — takes 30 seconds. Once done your phone reminds you automatically.</p>
+            <span class="section-kicker">Native Reminders</span>
+            <h2 class="notif-setup-title">Save reminders directly on this phone</h2>
+            <p class="notif-setup-sub">This app now uses native Android reminders only. No web or server reminder system is required.</p>
 
             <ol class="notif-steps">
               <li class="notif-step" id="notif-step-1">
                 <div class="notif-step-num">1</div>
                 <div class="notif-step-body">
-                  <strong>Allow notifications on your phone</strong>
-                  <p>Tap the button below. Your phone will show a system prompt — tap <em>Allow</em>.</p>
-                  <button type="button" class="primary-button" id="enable-notifications">Allow Notifications</button>
+                  <strong>Allow phone notifications</strong>
+                  <p>Tap the button below and allow Android notifications for FitGen.</p>
+                  <button type="button" class="primary-button" id="enable-notifications">Enable Native Alerts</button>
                   <p class="notif-step-status" id="notif-permission-status"></p>
                 </div>
               </li>
@@ -230,32 +216,30 @@
               <li class="notif-step" id="notif-step-2">
                 <div class="notif-step-num">2</div>
                 <div class="notif-step-body">
-                  <strong>Register this device</strong>
-                  <p>We link your phone’s push token so reminders reach <em>this</em> device.</p>
-                  <p class="notif-step-status" id="notif-device-status">Waiting for permission…</p>
+                  <strong>Allow exact reminder timing</strong>
+                  <p>Android may ask for alarm access so reminders can fire at the right time.</p>
+                  <p class="notif-step-status" id="notif-device-status">Waiting for phone permissions…</p>
                 </div>
               </li>
 
               <li class="notif-step" id="notif-step-3">
                 <div class="notif-step-num">3</div>
                 <div class="notif-step-body">
-                  <strong>Schedule your reminders</strong>
-                  <p>We push your dose times to our server so your phone alerts you even when the app is closed.</p>
+                  <strong>Save native reminders</strong>
+                  <p>Your dosing schedule is stored directly in the APK on this phone.</p>
                   <p class="notif-step-status" id="notif-schedule-status">Waiting…</p>
                   <div class="notif-step-actions">
-                    <button type="button" class="secondary-button" id="push-sync-now">Sync Now</button>
-                    <button type="button" class="secondary-button" id="push-test-btn">Send Test Push</button>
+                    <button type="button" class="secondary-button" id="push-sync-now">Save Native Reminders</button>
+                    <button type="button" class="secondary-button" id="push-test-btn">1-Minute Native Test</button>
                   </div>
                 </div>
               </li>
             </ol>
 
-            <!-- hidden wiring, kept for notification-fix.js compatibility -->
             <p id="notification-status" style="display:none"></p>
           </section>
 
           <section class="card full-height-card" id="dosage-card">
-
             <div class="schedule-form-hidden" aria-hidden="true">
               <form id="dosage-form" class="reminder-form">
                 <label>
@@ -325,7 +309,7 @@
         <form id="save-fill-form" class="calculator-form modal-form">
           <label>
             <span>Fill name</span>
-            <input id="save-fill-name" name="saveFillName" type="text" maxlength="80" placeholder="Retatrutide" list="peptide-suggestions" autocomplete="off">
+            <input id="save-fill-name" name="saveFillName" type="text" maxlength="80" placeholder="Retatrutide" autocomplete="off">
           </label>
 
           <label>
@@ -368,6 +352,5 @@
     <script src="./native-reminder-ux-fix.js"></script>
     <script src="./disable-web-reminder-fallback.js"></script>
     <script src="./native-backup-fix.js"></script>
-    <script src="./fill-name-suggestions-fix.js"></script>
   </body>
 </html>
