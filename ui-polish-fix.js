@@ -43,8 +43,43 @@
     };
   }
 
+  function applyCabinetAccordionLayout() {
+    const container = document.getElementById("current-peptides");
+    if (!container) return;
+
+    container.querySelectorAll(".cabinet-card").forEach((card) => {
+      const toggle = card.querySelector(".fill-toggle");
+      const caret = toggle?.querySelector(".caret");
+      const expanded = Boolean(caret && (caret.textContent || "").includes("▾"));
+      const header = card.querySelector(".fill-header");
+
+      Array.from(card.children).forEach((child) => {
+        if (child === header) {
+          child.style.display = "";
+          return;
+        }
+        child.style.display = expanded ? "" : "none";
+      });
+
+      if (header instanceof HTMLElement) {
+        header.querySelectorAll(".card-note").forEach((node) => {
+          node.style.display = expanded ? "" : "none";
+        });
+        header.querySelectorAll(".badge, .fill-actions, .card-actions, .result-metrics, .selected-fill-grid, .usage-grid").forEach((node) => {
+          if (node instanceof HTMLElement) {
+            node.style.display = expanded ? "" : "none";
+          }
+        });
+      }
+    });
+  }
+
   function collapseCabinetAtStartup() {
-    if (collapsedOnce) return;
+    if (collapsedOnce) {
+      applyCabinetAccordionLayout();
+      return;
+    }
+
     const container = document.getElementById("current-peptides");
     if (!container) return;
 
@@ -57,12 +92,14 @@
       localStorage.removeItem(EXPANDED_FILL_KEY);
       openToggle.click();
       collapsedOnce = true;
+      window.setTimeout(applyCabinetAccordionLayout, 0);
       return;
     }
 
     if (container.querySelector(".cabinet-card")) {
       localStorage.removeItem(EXPANDED_FILL_KEY);
       collapsedOnce = true;
+      applyCabinetAccordionLayout();
     }
   }
 
@@ -70,11 +107,20 @@
     const container = document.getElementById("current-peptides");
     if (!container) return;
 
+    container.addEventListener("click", (event) => {
+      const toggle = event.target instanceof Element ? event.target.closest(".fill-toggle") : null;
+      if (toggle) {
+        window.setTimeout(applyCabinetAccordionLayout, 0);
+      }
+    });
+
     const observer = new MutationObserver(() => {
       collapseCabinetAtStartup();
+      applyCabinetAccordionLayout();
     });
     observer.observe(container, { childList: true, subtree: true });
     collapseCabinetAtStartup();
+    applyCabinetAccordionLayout();
   }
 
   function attachSuggestionDropdown(input, names) {
