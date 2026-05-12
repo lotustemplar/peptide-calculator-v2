@@ -3,7 +3,6 @@
 
   const MAX_SUGGESTIONS = 6;
   const EXPANDED_FILL_KEY = "peptide-calculator-v2-expanded-fill";
-  const ACTIVE_VIEW_KEY = "peptide-calculator-v2-active-view";
   let collapsedOnce = false;
 
   function onReady(fn) {
@@ -19,13 +18,6 @@
     if (notificationCard instanceof HTMLElement) {
       notificationCard.style.display = "none";
     }
-
-    document.querySelectorAll(".tab-button").forEach((button) => {
-      const label = (button.textContent || "").trim().toLowerCase();
-      if (label === "schedule") {
-        button.style.display = "none";
-      }
-    });
 
     const settingsButton = Array.from(document.querySelectorAll("button")).find((button) => {
       return (button.textContent || "").trim().toLowerCase() === "settings";
@@ -49,18 +41,6 @@
     window.syncRemindersToBackend = async function () {
       return { ok: false, disabled: true };
     };
-  }
-
-  function activateCalculatorViewIfNeeded() {
-    const scheduleView = document.getElementById("schedule-view");
-    if (scheduleView instanceof HTMLElement && scheduleView.classList.contains("is-active")) {
-      const calculatorTab = Array.from(document.querySelectorAll(".tab-button")).find((button) => {
-        return (button.textContent || "").trim().toLowerCase() === "add peptide";
-      });
-      if (calculatorTab instanceof HTMLButtonElement) {
-        calculatorTab.click();
-      }
-    }
   }
 
   function collapseCabinetAtStartup() {
@@ -197,11 +177,7 @@
 
   onReady(function () {
     disableReminderFunctions();
-    if (localStorage.getItem(ACTIVE_VIEW_KEY) === "schedule-view") {
-      localStorage.setItem(ACTIVE_VIEW_KEY, "calculator-view");
-    }
     hideNotificationUi();
-    activateCalculatorViewIfNeeded();
     watchCabinet();
     attachPeptideSuggestions();
   });
