@@ -12,6 +12,10 @@
     const style = document.createElement("style");
     style.id = "fitgen-name-suggestion-styles";
     style.textContent = `
+      #peptide-suggestions {
+        display: none !important;
+      }
+
       .fitgen-suggestion-wrap {
         display: grid;
         grid-auto-flow: row;
@@ -55,8 +59,7 @@
   }
 
   function getSuggestions() {
-    const list = Array.isArray(window.PEPTIDE_LIST) ? window.PEPTIDE_LIST.slice(0, 7) : [];
-    return list;
+    return Array.isArray(window.PEPTIDE_LIST) ? window.PEPTIDE_LIST.slice(0, 7) : [];
   }
 
   function attachChips(inputId) {
@@ -67,6 +70,8 @@
     if (!suggestions.length) return;
 
     input.dataset.fitgenSuggestionsAttached = "true";
+    input.removeAttribute("list");
+    input.setAttribute("autocomplete", "off");
 
     const wrap = document.createElement("div");
     wrap.className = "fitgen-suggestion-wrap";
