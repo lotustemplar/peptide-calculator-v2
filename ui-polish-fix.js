@@ -32,6 +32,24 @@
     }
   }
 
+  function removeUnusedSections() {
+    const selectedFill = document.getElementById("selected-fill");
+    if (selectedFill instanceof HTMLElement) {
+      selectedFill.style.display = "none";
+    }
+
+    const medicationsCard = document.getElementById("medications-card");
+    if (medicationsCard instanceof HTMLElement) {
+      medicationsCard.style.display = "none";
+    }
+
+    const backupCard = document.getElementById("backup-card");
+    const cabinetCard = document.getElementById("cabinet-card");
+    if (backupCard instanceof HTMLElement && cabinetCard instanceof HTMLElement && cabinetCard.parentElement) {
+      cabinetCard.parentElement.appendChild(backupCard);
+    }
+  }
+
   function disableReminderFunctions() {
     window.maybeRegisterNativePushIdentity = function () {};
     window.queueNextReminder = function () {};
@@ -49,28 +67,22 @@
 
     container.querySelectorAll(".cabinet-card").forEach((card) => {
       const toggle = card.querySelector(".fill-toggle");
-      const caret = toggle?.querySelector(".caret");
+      if (!(toggle instanceof HTMLElement)) {
+        return;
+      }
+
+      const caret = toggle.querySelector(".caret");
       const expanded = Boolean(caret && (caret.textContent || "").includes("▾"));
-      const header = card.querySelector(".fill-header");
+      const topRow = toggle.closest(".fill-header, .list-topline, .card-topline") || toggle.parentElement;
 
       Array.from(card.children).forEach((child) => {
-        if (child === header) {
+        if (!(child instanceof HTMLElement)) return;
+        if (child === topRow) {
           child.style.display = "";
           return;
         }
         child.style.display = expanded ? "" : "none";
       });
-
-      if (header instanceof HTMLElement) {
-        header.querySelectorAll(".card-note").forEach((node) => {
-          node.style.display = expanded ? "" : "none";
-        });
-        header.querySelectorAll(".badge, .fill-actions, .card-actions, .result-metrics, .selected-fill-grid, .usage-grid").forEach((node) => {
-          if (node instanceof HTMLElement) {
-            node.style.display = expanded ? "" : "none";
-          }
-        });
-      }
     });
   }
 
@@ -115,12 +127,39 @@
     });
 
     const observer = new MutationObserver(() => {
+      removeUnusedSections();
       collapseCabinetAtStartup();
       applyCabinetAccordionLayout();
     });
     observer.observe(container, { childList: true, subtree: true });
+    removeUnusedSections();
     collapseCabinetAtStartup();
     applyCabinetAccordionLayout();
+  }
+
+  function removeDuplicateScheduleBanner() {
+    const reminderList = document.getElementById("reminder-list");
+    if (!reminderList) return;
+
+    const cards = Array.from(reminderList.children).filter((child) => child instanceof HTMLElement);
+    if (cards.length < 2) return;
+
+    const dueTodayCard = cards.find((card) => /due today/i.test(card.textContent || ""));
+    const markButtons = reminderList.querySelectorAll('[data-action="mark-taken"]');
+    if (dueTodayCard instanceof HTMLElement && markButtons.length > 1) {
+      dueTodayCard.remove();
+    }
+  }
+
+  function watchScheduleList() {
+    const reminderList = document.getElementById("reminder-list");
+    if (!reminderList) return;
+
+    const observer = new MutationObserver(() => {
+      removeDuplicateScheduleBanner();
+    });
+    observer.observe(reminderList, { childList: true, subtree: true });
+    removeDuplicateScheduleBanner();
   }
 
   function attachSuggestionDropdown(input, names) {
@@ -224,7 +263,9 @@
   onReady(function () {
     disableReminderFunctions();
     hideNotificationUi();
+    removeUnusedSections();
     watchCabinet();
+    watchScheduleList();
     attachPeptideSuggestions();
   });
 })();
