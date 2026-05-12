@@ -51,6 +51,18 @@
     };
   }
 
+  function activateCalculatorViewIfNeeded() {
+    const scheduleView = document.getElementById("schedule-view");
+    if (scheduleView instanceof HTMLElement && scheduleView.classList.contains("is-active")) {
+      const calculatorTab = Array.from(document.querySelectorAll(".tab-button")).find((button) => {
+        return (button.textContent || "").trim().toLowerCase() === "add peptide";
+      });
+      if (calculatorTab instanceof HTMLButtonElement) {
+        calculatorTab.click();
+      }
+    }
+  }
+
   function collapseCabinetAtStartup() {
     if (collapsedOnce) return;
     const container = document.getElementById("current-peptides");
@@ -189,6 +201,7 @@
       localStorage.setItem(ACTIVE_VIEW_KEY, "calculator-view");
     }
     hideNotificationUi();
+    activateCalculatorViewIfNeeded();
     watchCabinet();
     attachPeptideSuggestions();
   });
