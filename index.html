@@ -35,7 +35,7 @@
       </header>
 
       <nav class="tabbar" aria-label="App sections">
-        <button class="tab-button is-active" type="button" data-view-target="calculator-view">Fill</button>
+        <button class="tab-button is-active" type="button" data-view-target="calculator-view">Add Peptide</button>
         <button class="tab-button" type="button" data-view-target="cabinet-view">Cabinet</button>
         <button class="tab-button" type="button" data-view-target="schedule-view">Schedule</button>
         <button class="tab-button" type="button" data-view-target="calendar-view">Calendar</button>
@@ -46,8 +46,8 @@
           <div class="view-grid view-grid-fill">
             <section class="card calculator-card" id="calculator-card">
               <div class="section-heading compact">
-                <span class="section-kicker">Fill Builder</span>
-                <h2>Build your fill options</h2>
+                <span class="section-kicker">Peptide Builder</span>
+                <h2>Add a Peptide</h2>
                 <p>Choose the vial amount, dose, syringe size, and BAC water ceiling. The app will rank the easiest draw options first.</p>
               </div>
 
@@ -121,7 +121,7 @@
               </form>
 
               <div class="selected-fill" id="selected-fill">
-                <p class="selected-fill-empty">Save a fill option to add it into your Peptide Cabinet.</p>
+                <p class="selected-fill-empty">Save a peptide option to add it into your Peptide Cabinet.</p>
               </div>
             </section>
 
@@ -173,7 +173,7 @@
             </div>
 
             <form id="add-medication-form" class="med-form">
-              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Medication name (e.g. Retatrutide)" autocomplete="off" required>
+              <input id="med-name" name="medName" type="text" maxlength="80" placeholder="Peptide name (e.g. Retatrutide)" autocomplete="off" required>
               <input id="med-dose" name="medDose" type="number" min="0.01" step="0.01" placeholder="Dose" required>
               <select id="med-unit" name="medUnit">
                 <option value="mg" selected>mg</option>
@@ -295,8 +295,8 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="save-fill-title">
         <div class="card-topline">
           <div>
-            <span class="section-kicker">Save Fill</span>
-            <h2 id="save-fill-title">NAME YOUR PEPTIDE FILL</h2>
+            <span class="section-kicker">Add a Peptide</span>
+            <h2 id="save-fill-title">NAME YOUR PEPTIDE</h2>
             <p class="card-note">Save the fill and create the first dosage plan in one step.</p>
           </div>
           <button class="ghost-button icon-button" type="button" id="close-save-fill" aria-label="Close save fill dialog">×</button>
@@ -308,7 +308,7 @@
 
         <form id="save-fill-form" class="calculator-form modal-form">
           <label>
-            <span>Fill name</span>
+            <span>Peptide Name</span>
             <input id="save-fill-name" name="saveFillName" type="text" maxlength="80" placeholder="Retatrutide" autocomplete="off">
           </label>
 
@@ -333,7 +333,7 @@
           </label>
 
           <div class="form-actions">
-            <button class="primary-button" type="submit">Save Fill</button>
+            <button class="primary-button" type="submit">Save Peptide</button>
             <button class="secondary-button" type="button" id="cancel-save-fill">Cancel</button>
           </div>
         </form>
@@ -346,11 +346,8 @@
     <script src="./app.js"></script>
     <script src="./runtime-fixes.js"></script>
     <script src="./export-fix.js"></script>
-    <script src="./settings-fix.js"></script>
-    <script src="./native-reminder-fix.js"></script>
     <script src="./mobile-polish-fix.js"></script>
-    <script src="./native-reminder-ux-fix.js"></script>
-    <script src="./disable-web-reminder-fallback.js"></script>
     <script src="./native-backup-fix.js"></script>
+    <script src="./ui-polish-fix.js"></script>
   </body>
 </html>
