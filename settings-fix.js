@@ -216,6 +216,14 @@
       trigger.className = (themeToggle.className || "") + " fitgen-settings-trigger";
       trigger.type = "button";
       trigger.textContent = "Settings";
+      trigger.hidden = false;
+      trigger.disabled = false;
+      trigger.removeAttribute("hidden");
+      trigger.removeAttribute("aria-hidden");
+      trigger.tabIndex = 0;
+      trigger.style.display = "";
+      trigger.style.visibility = "visible";
+      trigger.style.pointerEvents = "auto";
       themeToggle.replaceWith(trigger);
     } else {
       trigger = document.createElement("button");
