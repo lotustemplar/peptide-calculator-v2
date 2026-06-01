@@ -1008,8 +1008,8 @@ function renderCurrentPeptides() {
               <strong>${formatNumber(fill.concentrationPerMl)} ${escapeHtml(fill.unitLabel)}/mL</strong>
             </div>
             <div class="metric">
-              <span>Amount left</span>
-              <strong>${formatDose(usage.remainingAmount, fill.unitLabel)}</strong>
+              <span>Doses taken</span>
+              <strong>${usage.dosesTaken}${usage.totalDoses !== null ? ` / ${usage.totalDoses}` : ""}</strong>
             </div>
             <div class="metric">
               <span>Doses left</span>
@@ -1026,10 +1026,9 @@ function renderCurrentPeptides() {
               <span class="vial-caption">${formatPercent(liquidPercent)} full</span>
             </div>
             <div class="vial-copy">
-              <strong>${formatMl(usage.remainingVolumeMl)} liquid remaining</strong>
+              <strong>${usage.dosesTaken > 0 ? formatMl(usage.remainingVolumeMl) + " liquid remaining" : "Mark doses taken to track depletion"}</strong>
               <p class="card-note">${usage.nextDose ? `Next dose ${formatDateTime(usage.nextDose)}.` : "No dosage plan saved yet."}</p>
-              <p class="card-note">${usage.refillDue ? `Refill due before ${formatDateTime(usage.refillDue)}.` : usage.totalSchedules ? "This fill still covers the currently saved plan." : "Save a dosage plan to start depletion tracking."}</p>
-              ${usage.shouldReorder ? '<p class="reorder-note">4 doses or fewer remain. Re-order soon.</p>' : ""}
+              <p class="card-note">${usage.shouldReorder ? `⚠ Only ${usage.dosesLeft} dose${usage.dosesLeft === 1 ? "" : "s"} left — re-order soon.` : usage.refillDue ? `Refill due before ${formatDateTime(usage.refillDue)}.` : usage.totalSchedules ? `${usage.dosesLeft !== null ? usage.dosesLeft + " doses remaining in this vial." : ""}` : "Save a dosage plan to start depletion tracking."}</p>
             </div>
           </div>
 
@@ -1183,20 +1182,35 @@ function renderSchedules() {
   }
 
   const now = new Date();
+  const today = todayKey();
+
   elements.reminderList.innerHTML = state.schedules
     .slice()
     .sort((left, right) => getNextOccurrence(left, now) - getNextOccurrence(right, now))
     .map((schedule) => {
       const fill = resolveScheduleFill(schedule);
       const nextDose = getNextOccurrence(schedule, now);
+      const takenDates = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
+      const takenToday = takenDates.includes(today);
+      const dueToday = isOccurrenceDueOnDate(schedule, today);
+
+      let pillClass = "";
+      let pillText = "Upcoming";
+      if (takenToday) { pillClass = "is-complete"; pillText = "✓ Taken today"; }
+      else if (dueToday) { pillClass = "is-ready"; pillText = "Due today"; }
+
+      const markTakenBtn = dueToday && !takenToday
+        ? `<button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${today}" style="flex:1">Mark as taken</button>`
+        : "";
+
       return `
         <article class="list-card">
           <div class="list-topline">
             <div>
               <h3>${fill ? escapeHtml(fill.name) : "Saved Dose"}</h3>
-              <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} • draw ${formatDrawMl(schedule.doseMl)}</p>
+              <p class="card-note">${formatDose(schedule.doseAmount, schedule.unitLabel)} • draw ${formatDrawMl(schedule.doseMl)} every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</p>
             </div>
-            <span class="badge">Every ${schedule.intervalDays} day${schedule.intervalDays === 1 ? "" : "s"}</span>
+            <span class="schedule-status-pill ${pillClass}">${pillText}</span>
           </div>
           <div class="schedule-metrics">
             <div class="metric">
@@ -1204,11 +1218,12 @@ function renderSchedules() {
               <strong>${formatDate(schedule.startDate)}</strong>
             </div>
             <div class="metric">
-              <span>Next reminder</span>
+              <span>Next dose</span>
               <strong>${nextDose ? formatDateTime(nextDose) : "Check inputs"}</strong>
             </div>
           </div>
           <div class="card-actions">
+            ${markTakenBtn}
             <button class="mini-button" type="button" data-action="test-reminder" data-id="${schedule.id}">Test Alert</button>
             <button class="mini-button" type="button" data-action="delete-reminder" data-id="${schedule.id}">Delete</button>
           </div>
@@ -1224,10 +1239,12 @@ function renderSchedules() {
   elements.reminderList.querySelectorAll('[data-action="test-reminder"]').forEach((button) => {
     button.addEventListener("click", () => {
       const schedule = state.schedules.find((item) => item.id === button.dataset.id);
-      if (schedule) {
-        fireReminder(schedule);
-      }
+      if (schedule) fireReminder(schedule);
     });
+  });
+
+  elements.reminderList.querySelectorAll('[data-action="mark-taken"]').forEach((button) => {
+    button.addEventListener("click", () => markOccurrenceTaken(button.dataset.id, button.dataset.date));
   });
 }
 
@@ -1236,74 +1253,132 @@ function renderCalendar() {
   if (!entries.length) {
     elements.calendarList.innerHTML = `
       <div class="empty-state">
-        Your calendar is empty right now. Save a fill or add a dosage plan to see upcoming doses here.
+        Your calendar is empty right now. Save a fill or add a dosage plan to see your dose timeline here.
       </div>
     `;
     return;
   }
 
-  const groupedByDay = entries.reduce((groups, entry) => {
-    const dayKey = entry.when.toISOString().split("T")[0];
-    if (!groups[dayKey]) {
-      groups[dayKey] = [];
-    }
-    groups[dayKey].push(entry);
-    return groups;
-  }, {});
+  const todayStr = todayKey();
+  const past = entries.filter((e) => e.dateKey < todayStr);
+  const todayAndFuture = entries.filter((e) => e.dateKey >= todayStr);
 
-  elements.calendarList.innerHTML = Object.entries(groupedByDay)
-    .map(([dayKey, dayEntries]) => `
+  function groupByDay(list) {
+    return list.reduce((groups, entry) => {
+      if (!groups[entry.dateKey]) groups[entry.dateKey] = [];
+      groups[entry.dateKey].push(entry);
+      return groups;
+    }, {});
+  }
+
+  function renderDayGroup(dayKey, dayEntries) {
+    const takenCount = dayEntries.filter((e) => e.isTaken).length;
+    const label = takenCount === dayEntries.length ? "All taken" : `${dayEntries.length} dose${dayEntries.length === 1 ? "" : "s"}`;
+    return `
       <article class="calendar-day">
         <div class="list-topline">
           <div>
             <h3>${formatDate(dayKey)}</h3>
-            <p class="card-note">${dayEntries.length} planned dose${dayEntries.length === 1 ? "" : "s"}</p>
+            <p class="card-note">${label}</p>
           </div>
         </div>
         <div class="calendar-day-list">
-          ${dayEntries
-            .map((entry) => `
-              <div class="calendar-item">
-                <div class="list-topline">
-                  <div>
-                    <h4>${escapeHtml(entry.fillName)}</h4>
-                    <p class="subtle-line">${formatDose(entry.doseAmount, entry.unitLabel)} • draw ${formatDrawMl(entry.doseMl)}</p>
-                  </div>
-                  <span class="badge">${formatTime(entry.when)}</span>
-                </div>
-              </div>
-            `)
-            .join("")}
+          ${dayEntries.map((entry) => renderCalendarItem(entry)).join("")}
         </div>
       </article>
-    `)
-    .join("");
+    `;
+  }
+
+  const pastHtml = past.length
+    ? `<div class="calendar-section-header">Past Doses</div>${Object.entries(groupByDay(past)).map(([k, v]) => renderDayGroup(k, v)).join("")}`
+    : "";
+
+  const futureHtml = todayAndFuture.length
+    ? `<div class="calendar-section-header">Upcoming</div>${Object.entries(groupByDay(todayAndFuture)).map(([k, v]) => renderDayGroup(k, v)).join("")}`
+    : "";
+
+  elements.calendarList.innerHTML = `${pastHtml}${futureHtml}`;
+
+  elements.calendarList.querySelectorAll('[data-action="mark-taken"]').forEach((button) => {
+    button.addEventListener("click", () => markOccurrenceTaken(button.dataset.id, button.dataset.date));
+  });
+}
+
+function renderCalendarItem(entry) {
+  const actionBtn = !entry.isTaken
+    ? `<button class="mini-button mark-taken-btn" type="button" data-action="mark-taken" data-id="${entry.scheduleId}" data-date="${entry.dateKey}">Mark as taken</button>`
+    : "";
+
+  let rightContent;
+  if (entry.isTaken) {
+    rightContent = '<span class="badge taken-badge">✓ Taken</span>';
+  } else if (entry.isToday) {
+    rightContent = `<span class="badge">${formatTime(entry.when)}</span><span class="badge today-badge">Due today</span>`;
+  } else {
+    rightContent = `<span class="badge">${formatTime(entry.when)}</span>`;
+  }
+
+  return `
+    <div class="calendar-item${entry.isTaken ? " is-taken" : ""}${entry.isToday ? " is-today" : ""}">
+      <div class="list-topline">
+        <div>
+          <h4>${escapeHtml(entry.fillName)}</h4>
+          <p class="subtle-line">${formatDose(entry.doseAmount, entry.unitLabel)} • draw ${formatDrawMl(entry.doseMl)}</p>
+        </div>
+        <div class="cal-item-right">${rightContent}</div>
+      </div>
+      ${actionBtn}
+    </div>
+  `;
 }
 
 function buildCalendarEntries(schedules) {
   const now = new Date();
+  const todayStr = todayKey();
   const entries = [];
 
   schedules.forEach((schedule) => {
     const fill = resolveScheduleFill(schedule);
-    let nextAt = getNextOccurrence(schedule, now);
-    let count = 0;
+    if (!fill) return;
 
-    while (fill && nextAt && count < 4) {
+    const takenDates = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
+    const [sy, sm, sd] = schedule.startDate.split("-").map(Number);
+    let probe = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+    const intervalMs = schedule.intervalDays * DAY_MS;
+    const [rh, rm] = (schedule.reminderTime || "09:00").split(":").map(Number);
+
+    // Past: back-fill up to 30 days
+    const pastCutoff = new Date(now.getTime() - 30 * DAY_MS);
+    while (probe < pastCutoff) probe = new Date(probe.getTime() + intervalMs);
+
+    let upcomingCount = 0;
+    const maxFuture = 5;
+
+    while (upcomingCount < maxFuture) {
+      const dk = dateToKey(probe);
+      const isPast = dk < todayStr;
+      const isToday = dk === todayStr;
+      const entryWhen = new Date(probe.getFullYear(), probe.getMonth(), probe.getDate(), rh, rm, 0, 0);
+
       entries.push({
         scheduleId: schedule.id,
         fillName: fill.name,
         doseAmount: schedule.doseAmount,
         doseMl: schedule.doseMl,
         unitLabel: schedule.unitLabel,
-        when: nextAt,
+        when: entryWhen,
+        dateKey: dk,
+        isPast,
+        isToday,
+        isTaken: takenDates.includes(dk),
       });
-      nextAt = new Date(nextAt.getTime() + schedule.intervalDays * DAY_MS);
-      count += 1;
+
+      if (!isPast) upcomingCount++;
+      probe = new Date(probe.getTime() + intervalMs);
     }
   });
 
-  return entries.sort((left, right) => left.when - right.when).slice(0, 20);
+  return entries.sort((a, b) => a.when - b.when);
 }
 
 function getFillUsageSummary(fill, schedules, fromDate) {
@@ -1314,6 +1389,8 @@ function getFillUsageSummary(fill, schedules, fromDate) {
   const remainingVolumeMl = clamp(fill.waterMl - consumedVolume, 0, fill.waterMl);
   const primarySchedule = sortedSchedules[0] || null;
   const dosesLeft = primarySchedule ? Math.floor((remainingAmount / primarySchedule.doseAmount) + 1e-9) : null;
+  const totalDoses = primarySchedule ? Math.floor((fill.vialAmount / primarySchedule.doseAmount) + 1e-9) : null;
+  const dosesTaken = sortedSchedules.reduce((sum, s) => sum + (Array.isArray(s.takenDates) ? s.takenDates.length : 0), 0);
   const nextDose = sortedSchedules
     .map((schedule) => getNextOccurrence(schedule, fromDate))
     .filter(Boolean)
@@ -1324,6 +1401,8 @@ function getFillUsageSummary(fill, schedules, fromDate) {
     remainingVolumeMl,
     percentRemaining: fill.waterMl ? (remainingVolumeMl / fill.waterMl) * 100 : 0,
     dosesLeft,
+    totalDoses,
+    dosesTaken,
     nextDose,
     refillDue: getRefillDueDate(fill, sortedSchedules, fromDate),
     shouldReorder: dosesLeft !== null && dosesLeft <= 4,
@@ -1585,6 +1664,7 @@ function normalizeSchedule(schedule) {
     createdAt: schedule?.createdAt || new Date().toISOString(),
     lastTriggeredAt: schedule?.lastTriggeredAt || null,
     fillSnapshot,
+    takenDates: Array.isArray(schedule?.takenDates) ? schedule.takenDates : [],
   };
 }
 
@@ -1618,11 +1698,49 @@ function getSchedulesForFill(savedId) {
   return state.schedules.filter((schedule) => schedule.fillSavedId === savedId);
 }
 
+function todayKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function dateToKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+// Returns true if the schedule has an occurrence on the given YYYY-MM-DD dateKey.
+function isOccurrenceDueOnDate(schedule, dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(schedule.startDate))) return false;
+  const [sy, sm, sd] = schedule.startDate.split("-").map(Number);
+  const [ty, tm, td] = dateKey.split("-").map(Number);
+  const startMs = new Date(sy, sm - 1, sd).getTime();
+  const targetMs = new Date(ty, tm - 1, td).getTime();
+  if (targetMs < startMs) return false;
+  const elapsedDays = Math.round((targetMs - startMs) / DAY_MS);
+  return elapsedDays % Math.max(1, schedule.intervalDays) === 0;
+}
+
+function markOccurrenceTaken(scheduleId, dateKey) {
+  state.schedules = state.schedules.map((s) => {
+    if (s.id !== scheduleId) return s;
+    const taken = Array.isArray(s.takenDates) ? s.takenDates : [];
+    if (taken.includes(dateKey)) return s;
+    return { ...s, takenDates: [...taken, dateKey] };
+  });
+  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  renderCurrentPeptides();
+  renderSchedules();
+  renderCalendar();
+}
+
 function getTakenOccurrences(schedule, fromDate) {
-  const start = combineDateAndTime(schedule.startDate, schedule.reminderTime);
-  if (!start || start > fromDate) {
-    return 0;
+  const taken = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
+  if (taken.length > 0) {
+    const fromKey = dateToKey(fromDate);
+    return taken.filter((k) => k <= fromKey).length;
   }
+  // Fallback for schedules that predate explicit tracking
+  const start = combineDateAndTime(schedule.startDate, schedule.reminderTime);
+  if (!start || start > fromDate) return 0;
   const elapsed = fromDate.getTime() - start.getTime();
   return Math.floor(elapsed / (schedule.intervalDays * DAY_MS)) + 1;
 }
