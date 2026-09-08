@@ -1,0 +1,19 @@
+# Grandfathered JS already on main @ 4741e6f.
+# Changed-file lint skips these so P0.0 does not auto-fix or rewrite legacy app code.
+# New JS/CJS/MJS outside this list is linted. TypeScript is blocked until Issue #9.
+app.js
+backend/server.js
+config.example.js
+config.js
+disable-web-reminder-fallback.js
+export-fix.js
+fill-name-suggestions-fix.js
+mobile-polish-fix.js
+native-backup-fix.js
+native-reminder-fix.js
+native-reminder-ux-fix.js
+notification-fix.js
+peptide-list.js
+runtime-fixes.js
+settings-fix.js
+ui-polish-fix.js
