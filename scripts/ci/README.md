@@ -62,7 +62,7 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Gate | Script | Fails when |
 | --- | --- | --- |
 | Lockfiles | `check-lockfiles.js` | `package-lock.json` or `backend/package-lock.json` is missing |
-| Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/TS outside the legacy-path allowlist |
+| Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS outside the legacy-path allowlist; a new `.ts`/`.tsx` file fails closed until Issue #9 |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
 | Test runner | `scripts/test.js` | Gate self-tests fail |
@@ -102,9 +102,15 @@ name the phrases.
 ### `allowlists/legacy-lint-paths.txt`
 
 Grandfathered application/backend JS already on `main`. Changed-file lint skips
-these so P0.0 does not rewrite legacy code. New JS/TS (including future `src/`
-and `.ts`/`.tsx`) is linted. Adding a path to this list versus the PR base
-fails CI.
+these so P0.0 does not rewrite legacy code. New **JS/CJS/MJS** is linted with
+parser settings split by runtime:
+
+- `scripts/**`, `backend/**`, `*.cjs`, `eslint.config.js` → CommonJS + Node
+- `*.mjs` and other new `*.js` (for example `src/`) → `sourceType: "module"`
+
+TypeScript/TSX is **not** linted in P0.0. A new `.ts`/`.tsx` file fails closed
+until typed linting lands ([Issue #9](https://github.com/lotustemplar/peptide-calculator-v2/issues/9)).
+Adding a path to this list versus the PR base fails CI.
 
 ## How to see a failing check
 
@@ -122,6 +128,9 @@ printf 'debugger;\n' > src/probe.js
 FITGEN_CI_LINT_FILES=src/probe.js FITGEN_CI_SKIP_SCRIPTS=1 node scripts/ci/check-lint.js
 rm -rf src
 ```
+
+Valid JS/CJS/MJS fixtures (must pass) and a fail-closed TypeScript probe are
+covered by `gate-selftest.js`.
 
 The self-tests in `gate-selftest.js` create temporary fixtures (removed in
 `finally`) for failure cases, including allowlist-bypass attempts, relocated

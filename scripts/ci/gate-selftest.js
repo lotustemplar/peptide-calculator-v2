@@ -81,13 +81,32 @@ function cleanupTemps() {
   tempDirs.length = 0;
 }
 
+function lintEnv(allowDir, baseRoot, files) {
+  return {
+    FITGEN_CI_LINT_FILES: files,
+    FITGEN_CI_SKIP_SCRIPTS: "1",
+    FITGEN_CI_BASE_ROOT: baseRoot,
+    FITGEN_CI_ALLOWLIST_DIR: allowDir,
+  };
+}
+
 function testLint() {
   console.log("check-lint.js");
-  const probeJs = path.join(ROOT, "src", ".lint-probe-temp.js");
-  const probeTs = path.join(ROOT, "src", ".lint-probe-temp.ts");
-  fs.mkdirSync(path.dirname(probeJs), { recursive: true });
-  fs.writeFileSync(probeJs, "debugger;\n");
-  fs.writeFileSync(probeTs, "debugger;\n");
+  const srcDir = path.join(ROOT, "src");
+  const probes = {
+    "src/.lint-probe-temp.js": "debugger;\n",
+    "src/.lint-probe-temp.cjs": "debugger;\n",
+    "src/.lint-probe-temp.mjs": "debugger;\n",
+    "src/.lint-ok-temp.js": "export const dose = 1;\n",
+    "src/.lint-ok-temp.cjs": "\"use strict\";\nmodule.exports = { dose: 1 };\n",
+    "src/.lint-ok-temp.mjs": "export const dose = 1;\nexport function formatDose(value) {\n  return String(value);\n}\n",
+    "src/.lint-probe-temp.ts": "const dose: number = 1;\nexport { dose };\n",
+  };
+
+  fs.mkdirSync(srcDir, { recursive: true });
+  for (const [rel, contents] of Object.entries(probes)) {
+    write(ROOT, rel, contents);
+  }
 
   const legacyPaths = ["app.js"];
   const baseRoot = makeTempRoot("fitgen-lint-base-");
@@ -96,35 +115,42 @@ function testLint() {
   write(allowDir, "legacy-lint-paths.txt", `${legacyPaths.join("\n")}\n`);
 
   try {
-    const jsHit = runCheck("check-lint.js", {
-      FITGEN_CI_LINT_FILES: "src/.lint-probe-temp.js",
-      FITGEN_CI_SKIP_SCRIPTS: "1",
-      FITGEN_CI_BASE_ROOT: baseRoot,
-      FITGEN_CI_ALLOWLIST_DIR: allowDir,
-    });
-    const jsOut = `${jsHit.stdout || ""}\n${jsHit.stderr || ""}`;
-    assert(jsHit.status !== 0, "fails lint on a violating JS file outside scripts/");
-    assert(/debugger/.test(jsOut), "reports the debugger violation outside scripts/");
+    for (const ext of ["js", "cjs", "mjs"]) {
+      const rel = `src/.lint-probe-temp.${ext}`;
+      const hit = runCheck("check-lint.js", lintEnv(allowDir, baseRoot, rel));
+      const out = `${hit.stdout || ""}\n${hit.stderr || ""}`;
+      assert(hit.status !== 0, `fails lint on a debugger violation in .${ext}`);
+      assert(/debugger/.test(out), `reports the debugger violation for .${ext}`);
+    }
 
-    const tsHit = runCheck("check-lint.js", {
-      FITGEN_CI_LINT_FILES: "src/.lint-probe-temp.ts",
-      FITGEN_CI_SKIP_SCRIPTS: "1",
-      FITGEN_CI_BASE_ROOT: baseRoot,
-      FITGEN_CI_ALLOWLIST_DIR: allowDir,
-    });
-    assert(tsHit.status !== 0, "fails lint on a violating TS file outside scripts/");
+    for (const ext of ["js", "cjs", "mjs"]) {
+      const rel = `src/.lint-ok-temp.${ext}`;
+      const ok = runCheck("check-lint.js", lintEnv(allowDir, baseRoot, rel));
+      assert(ok.status === 0, `passes lint on a valid .${ext} fixture`);
+    }
 
-    const skippedLegacy = runCheck("check-lint.js", {
-      FITGEN_CI_LINT_FILES: "app.js",
-      FITGEN_CI_SKIP_SCRIPTS: "1",
-      FITGEN_CI_BASE_ROOT: baseRoot,
-      FITGEN_CI_ALLOWLIST_DIR: allowDir,
-    });
+    const tsHit = runCheck(
+      "check-lint.js",
+      lintEnv(allowDir, baseRoot, "src/.lint-probe-temp.ts")
+    );
+    const tsOut = `${tsHit.stdout || ""}\n${tsHit.stderr || ""}`;
+    assert(tsHit.status !== 0, "fails closed when a TypeScript file is introduced");
+    assert(
+      /typed linting|TypeScript\/TSX is outside/i.test(tsOut),
+      "points TypeScript files at the typed-linting prerequisite instead of parsing them as JS"
+    );
+    assert(
+      !/Parsing error/i.test(tsOut),
+      "does not report a stock Espree parse error for TypeScript"
+    );
+
+    const skippedLegacy = runCheck("check-lint.js", lintEnv(allowDir, baseRoot, "app.js"));
     assert(skippedLegacy.status === 0, "does not lint grandfathered legacy paths");
   } finally {
-    fs.rmSync(probeJs, { force: true });
-    fs.rmSync(probeTs, { force: true });
-    fs.rmSync(path.dirname(probeJs), { recursive: true, force: true });
+    for (const rel of Object.keys(probes)) {
+      fs.rmSync(path.join(ROOT, rel), { force: true });
+    }
+    fs.rmSync(srcDir, { recursive: true, force: true });
   }
 
   const clean = spawnSync("npm", ["run", "lint"], { cwd: ROOT, encoding: "utf8" });

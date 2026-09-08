@@ -41,7 +41,8 @@ Median docs:
 Pull-request quality gates live in `.github/workflows/ci.yml` and are documented
 in `scripts/ci/README.md`. Keep-alive is not a PR quality check. Lockfiles for
 the root package and `backend/` are committed and used by CI installs. Lint
-covers `scripts/` plus changed/new JS/TS outside the legacy-path allowlist.
+covers `scripts/` plus changed/new JS/CJS/MJS outside the legacy-path allowlist.
+TypeScript linting is a prerequisite (Issue #9) before the first `.ts`/`.tsx` source PR.
 
 ## Notes
 

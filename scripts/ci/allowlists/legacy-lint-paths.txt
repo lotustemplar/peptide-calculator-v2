@@ -1,6 +1,6 @@
 # Grandfathered JS already on main @ 4741e6f.
 # Changed-file lint skips these so P0.0 does not auto-fix or rewrite legacy app code.
-# New JS/TS outside this list is linted. Do not add paths to skip lint on new files.
+# New JS/CJS/MJS outside this list is linted. TypeScript is blocked until Issue #9.
 app.js
 backend/server.js
 config.example.js
