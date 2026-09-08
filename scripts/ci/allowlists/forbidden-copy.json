@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "baselineSha": "4741e6f227676ff5c0f511edf173ecc03bc298df",
+  "notes": [
+    "Forward-looking allowlist for pre-existing MED-FLAG / forbidden matches on main.",
+    "Live copy rewrite is P0.6 / UX-COPY-001 — out of scope for P0.0.",
+    "Each entry consumes one match of patternId in file whose line contains excerpt.",
+    "Do not add entries to land new clinical/clearance copy. Remove unused entries in P0.6."
+  ],
+  "entries": [
+    {
+      "file": "index.html",
+      "patternId": "SAFETY_FIRST",
+      "excerpt": "safety-first dose math",
+      "rationale": "Pre-existing marketing meta description (UX-COPY-001 MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "index.html",
+      "patternId": "USUALLY_PREFERRED",
+      "excerpt": "usually preferred for vial fit",
+      "rationale": "Pre-existing wizard helper copy (UX-COPY-001 MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "index.html",
+      "patternId": "RECOMMENDED",
+      "excerpt": "Recommended water amounts",
+      "rationale": "Pre-existing results heading (UX-RES-002 / MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "index.html",
+      "patternId": "SAVED_PRESCRIPTIONS",
+      "excerpt": "Saved prescriptions",
+      "rationale": "Pre-existing cabinet heading (UX-COPY-001 MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "index.html",
+      "patternId": "HOW_MUCH_TO_TAKE",
+      "excerpt": "how much to take",
+      "rationale": "Pre-existing cabinet helper copy (UX-COPY-001 MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "app.js",
+      "patternId": "RECOMMENDED",
+      "excerpt": "badge\">Recommended</span>",
+      "rationale": "Pre-existing results badge (UX-RES-002 / MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "app.js",
+      "patternId": "USUALLY_PREFERRED",
+      "excerpt": "usually preferred for vial fit",
+      "rationale": "Pre-existing water-warning string (UX-COPY-001 MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "app.js",
+      "patternId": "TAKE_AND_DRAW",
+      "excerpt": "Take ${formatDose(schedule.doseAmount, schedule.unitLabel)} and draw",
+      "rationale": "Pre-existing reminder body (UX-COPY-001 Take-dose phrasing). Rewrite in P0.6 if reminders remain."
+    },
+    {
+      "file": "runtime-fixes.js",
+      "patternId": "RECOMMENDED",
+      "excerpt": "badge\">Recommended</span>",
+      "rationale": "Pre-existing results badge duplicate path (UX-RES-002 / MED-FLAG). Rewrite in P0.6."
+    },
+    {
+      "file": "runtime-fixes.js",
+      "patternId": "TAKE_AND_DRAW",
+      "excerpt": "Take ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)} and draw",
+      "rationale": "Pre-existing reminder body duplicate path (UX-COPY-001). Rewrite in P0.6 if reminders remain."
+    },
+    {
+      "file": "native-reminder-fix.js",
+      "patternId": "TAKE_AND_DRAW",
+      "excerpt": "Take ${doseAmount.toFixed(2).replace(/\\.00$/, \"\")} ${unitLabel} and draw",
+      "rationale": "Pre-existing native reminder payload (UX-COPY-001). File is unloaded on main but still scanned."
+    },
+    {
+      "file": "MEDIAN_SETUP.md",
+      "patternId": "RECOMMENDED",
+      "excerpt": "Recommended stack",
+      "rationale": "Non-clinical setup heading already on main. Allowlisted so the gate stays forward-looking."
+    }
+  ]
+}

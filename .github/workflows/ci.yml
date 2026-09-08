@@ -1,0 +1,47 @@
+# PR quality gates (SR-CI-001, SR-CI-002, SAF-COPY-001).
+# This is the required pull_request check path for implementation work.
+# keep-alive.yml is schedule-only and must NOT be treated as a required PR check.
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    name: PR quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          # ESLint 10 requires Node ^20.19.0 || ^22.13.0 || >=24
+          node-version: "20.19"
+          cache: npm
+
+      - name: Verify lockfiles
+        run: node scripts/ci/check-lockfiles.js
+
+      - name: Install root dependencies from lockfile
+        run: npm ci --ignore-scripts
+
+      - name: Install backend dependencies from lockfile
+        run: npm ci --prefix backend
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Fail on new runtime *-fix.js
+        run: npm run ci:no-new-fix
+
+      - name: Forbidden-copy grep (SR-CI-002 / SAF-COPY-001)
+        run: npm run ci:forbidden-copy
+
+      - name: Test runner
+        run: npm test

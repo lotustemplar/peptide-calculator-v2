@@ -36,6 +36,12 @@ Median docs:
 - OneSignal plugin: https://docs.median.co/docs/onesignal
 - Open URL from notification: https://docs.median.co/docs/open-url-from-notification
 
+## CI (P0.0)
+
+Pull-request quality gates live in `.github/workflows/ci.yml` and are documented
+in `scripts/ci/README.md`. Keep-alive is not a PR quality check. Lockfiles for
+the root package and `backend/` are committed and used by CI installs.
+
 ## Notes
 
 - Saved fills and reminders are stored in `localStorage`

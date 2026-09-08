@@ -1,0 +1,13 @@
+# Pre-existing runtime *-fix.js / *-fixes.js files on main @ 4741e6f.
+# Forward-looking only: adding any new matching file fails CI (SR-CI-001).
+# Do not add entries for new patches. Live patch retirement is a later slice.
+export-fix.js
+fill-name-suggestions-fix.js
+mobile-polish-fix.js
+native-backup-fix.js
+native-reminder-fix.js
+native-reminder-ux-fix.js
+notification-fix.js
+runtime-fixes.js
+settings-fix.js
+ui-polish-fix.js

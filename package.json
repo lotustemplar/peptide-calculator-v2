@@ -8,6 +8,17 @@
   },
   "scripts": {
     "postinstall": "cd backend && npm install",
-    "start": "cd backend && npm start"
+    "start": "cd backend && npm start",
+    "lint": "eslint scripts --max-warnings 0",
+    "test": "node scripts/test.js",
+    "ci:lockfiles": "node scripts/ci/check-lockfiles.js",
+    "ci:no-new-fix": "node scripts/ci/check-no-new-fix-js.js",
+    "ci:forbidden-copy": "node scripts/ci/check-forbidden-copy.js",
+    "ci": "npm run ci:lockfiles && npm run lint && npm run ci:no-new-fix && npm run ci:forbidden-copy && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0"
   }
 }
