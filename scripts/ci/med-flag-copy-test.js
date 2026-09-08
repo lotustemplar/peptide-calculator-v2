@@ -95,13 +95,13 @@ function main() {
 
   assertIncludes(
     app,
-    "Planned draw: ${formatDose(schedule.doseAmount, schedule.unitLabel)}. Measure ${formatDrawMl(schedule.doseMl)} from the constituted vial.",
-    "app.js reminder body uses planned-draw framing"
+    "Planned dose: ${formatDose(schedule.doseAmount, schedule.unitLabel)}. Measure ${formatDrawMl(schedule.doseMl)} from the constituted vial.",
+    "app.js reminder body uses planned-dose framing"
   );
   assertIncludes(
     runtime,
-    "Planned draw: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.",
-    "runtime-fixes.js reminder body uses planned-draw framing"
+    "Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.",
+    "runtime-fixes.js reminder body uses planned-dose framing"
   );
   assert(
     !/\bTake\s+\$\{/.test(app) && !/\bTake\s+\$\{/.test(runtime),

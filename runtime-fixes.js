@@ -599,7 +599,7 @@ async function syncRemindersToBackend() {
       } else if (nextReminder.fill) {
         fireBrowserNotification(
           `${nextReminder.fill.name} dose due`,
-          `Planned draw: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.`
+          `Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.`
         );
       }
       renderScheduleIndicator();

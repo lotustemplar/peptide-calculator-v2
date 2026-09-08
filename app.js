@@ -1561,7 +1561,7 @@ function queueNextReminder() {
 function fireReminder(schedule) {
   const fill = resolveScheduleFill(schedule);
   const title = `${fill ? fill.name : "Peptide"} Reminder`;
-  const body = `Planned draw: ${formatDose(schedule.doseAmount, schedule.unitLabel)}. Measure ${formatDrawMl(schedule.doseMl)} from the constituted vial.`;
+  const body = `Planned dose: ${formatDose(schedule.doseAmount, schedule.unitLabel)}. Measure ${formatDrawMl(schedule.doseMl)} from the constituted vial.`;
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
