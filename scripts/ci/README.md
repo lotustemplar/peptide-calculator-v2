@@ -62,7 +62,7 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Gate | Script | Fails when |
 | --- | --- | --- |
 | Lockfiles | `check-lockfiles.js` | `package-lock.json` or `backend/package-lock.json` is missing |
-| Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS outside the legacy-path allowlist; a new `.ts`/`.tsx` file fails closed until Issue #9 |
+| Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS/TS/TSX outside the legacy-path allowlist |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
 | Test runner | `scripts/test.js` | Gate self-tests or P0.1 calculator tests fail |
@@ -103,14 +103,15 @@ name the phrases.
 ### `allowlists/legacy-lint-paths.txt`
 
 Grandfathered application/backend JS already on `main`. Changed-file lint skips
-these so P0.0 does not rewrite legacy code. New **JS/CJS/MJS** is linted with
-parser settings split by runtime:
+these so P0.0 does not rewrite legacy code. New **JS/CJS/MJS/TS/TSX** is linted
+with parser settings split by runtime:
 
 - `scripts/**`, `backend/**`, `*.cjs`, `eslint.config.js` → CommonJS + Node
 - `*.mjs` and other new `*.js` (for example `src/`) → `sourceType: "module"`
+- `scripts/**` / `backend/**` `.ts`/`.tsx` → typescript-eslint parser, CommonJS + Node
+- other `.ts`/`.tsx` → typescript-eslint parser, `sourceType: "module"`
+- `scripts/ci/fixtures/lint/esm/**` → typescript-eslint parser, ESM (typed import / TSX fixtures)
 
-TypeScript/TSX is **not** linted in P0.0. A new `.ts`/`.tsx` file fails closed
-until typed linting lands ([Issue #9](https://github.com/lotustemplar/peptide-calculator-v2/issues/9)).
 Adding a path to this list versus the PR base fails CI.
 
 ## How to see a failing check
@@ -128,10 +129,17 @@ mkdir -p src
 printf 'debugger;\n' > src/probe.js
 FITGEN_CI_LINT_FILES=src/probe.js FITGEN_CI_SKIP_SCRIPTS=1 node scripts/ci/check-lint.js
 rm -rf src
+
+# TypeScript debugger (must fail)
+mkdir -p src
+printf 'debugger;\nconst dose: number = 1;\n' > src/probe.ts
+FITGEN_CI_LINT_FILES=src/probe.ts FITGEN_CI_SKIP_SCRIPTS=1 node scripts/ci/check-lint.js
+rm -rf src
 ```
 
-Valid JS/CJS/MJS fixtures (must pass) and a fail-closed TypeScript probe are
-covered by `gate-selftest.js`.
+Committed passing fixtures live in `scripts/ci/fixtures/lint/` (`const dose: number = 1`,
+typed imports, TSX). Valid JS/CJS/MJS/TS/TSX fixtures and failing TS `debugger` /
+unused-binding probes are covered by `gate-selftest.js`.
 
 The self-tests in `gate-selftest.js` create temporary fixtures (removed in
 `finally`) for failure cases, including allowlist-bypass attempts, relocated

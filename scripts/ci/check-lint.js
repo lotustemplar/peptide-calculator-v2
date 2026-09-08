@@ -7,8 +7,7 @@ const { allowlistDir, fail, readText, repoRoot, toPosix } = require("./lib");
 const { listChangedFiles, requireBaseRef } = require("./base-ref");
 const { assertPathAllowlistNotBroadened, parsePathAllowlist } = require("./allowlist-freeze");
 
-const SOURCE_RE = /\.(?:js|cjs|mjs)$/i;
-const TYPESCRIPT_RE = /\.(?:ts|tsx)$/i;
+const SOURCE_RE = /\.(?:js|cjs|mjs|ts|tsx)$/i;
 
 function eslintBin() {
   return path.join(repoRoot(), "node_modules", "eslint", "bin", "eslint.js");
@@ -36,18 +35,6 @@ function loadLegacyPaths() {
 
 function collectForwardFiles(legacy) {
   const changed = listChangedFiles().map((rel) => toPosix(rel));
-  const typescriptHits = changed.filter((rel) => {
-    if (!TYPESCRIPT_RE.test(rel)) {
-      return false;
-    }
-    return fs.existsSync(path.join(repoRoot(), rel));
-  });
-  if (typescriptHits.length) {
-    fail(
-      "SR-CI-001: TypeScript/TSX is outside the P0.0 lint surface. Land typed linting (typescript-eslint) before the first .ts/.tsx source PR. See Issue #9.",
-      typescriptHits.map((rel) => `blocked ${rel}`)
-    );
-  }
 
   return changed.filter((rel) => {
     if (!SOURCE_RE.test(rel)) {
@@ -84,7 +71,7 @@ function main() {
 
   const extra = collectForwardFiles(legacy);
   if (!extra.length) {
-    console.log("lint: no new/changed non-legacy JS/CJS/MJS outside scripts/.");
+    console.log("lint: no new/changed non-legacy JS/CJS/MJS/TS/TSX outside scripts/.");
     return;
   }
 
@@ -101,9 +88,9 @@ function main() {
     if (extraLint.stderr) {
       process.stderr.write(extraLint.stderr);
     }
-    fail("SR-CI-001: lint failed on changed/new JS/CJS/MJS outside the legacy allowlist.");
+    fail("SR-CI-001: lint failed on changed/new JS/CJS/MJS/TS/TSX outside the legacy allowlist.");
   }
-  console.log("lint: changed/new non-legacy JS/CJS/MJS files clean.");
+  console.log("lint: changed/new non-legacy JS/CJS/MJS/TS/TSX files clean.");
 }
 
 if (require.main === module) {
@@ -112,7 +99,6 @@ if (require.main === module) {
 
 module.exports = {
   SOURCE_RE,
-  TYPESCRIPT_RE,
   collectForwardFiles,
   loadLegacyPaths,
   main,
