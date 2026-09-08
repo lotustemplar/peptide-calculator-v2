@@ -6,6 +6,7 @@
  * P0.0: gate self-tests.
  * P0.1: dual-path calculator legacy-evidence goldens + FR-CALC-010 domain fixtures.
  * P0.6: MED-FLAG measurement/planner copy replacements on loaded surfaces.
+ * P0.OCC: FR-SCH-000 occurrence identity + atomic Taken/Undo writer.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -19,6 +20,10 @@ const jobs = [
   {
     name: "P0.6 MED-FLAG copy replacements",
     file: path.join(__dirname, "ci", "med-flag-copy-test.js"),
+  },
+  {
+    name: "P0.OCC FR-SCH-000 occurrence identity + atomic writer",
+    file: path.join(__dirname, "occ", "occurrence-test.js"),
   },
 ];
 
