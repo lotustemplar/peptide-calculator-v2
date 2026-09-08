@@ -1,5 +1,6 @@
 export {
   cloneOccurrence,
+  cloneOccurrences,
   cloneSnapshot,
   depletionApplied,
   isSupportedDepletionUnit,
@@ -22,14 +23,17 @@ export type {
 export {
   countIdentityMatches,
   deterministicOccurrenceId,
+  findDuplicateIdentity,
   lookupOccurrence,
   materializeOccurrence,
+  normalizeIanaTimeZone,
+  normalizeIsoInstant,
   normalizeLocalCivilDate,
   normalizeScheduleId,
   occurrenceIdentityKey,
   replaceOccurrence,
 } from "./identity";
-export type { MaterializeInput, MaterializeResult } from "./identity";
+export type { MaterializeFailure, MaterializeInput, MaterializeResult, MaterializeSuccess } from "./identity";
 
 export { explicitLegacyTakenDates, materializeLegacyTakenDates } from "./legacy";
 export type { LegacyMaterializeResult, LegacyScheduleSource } from "./legacy";

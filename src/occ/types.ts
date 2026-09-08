@@ -2,6 +2,10 @@
  * P0.OCC / FR-SCH-000 / Spec §6.5 OccurrenceRecord.
  * P0 statuses only: pending | taken (undo → pending).
  * Skip / Snooze / Reschedule remain P1 (FR-SCH-001).
+ *
+ * Narrow FR-SCH-000 integrity amendment: `appliedFillId` binds the depletion
+ * snapshot to the fill that was decremented so Undo cannot credit another fill.
+ * Not a dose/unit conversion field.
  */
 
 export const SUPPORTED_DEPLETION_UNITS = ["mg", "mcg", "IU"] as const;
@@ -21,6 +25,8 @@ export interface OccurrenceRecord {
   takenAt: string | null;
   appliedDepletionAmount: number | null;
   appliedDepletionUnit: SupportedDepletionUnit | null;
+  /** Fill decremented at Taken. Required when a depletion snapshot is stored. */
+  appliedFillId: string | null;
   updatedAt: string;
 }
 
@@ -42,6 +48,10 @@ export interface OccurrenceStoreSnapshot {
 export type WriterFailureCode =
   | "NOT_FOUND"
   | "INVALID_IDENTITY"
+  | "INVALID_TIMEZONE"
+  | "INVALID_INSTANT"
+  | "DUPLICATE_IDENTITY"
+  | "FILL_MISMATCH"
   | "UNSUPPORTED_UNIT"
   | "UNIT_MISMATCH"
   | "INVALID_DOSE"
@@ -86,4 +96,8 @@ export function cloneSnapshot(snapshot: OccurrenceStoreSnapshot): OccurrenceStor
 
 export function cloneOccurrence(record: OccurrenceRecord): OccurrenceRecord {
   return { ...record };
+}
+
+export function cloneOccurrences(records: readonly OccurrenceRecord[]): OccurrenceRecord[] {
+  return records.map((row) => ({ ...row }));
 }

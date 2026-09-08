@@ -1,7 +1,13 @@
 import {
-  LOCAL_CIVIL_DATE_RE,
+  cloneOccurrences,
   type OccurrenceRecord,
 } from "./types";
+import {
+  normalizeIanaTimeZone,
+  normalizeIsoInstant,
+  normalizeLocalCivilDate,
+  normalizeScheduleId,
+} from "./validate";
 
 export interface MaterializeInput {
   scheduleId: string;
@@ -15,27 +21,23 @@ export interface MaterializeInput {
   createId?: () => string;
 }
 
-export interface MaterializeResult {
+export interface MaterializeSuccess {
+  ok: true;
   record: OccurrenceRecord;
   records: OccurrenceRecord[];
   created: boolean;
 }
 
-export function normalizeScheduleId(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+export interface MaterializeFailure {
+  ok: false;
+  code: "DUPLICATE_IDENTITY" | "INVALID_IDENTITY" | "INVALID_TIMEZONE" | "INVALID_INSTANT";
+  message: string;
+  records: OccurrenceRecord[];
 }
 
-export function normalizeLocalCivilDate(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.trim();
-  return LOCAL_CIVIL_DATE_RE.test(trimmed) ? trimmed : null;
-}
+export type MaterializeResult = MaterializeSuccess | MaterializeFailure;
+
+export { normalizeIanaTimeZone, normalizeIsoInstant, normalizeLocalCivilDate, normalizeScheduleId };
 
 /** Logical identity key for uniqueness: (scheduleId, localCivilDate). */
 export function occurrenceIdentityKey(scheduleId: string, localCivilDate: string): string {
@@ -45,6 +47,20 @@ export function occurrenceIdentityKey(scheduleId: string, localCivilDate: string
 /** Surrogate assigned once. Deterministic so rematerialization cannot mint a second id. */
 export function deterministicOccurrenceId(scheduleId: string, localCivilDate: string): string {
   return `occ:${scheduleId}:${localCivilDate}`;
+}
+
+export function findDuplicateIdentity(
+  records: readonly OccurrenceRecord[]
+): { scheduleId: string; localCivilDate: string } | null {
+  const seen = new Set<string>();
+  for (const row of records) {
+    const key = occurrenceIdentityKey(row.scheduleId, row.localCivilDate);
+    if (seen.has(key)) {
+      return { scheduleId: row.scheduleId, localCivilDate: row.localCivilDate };
+    }
+    seen.add(key);
+  }
+  return null;
 }
 
 export function lookupOccurrence(
@@ -75,26 +91,60 @@ export function countIdentityMatches(
 
 /**
  * Lookup-first materialization. Never inserts a second row for the same pair.
- * Reuses the persisted surrogate id after rebuild / restart.
+ * Fail-closed if the input already contains duplicate logical identities.
  */
 export function materializeOccurrence(
   records: readonly OccurrenceRecord[],
   input: MaterializeInput
 ): MaterializeResult {
+  const unchanged = cloneOccurrences(records);
+  const duplicate = findDuplicateIdentity(records);
+  if (duplicate) {
+    return {
+      ok: false,
+      code: "DUPLICATE_IDENTITY",
+      message: `duplicate occurrence identity (${duplicate.scheduleId}, ${duplicate.localCivilDate})`,
+      records: unchanged,
+    };
+  }
+
   const scheduleId = normalizeScheduleId(input.scheduleId);
   const localCivilDate = normalizeLocalCivilDate(input.localCivilDate);
   if (!scheduleId || !localCivilDate) {
-    throw new Error("INVALID_IDENTITY");
+    return {
+      ok: false,
+      code: "INVALID_IDENTITY",
+      message: "scheduleId/localCivilDate is not a real identity pair",
+      records: unchanged,
+    };
   }
-  if (typeof input.timeZone !== "string" || input.timeZone.trim().length === 0) {
-    throw new Error("INVALID_IDENTITY");
+
+  const timeZone = normalizeIanaTimeZone(input.timeZone);
+  if (!timeZone) {
+    return {
+      ok: false,
+      code: "INVALID_TIMEZONE",
+      message: "timeZone is not a valid IANA identifier",
+      records: unchanged,
+    };
+  }
+
+  const nowIso = normalizeIsoInstant(input.nowIso);
+  if (!nowIso) {
+    return {
+      ok: false,
+      code: "INVALID_INSTANT",
+      message: "nowIso is not a valid ISO-8601 instant",
+      records: unchanged,
+    };
   }
 
   const existing = lookupOccurrence(records, scheduleId, localCivilDate);
   if (existing) {
     return {
+      ok: true,
       record: { ...existing },
-      records: records.map((row) => ({ ...row })),
+      records: unchanged,
       created: false,
     };
   }
@@ -104,17 +154,19 @@ export function materializeOccurrence(
     id,
     scheduleId,
     localCivilDate,
-    timeZone: input.timeZone,
+    timeZone,
     status: "pending",
     takenAt: null,
     appliedDepletionAmount: null,
     appliedDepletionUnit: null,
-    updatedAt: input.nowIso,
+    appliedFillId: null,
+    updatedAt: nowIso,
   };
 
   return {
+    ok: true,
     record: { ...record },
-    records: [...records.map((row) => ({ ...row })), { ...record }],
+    records: [...unchanged, { ...record }],
     created: true,
   };
 }

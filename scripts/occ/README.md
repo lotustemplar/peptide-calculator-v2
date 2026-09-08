@@ -12,6 +12,9 @@ legacy `takenDates` writers.
 - One logical record per `(scheduleId, localCivilDate)`; lookup before create
 - Surrogate `id` assigned once and reused after calendar rebuild / restart
 - Taken/Undo + fill depletion in one persist commit
+- Immutable `appliedFillId` binds Undo to the fill that was decremented
+- Duplicate logical identities fail closed (no discard, no persist)
+- Civil dates are real Gregorian dates; IANA zones and ISO instants are validated
 - Double-tap Taken is a no-op
 - Undo uses the stored snapshot, not a later `desiredDose` edit
 - Persist failure retains pre-operation status and depletion

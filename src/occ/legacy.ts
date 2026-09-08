@@ -1,5 +1,5 @@
 import { materializeOccurrence, normalizeLocalCivilDate, replaceOccurrence } from "./identity";
-import { type OccurrenceRecord } from "./types";
+import { cloneOccurrences, type OccurrenceRecord } from "./types";
 
 export interface LegacyScheduleSource {
   id: string;
@@ -8,10 +8,12 @@ export interface LegacyScheduleSource {
 }
 
 export interface LegacyMaterializeResult {
+  ok: boolean;
   records: OccurrenceRecord[];
   /** Original source value, never rewritten. */
   sourceTakenDates: unknown;
   materializedDates: string[];
+  code?: string;
 }
 
 /**
@@ -45,8 +47,9 @@ export function materializeLegacyTakenDates(
   nowIso: string
 ): LegacyMaterializeResult {
   const sourceTakenDates = schedule.takenDates;
+  const unchanged = cloneOccurrences(records);
   const dates = explicitLegacyTakenDates(sourceTakenDates);
-  let next = records.map((row) => ({ ...row }));
+  let next = cloneOccurrences(records);
   const materializedDates: string[] = [];
 
   for (const localCivilDate of dates) {
@@ -56,6 +59,15 @@ export function materializeLegacyTakenDates(
       timeZone: schedule.timeZone,
       nowIso,
     });
+    if (!result.ok) {
+      return {
+        ok: false,
+        records: unchanged,
+        sourceTakenDates,
+        materializedDates: [],
+        code: result.code,
+      };
+    }
     next = result.records;
     if (result.created) {
       next = replaceOccurrence(next, {
@@ -67,6 +79,7 @@ export function materializeLegacyTakenDates(
   }
 
   return {
+    ok: true,
     records: next,
     sourceTakenDates,
     materializedDates,

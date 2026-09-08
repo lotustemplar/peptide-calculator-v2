@@ -140,6 +140,7 @@ console.log("P0.OCC FR-SCH-000 occurrence identity + atomic writer");
   assertEqual(result.occurrence.takenAt, NOW, "Taken sets takenAt");
   assertEqual(result.occurrence.appliedDepletionAmount, 2, "Taken snapshots desiredDose");
   assertEqual(result.occurrence.appliedDepletionUnit, "mg", "Taken snapshots unit");
+  assertEqual(result.occurrence.appliedFillId, FILL_ID, "Taken stores immutable appliedFillId");
   assertEqual(result.fill.depletionRemaining, 28, "Taken decrements fill depletion by snapshot amount");
   assertEqual(persist.commits.length, 1, "Taken persists one writer commit");
   assertEqual(result.snapshot.occurrences.length, 1, "Taken persist includes the occurrence");
@@ -178,6 +179,7 @@ console.log("P0.OCC FR-SCH-000 occurrence identity + atomic writer");
   assertEqual(undone.occurrence.takenAt, null, "Undo clears takenAt");
   assertEqual(undone.occurrence.appliedDepletionAmount, null, "Undo clears snapshot amount in the same commit");
   assertEqual(undone.occurrence.appliedDepletionUnit, null, "Undo clears snapshot unit in the same commit");
+  assertEqual(undone.occurrence.appliedFillId, null, "Undo clears appliedFillId in the same commit");
   assertEqual(undone.fill.depletionRemaining, 30, "Undo restores snapshotted 2 mg, not edited 5 mg");
   assertEqual(undone.fill.desiredDose, 5, "Undo does not rewrite the edited desiredDose");
 })();
@@ -288,6 +290,174 @@ console.log("P0.OCC FR-SCH-000 occurrence identity + atomic writer");
   assertEqual(undone.occurrence.status, "pending", "restart Undo returns pending");
   assertEqual(undone.fill.depletionRemaining, 30, "restart Undo restores snapshotted depletion");
   assertEqual(undone.occurrence.appliedDepletionAmount, null, "restart Undo clears snapshot after commit");
+  assertEqual(undone.occurrence.appliedFillId, null, "restart Undo clears appliedFillId after commit");
+  assertEqual(undone.fill.id, FILL_ID, "restart Undo restores the originally debited fill");
+})();
+
+(function appliedFillIdRejectsWrongFill() {
+  const taken = occ.markTaken(emptySnapshot(), identity(), recordingPersist().persist);
+  const otherFill = baseFill({ id: "fill-other", depletionRemaining: 40 });
+  const twoFills = {
+    occurrences: taken.snapshot.occurrences.map((row) => ({ ...row })),
+    fills: [...taken.snapshot.fills.map((row) => ({ ...row })), otherFill],
+  };
+  const persist = recordingPersist();
+  const wrong = occ.undoTaken(
+    twoFills,
+    { scheduleId: SCHEDULE_ID, localCivilDate: DATE, fillId: "fill-other", nowIso: LATER },
+    persist.persist
+  );
+  assert(wrong.ok === false && wrong.code === "FILL_MISMATCH", "Undo fail-closes when caller fillId is not appliedFillId");
+  assertEqual(persist.commits.length, 0, "wrong-fill Undo does not persist");
+  assertEqual(wrong.snapshot.fills.find((row) => row.id === FILL_ID).depletionRemaining, 28, "originally debited fill is unchanged");
+  assertEqual(wrong.snapshot.fills.find((row) => row.id === "fill-other").depletionRemaining, 40, "other same-unit fill does not receive restored depletion");
+  assertEqual(wrong.snapshot.occurrences[0].status, "taken", "wrong-fill Undo keeps taken status");
+  assertEqual(wrong.snapshot.occurrences[0].appliedFillId, FILL_ID, "wrong-fill Undo keeps appliedFillId");
+  assert(snapshotEqual(twoFills.fills, wrong.snapshot.fills), "wrong-fill Undo does not mutate caller fills");
+
+  const restarted = occ.reloadSnapshot(twoFills);
+  const restored = occ.undoTaken(
+    restarted,
+    { scheduleId: SCHEDULE_ID, localCivilDate: DATE, nowIso: LATER },
+    recordingPersist().persist
+  );
+  assert(restored.ok === true, "restart Undo without caller fillId uses stored appliedFillId");
+  assertEqual(restored.fill.id, FILL_ID, "restart Undo credits the originally debited fill");
+  assertEqual(restored.fill.depletionRemaining, 30, "restart Undo restores snapshot onto the bound fill");
+  assertEqual(
+    restored.snapshot.fills.find((row) => row.id === "fill-other").depletionRemaining,
+    40,
+    "restart Undo does not credit a different fill"
+  );
+})();
+
+function duplicateRows() {
+  const shared = {
+    scheduleId: SCHEDULE_ID,
+    localCivilDate: DATE,
+    timeZone: TZ,
+    status: "pending",
+    takenAt: null,
+    appliedDepletionAmount: null,
+    appliedDepletionUnit: null,
+    appliedFillId: null,
+    updatedAt: NOW,
+  };
+  return [
+    { ...shared, id: "occ-dup-a" },
+    { ...shared, id: "occ-dup-b" },
+  ];
+}
+
+(function duplicateIdentityFailClosed() {
+  const dupRecords = duplicateRows();
+  const materialized = occ.materializeOccurrence(dupRecords, {
+    scheduleId: SCHEDULE_ID,
+    localCivilDate: DATE,
+    timeZone: TZ,
+    nowIso: NOW,
+  });
+  assert(materialized.ok === false && materialized.code === "DUPLICATE_IDENTITY", "materialize fail-closes on duplicate logical identity");
+  assertEqual(materialized.records.length, 2, "duplicate materialize does not discard a record");
+  assertEqual(materialized.records[0].id, "occ-dup-a", "duplicate materialize keeps first row");
+  assertEqual(materialized.records[1].id, "occ-dup-b", "duplicate materialize keeps second row");
+
+  const before = { occurrences: dupRecords, fills: [baseFill()] };
+  const takenPersist = recordingPersist();
+  const taken = occ.markTaken(before, identity(), takenPersist.persist);
+  assert(taken.ok === false && taken.code === "DUPLICATE_IDENTITY", "Taken fail-closes on duplicate logical identity");
+  assertEqual(takenPersist.commits.length, 0, "duplicate Taken does not persist");
+  assertEqual(taken.snapshot.fills[0].depletionRemaining, 30, "duplicate Taken does not change depletion");
+  assert(snapshotEqual(before, { occurrences: dupRecords, fills: [baseFill()] }), "duplicate Taken leaves caller state unchanged");
+
+  const takenDup = duplicateRows().map((row, index) => ({
+    ...row,
+    status: "taken",
+    takenAt: NOW,
+    appliedDepletionAmount: 2,
+    appliedDepletionUnit: "mg",
+    appliedFillId: FILL_ID,
+    id: index === 0 ? "occ-dup-taken-a" : "occ-dup-taken-b",
+  }));
+  const undoBefore = { occurrences: takenDup, fills: [baseFill({ depletionRemaining: 28 })] };
+  const undoPersist = recordingPersist();
+  const undone = occ.undoTaken(
+    undoBefore,
+    { scheduleId: SCHEDULE_ID, localCivilDate: DATE, fillId: FILL_ID, nowIso: LATER },
+    undoPersist.persist
+  );
+  assert(undone.ok === false && undone.code === "DUPLICATE_IDENTITY", "Undo fail-closes on duplicate logical identity");
+  assertEqual(undoPersist.commits.length, 0, "duplicate Undo does not persist");
+  assertEqual(undone.snapshot.fills[0].depletionRemaining, 28, "duplicate Undo does not restore depletion");
+  assertEqual(undone.snapshot.occurrences.length, 2, "duplicate Undo does not discard a record");
+})();
+
+(function civilDateZoneInstantValidation() {
+  assertEqual(occ.normalizeLocalCivilDate("2024-02-29"), "2024-02-29", "leap day 2024-02-29 is a real civil date");
+  assertEqual(occ.normalizeLocalCivilDate("2000-02-29"), "2000-02-29", "leap day 2000-02-29 is a real civil date");
+  assertEqual(occ.normalizeLocalCivilDate("2026-01-01"), "2026-01-01", "year boundary 2026-01-01 is valid");
+  assertEqual(occ.normalizeLocalCivilDate("2026-12-31"), "2026-12-31", "year boundary 2026-12-31 is valid");
+  assertEqual(occ.normalizeLocalCivilDate("2026-02-29"), null, "non-leap 2026-02-29 is rejected");
+  assertEqual(occ.normalizeLocalCivilDate("2026-04-31"), null, "impossible 2026-04-31 is rejected");
+  assertEqual(occ.normalizeLocalCivilDate("2026-99-99"), null, "impossible 2026-99-99 is rejected");
+  assertEqual(occ.normalizeIanaTimeZone("America/New_York"), "America/New_York", "IANA America/New_York is accepted");
+  assertEqual(occ.normalizeIanaTimeZone("UTC"), "UTC", "IANA UTC is accepted");
+  assertEqual(occ.normalizeIanaTimeZone("Not/AZone"), null, "unknown zone is rejected");
+  assertEqual(occ.normalizeIanaTimeZone(""), null, "empty zone is rejected");
+  assertEqual(occ.normalizeIsoInstant(NOW), NOW, "ISO instant with Z is accepted");
+  assertEqual(occ.normalizeIsoInstant("2026-09-08T15:00:00+00:00"), "2026-09-08T15:00:00+00:00", "ISO instant with offset is accepted");
+  assertEqual(occ.normalizeIsoInstant("2026-09-08"), null, "date-only string is not an instant");
+  assertEqual(occ.normalizeIsoInstant("not-an-instant"), null, "invalid instant is rejected");
+
+  const leap = occ.materializeOccurrence([], {
+    scheduleId: SCHEDULE_ID,
+    localCivilDate: "2024-02-29",
+    timeZone: TZ,
+    nowIso: NOW,
+  });
+  assert(leap.ok === true && leap.record.localCivilDate === "2024-02-29", "materialize accepts leap day");
+
+  const before = emptySnapshot();
+  const persist = recordingPersist();
+  const badDate = occ.markTaken(
+    before,
+    { ...identity(), localCivilDate: "2026-02-29" },
+    persist.persist
+  );
+  assert(badDate.ok === false && badDate.code === "INVALID_IDENTITY", "Taken fail-closes on impossible civil date");
+  assertEqual(persist.commits.length, 0, "impossible-date Taken does not persist");
+  assert(snapshotEqual(before, emptySnapshot()), "impossible-date Taken does not mutate caller state");
+
+  const badZonePersist = recordingPersist();
+  const badZone = occ.markTaken(
+    before,
+    { ...identity(), timeZone: "Not/AZone" },
+    badZonePersist.persist
+  );
+  assert(badZone.ok === false && badZone.code === "INVALID_TIMEZONE", "Taken fail-closes on invalid IANA zone");
+  assertEqual(badZonePersist.commits.length, 0, "invalid-zone Taken does not persist");
+  assert(snapshotEqual(before, emptySnapshot()), "invalid-zone Taken does not mutate caller state");
+
+  const badInstantPersist = recordingPersist();
+  const badInstant = occ.markTaken(
+    before,
+    { ...identity(), nowIso: "2026-09-08" },
+    badInstantPersist.persist
+  );
+  assert(badInstant.ok === false && badInstant.code === "INVALID_INSTANT", "Taken fail-closes on invalid ISO instant");
+  assertEqual(badInstantPersist.commits.length, 0, "invalid-instant Taken does not persist");
+  assert(snapshotEqual(before, emptySnapshot()), "invalid-instant Taken does not mutate caller state");
+
+  const taken = occ.markTaken(emptySnapshot(), identity(), recordingPersist().persist);
+  const undoBadInstantPersist = recordingPersist();
+  const undoBadInstant = occ.undoTaken(
+    taken.snapshot,
+    { scheduleId: SCHEDULE_ID, localCivilDate: DATE, fillId: FILL_ID, nowIso: "not-an-instant" },
+    undoBadInstantPersist.persist
+  );
+  assert(undoBadInstant.ok === false && undoBadInstant.code === "INVALID_INSTANT", "Undo fail-closes on invalid ISO instant");
+  assertEqual(undoBadInstantPersist.commits.length, 0, "invalid-instant Undo does not persist");
+  assertEqual(undoBadInstant.snapshot.occurrences[0].status, "taken", "invalid-instant Undo keeps taken status");
 })();
 
 (function lookupPrecedesCreate() {

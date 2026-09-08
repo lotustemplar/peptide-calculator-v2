@@ -1,4 +1,9 @@
-import { lookupOccurrence, materializeOccurrence, replaceOccurrence } from "./identity";
+import {
+  findDuplicateIdentity,
+  lookupOccurrence,
+  materializeOccurrence,
+  replaceOccurrence,
+} from "./identity";
 import {
   cloneSnapshot,
   depletionApplied,
@@ -10,6 +15,7 @@ import {
   type WriterFailure,
   type WriterResult,
 } from "./types";
+import { normalizeIsoInstant } from "./validate";
 
 export type PersistCommit = (snapshot: OccurrenceStoreSnapshot) => void;
 
@@ -25,7 +31,8 @@ export interface TakenInput {
 export interface UndoInput {
   scheduleId: string;
   localCivilDate: string;
-  fillId: string;
+  /** If provided, must match the stored appliedFillId. */
+  fillId?: string;
   nowIso: string;
 }
 
@@ -54,6 +61,20 @@ function replaceFill(
   next: FillDepletionRecord
 ): FillDepletionRecord[] {
   return fills.map((row) => (row.id === next.id ? { ...next } : { ...row }));
+}
+
+function rejectIfDuplicate(
+  snapshot: OccurrenceStoreSnapshot
+): WriterFailure | null {
+  const duplicate = findDuplicateIdentity(snapshot.occurrences);
+  if (!duplicate) {
+    return null;
+  }
+  return fail(
+    snapshot,
+    "DUPLICATE_IDENTITY",
+    `duplicate occurrence identity (${duplicate.scheduleId}, ${duplicate.localCivilDate})`
+  );
 }
 
 /**
@@ -105,8 +126,8 @@ function finishSuccess(
 }
 
 /**
- * First Taken snapshots fill.desiredDose + unit once and decrements depletion
- * by that same amount/unit in one commit. Repeat Taken is a no-op.
+ * First Taken snapshots fill.desiredDose + unit once, stores appliedFillId,
+ * and decrements that fill in one commit. Repeat Taken is a no-op.
  */
 export function markTaken(
   snapshot: OccurrenceStoreSnapshot,
@@ -114,17 +135,20 @@ export function markTaken(
   persist: PersistCommit
 ): WriterResult {
   const before = cloneSnapshot(snapshot);
-  let materialized: ReturnType<typeof materializeOccurrence>;
-  try {
-    materialized = materializeOccurrence(before.occurrences, {
-      scheduleId: input.scheduleId,
-      localCivilDate: input.localCivilDate,
-      timeZone: input.timeZone,
-      nowIso: input.nowIso,
-      createId: input.createId,
-    });
-  } catch {
-    return fail(before, "INVALID_IDENTITY", "scheduleId/localCivilDate/timeZone invalid");
+  const duplicate = rejectIfDuplicate(before);
+  if (duplicate) {
+    return duplicate;
+  }
+
+  const materialized = materializeOccurrence(before.occurrences, {
+    scheduleId: input.scheduleId,
+    localCivilDate: input.localCivilDate,
+    timeZone: input.timeZone,
+    nowIso: input.nowIso,
+    createId: input.createId,
+  });
+  if (!materialized.ok) {
+    return fail(before, materialized.code, materialized.message);
   }
 
   const fill = findFill(before.fills, input.fillId);
@@ -133,7 +157,11 @@ export function markTaken(
   }
 
   if (materialized.record.status === "taken") {
-    return finishSuccess(before, before, materialized.record, fill, persist, true);
+    const bound =
+      (materialized.record.appliedFillId
+        ? findFill(before.fills, materialized.record.appliedFillId)
+        : null) ?? fill;
+    return finishSuccess(before, before, materialized.record, bound, persist, true);
   }
 
   if (!Number.isFinite(fill.desiredDose) || fill.desiredDose <= 0) {
@@ -160,6 +188,7 @@ export function markTaken(
     takenAt: input.nowIso,
     appliedDepletionAmount: fill.desiredDose,
     appliedDepletionUnit: unitCheck.unit,
+    appliedFillId: fill.id,
     updatedAt: input.nowIso,
   };
 
@@ -177,8 +206,8 @@ export function markTaken(
 }
 
 /**
- * Undo restores the persisted snapshot amount/unit (not a later desiredDose edit),
- * returns status to pending, and clears the snapshot in the same commit.
+ * Undo restores the persisted snapshot onto the stored appliedFillId
+ * (not a later desiredDose edit or a different caller fill).
  */
 export function undoTaken(
   snapshot: OccurrenceStoreSnapshot,
@@ -186,24 +215,47 @@ export function undoTaken(
   persist: PersistCommit
 ): WriterResult {
   const before = cloneSnapshot(snapshot);
+  const duplicate = rejectIfDuplicate(before);
+  if (duplicate) {
+    return duplicate;
+  }
+
+  if (!normalizeIsoInstant(input.nowIso)) {
+    return fail(before, "INVALID_INSTANT", "nowIso is not a valid ISO-8601 instant");
+  }
+
   const existing = lookupOccurrence(before.occurrences, input.scheduleId, input.localCivilDate);
   if (!existing) {
     return fail(before, "NOT_FOUND", "occurrence not found");
   }
 
-  const fill = findFill(before.fills, input.fillId);
-  if (!fill) {
-    return fail(before, "NOT_FOUND", "fill not found");
-  }
-
   if (existing.status !== "taken") {
-    return finishSuccess(before, before, existing, fill, persist, true);
+    const pendingFill = input.fillId ? findFill(before.fills, input.fillId) : null;
+    if (!pendingFill) {
+      return fail(before, "NOT_FOUND", "fill not found");
+    }
+    return finishSuccess(before, before, existing, pendingFill, persist, true);
   }
 
   const snapshotAmount = existing.appliedDepletionAmount;
   const snapshotUnit = existing.appliedDepletionUnit;
-  if (!depletionApplied(existing) || snapshotAmount === null || snapshotUnit === null) {
+  const appliedFillId = existing.appliedFillId;
+  if (
+    !depletionApplied(existing) ||
+    snapshotAmount === null ||
+    snapshotUnit === null ||
+    !appliedFillId
+  ) {
     return fail(before, "INVALID_SNAPSHOT", "taken occurrence has no restorable depletion snapshot");
+  }
+
+  if (input.fillId && input.fillId !== appliedFillId) {
+    return fail(before, "FILL_MISMATCH", "Undo fillId does not match stored appliedFillId");
+  }
+
+  const fill = findFill(before.fills, appliedFillId);
+  if (!fill) {
+    return fail(before, "NOT_FOUND", "applied fill not found");
   }
 
   const unitCheck = assertExactDepletionUnits(snapshotUnit, fill.depletionUnit);
@@ -227,6 +279,7 @@ export function undoTaken(
     takenAt: null,
     appliedDepletionAmount: null,
     appliedDepletionUnit: null,
+    appliedFillId: null,
     updatedAt: input.nowIso,
   };
 
