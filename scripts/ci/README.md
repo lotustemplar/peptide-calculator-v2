@@ -65,11 +65,14 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS/TS/TSX outside the legacy-path allowlist |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
-| Test runner | `scripts/test.js` | Gate self-tests or P0.1 calculator tests fail |
+| Test runner | `scripts/test.js` | Gate self-tests, P0.1 calculator tests, P0.6 copy tests, or P0.OCC occurrence tests fail |
 
 P0.1 calculator **legacy-evidence** goldens and FR-CALC-010 domain fixtures
 live in `scripts/calc/` and are invoked by `scripts/test.js` / `npm test`.
 Those snapshots lock current dual-path outputs; they are not target oracles.
+
+P0.OCC / FR-SCH-000 occurrence identity and the narrow Taken/Undo writer live
+in `src/occ/` with tests in `scripts/occ/`. They do not change live Taken UI.
 
 ## Allowlist rationale
 
@@ -145,6 +148,7 @@ unused-binding probes are covered by `gate-selftest.js`.
 The self-tests in `gate-selftest.js` create temporary fixtures (removed in
 `finally`) for failure cases, including allowlist-bypass attempts, relocated
 forbidden copy, lowercase recommended, literal Take/draw, and every pattern ID.
+Lint probes write under `src/` and must not delete other `src/` files (P0.OCC).
 
 A PR that adds `*-fix.js`, new forbidden copy, or a lint violation on a
 non-legacy file should show a red **PR quality gates** check on the pull

@@ -93,6 +93,8 @@ function lintEnv(allowDir, baseRoot, files) {
 function testLint() {
   console.log("check-lint.js");
   const srcDir = path.join(ROOT, "src");
+  const srcExisted = fs.existsSync(srcDir);
+  const sentinelRel = "src/.lint-keep-sentinel";
   const probes = {
     "src/.lint-probe-temp.js": "debugger;\n",
     "src/.lint-probe-temp.cjs": "debugger;\n",
@@ -109,6 +111,7 @@ function testLint() {
   };
 
   fs.mkdirSync(srcDir, { recursive: true });
+  write(ROOT, sentinelRel, "keep\n");
   for (const [rel, contents] of Object.entries(probes)) {
     write(ROOT, rel, contents);
   }
@@ -194,7 +197,16 @@ function testLint() {
     for (const rel of Object.keys(probes)) {
       fs.rmSync(path.join(ROOT, rel), { force: true });
     }
-    fs.rmSync(srcDir, { recursive: true, force: true });
+    const sentinelAbs = path.join(ROOT, sentinelRel);
+    const sentinelSurvived = fs.existsSync(sentinelAbs);
+    fs.rmSync(sentinelAbs, { force: true });
+    assert(sentinelSurvived, "lint probe cleanup must not delete other src/ files");
+    if (!srcExisted) {
+      const leftover = fs.existsSync(srcDir) ? fs.readdirSync(srcDir) : [];
+      if (leftover.length === 0) {
+        fs.rmSync(srcDir, { recursive: true, force: true });
+      }
+    }
   }
 
   const clean = spawnSync("npm", ["run", "lint"], { cwd: ROOT, encoding: "utf8" });
