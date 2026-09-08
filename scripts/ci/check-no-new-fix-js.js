@@ -3,18 +3,10 @@
 const fs = require("fs");
 const path = require("path");
 const { allowlistDir, fail, relPosix, repoRoot, walkFiles } = require("./lib");
+const { requireBaseRef } = require("./base-ref");
+const { assertPathAllowlistNotBroadened } = require("./allowlist-freeze");
 
 const FIX_FILE_RE = /-(?:fix|fixes)\.js$/;
-
-function loadAllowlist(absPath) {
-  const text = fs.readFileSync(absPath, "utf8");
-  return new Set(
-    text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith("#"))
-  );
-}
 
 function isRuntimeFixJs(relPath) {
   const base = path.posix.basename(relPath);
@@ -22,15 +14,15 @@ function isRuntimeFixJs(relPath) {
 }
 
 function main() {
-  const root = repoRoot();
+  requireBaseRef();
   const allowPath = path.join(allowlistDir(), "runtime-fix-js.txt");
   if (!fs.existsSync(allowPath)) {
     fail("SR-CI-001: runtime *-fix.js allowlist is missing.", [allowPath]);
   }
 
-  const allowed = loadAllowlist(allowPath);
-  const found = walkFiles(root)
-    .map((abs) => relPosix(root, abs))
+  const allowed = assertPathAllowlistNotBroadened("scripts/ci/allowlists/runtime-fix-js.txt");
+  const found = walkFiles(repoRoot())
+    .map((abs) => relPosix(repoRoot(), abs))
     .filter(isRuntimeFixJs);
 
   const extra = found.filter((rel) => !allowed.has(rel));
@@ -52,4 +44,12 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  FIX_FILE_RE,
+  isRuntimeFixJs,
+  main,
+};

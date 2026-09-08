@@ -9,7 +9,7 @@
   "scripts": {
     "postinstall": "cd backend && npm install",
     "start": "cd backend && npm start",
-    "lint": "eslint scripts --max-warnings 0",
+    "lint": "node scripts/ci/check-lint.js",
     "test": "node scripts/test.js",
     "ci:lockfiles": "node scripts/ci/check-lockfiles.js",
     "ci:no-new-fix": "node scripts/ci/check-no-new-fix-js.js",

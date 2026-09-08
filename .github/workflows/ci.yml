@@ -14,9 +14,18 @@ jobs:
     name: PR quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # pull_request only. Compare changed files and allowlists to the PR base.
+      # Fork-safe: contents:read + default GITHUB_TOKEN. Do not use pull_request_target.
+      FITGEN_CI_BASE_REF: origin/${{ github.base_ref }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch PR base for changed-file and allowlist freeze
+        run: git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4

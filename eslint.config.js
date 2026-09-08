@@ -13,14 +13,18 @@ module.exports = [
   },
   js.configs.recommended,
   {
-    files: ["scripts/**/*.js"],
+    files: ["**/*.{js,cjs,mjs,ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "commonjs",
-      globals: globals.node,
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
     },
     rules: {
       "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-debugger": "error",
     },
   },
 ];

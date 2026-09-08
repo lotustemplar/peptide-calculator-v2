@@ -3,6 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 const { allowlistDir, fail, readText, relPosix, repoRoot, walkFiles } = require("./lib");
+const { requireBaseRef } = require("./base-ref");
+const { assertCopyAllowlistNotBroadened, normalizeContext } = require("./allowlist-freeze");
 
 const SCAN_EXTENSIONS = new Set([
   ".js",
@@ -26,6 +28,7 @@ const SKIP_REL_FILES = new Set([
   "backend/package.json",
 ]);
 
+// Clinical / clearance / MED-FLAG phrases. Keep IDs stable; self-tests table-drive every id.
 const PATTERNS = [
   { id: "SAFE_TO_COMBINE", re: /safe[\s-]*to[\s-]*combine/i },
   { id: "NO_INTERACTIONS_FOUND", re: /no[\s-]+interactions?[\s-]+found/i },
@@ -36,12 +39,14 @@ const PATTERNS = [
   { id: "START_DOSE", re: /\bstart[\s-]+(?:taking[\s-]+)?(?:your[\s-]+|the[\s-]+)?dose\b/i },
   { id: "INCREASE_DOSE", re: /\bincrease[\s-]+(?:your[\s-]+|the[\s-]+)?dose\b/i },
   { id: "DECREASE_DOSE", re: /\bdecrease[\s-]+(?:your[\s-]+|the[\s-]+)?dose\b/i },
-  { id: "RECOMMENDED", re: /\bRecommended\b/ },
-  { id: "SAVED_PRESCRIPTIONS", re: /Saved prescriptions/ },
+  // Case-insensitive clinical "recommended", but not identifiers, CSS classes, or configs.recommended.
+  { id: "RECOMMENDED", re: /(?<![\w.])recommended(?![\w])/i },
+  { id: "SAVED_PRESCRIPTIONS", re: /saved prescriptions/i },
   { id: "HOW_MUCH_TO_TAKE", re: /how much to take/i },
   { id: "SAFETY_FIRST", re: /safety-first/i },
   { id: "USUALLY_PREFERRED", re: /usually preferred/i },
-  { id: "TAKE_AND_DRAW", re: /\bTake\s+\$\{/ },
+  // Literal or interpolated "Take <amount> and draw …" — not "take the lockfile and draw a diagram".
+  { id: "TAKE_AND_DRAW", re: /\btake\s+(?:\$\{|\d)[^\n]{0,200}?\band\s+draw\b/i },
 ];
 
 function shouldSkip(relPath) {
@@ -70,7 +75,7 @@ function collectHits(relPath, content) {
           line: index + 1,
           patternId: pattern.id,
           match: match[0],
-          excerptContext: line.trim(),
+          context: normalizeContext(line),
         });
       }
     }
@@ -85,13 +90,13 @@ function loadAllowlist(absPath) {
     throw new Error("forbidden-copy allowlist must contain an entries array");
   }
   return parsed.entries.map((entry, index) => {
-    if (!entry.file || !entry.patternId || !entry.excerpt) {
-      throw new Error(`allowlist entry ${index} is missing file, patternId, or excerpt`);
+    if (!entry.file || !entry.patternId || !entry.context) {
+      throw new Error(`allowlist entry ${index} is missing file, patternId, or context`);
     }
     return {
       file: entry.file,
       patternId: entry.patternId,
-      excerpt: entry.excerpt,
+      context: normalizeContext(entry.context),
       used: false,
     };
   });
@@ -105,7 +110,7 @@ function consumeAllowlist(hit, allowlist) {
     if (candidate.file !== hit.file || candidate.patternId !== hit.patternId) {
       return false;
     }
-    return hit.excerptContext.includes(candidate.excerpt) || candidate.excerpt.includes(hit.match);
+    return candidate.context === hit.context;
   });
   if (entry) {
     entry.used = true;
@@ -115,15 +120,16 @@ function consumeAllowlist(hit, allowlist) {
 }
 
 function main() {
-  const root = repoRoot();
+  requireBaseRef();
   const allowPath = path.join(allowlistDir(), "forbidden-copy.json");
   if (!fs.existsSync(allowPath)) {
     fail("SR-CI-002: forbidden-copy allowlist is missing.", [allowPath]);
   }
 
+  assertCopyAllowlistNotBroadened();
   const allowlist = loadAllowlist(allowPath);
-  const files = walkFiles(root, { extensions: SCAN_EXTENSIONS })
-    .map((abs) => ({ abs, rel: relPosix(root, abs) }))
+  const files = walkFiles(repoRoot(), { extensions: SCAN_EXTENSIONS })
+    .map((abs) => ({ abs, rel: relPosix(repoRoot(), abs) }))
     .filter((file) => !shouldSkip(file.rel));
 
   const novel = [];
@@ -152,9 +158,21 @@ function main() {
   if (unused.length) {
     console.log("Unused allowlist entries (OK if P0.6 already removed the live string):");
     for (const entry of unused) {
-      console.log(`  ${entry.file} [${entry.patternId}] ${entry.excerpt}`);
+      console.log(`  ${entry.file} [${entry.patternId}] ${entry.context}`);
     }
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  PATTERNS,
+  SKIP_REL_PREFIXES,
+  collectHits,
+  consumeAllowlist,
+  loadAllowlist,
+  main,
+  shouldSkip,
+};
