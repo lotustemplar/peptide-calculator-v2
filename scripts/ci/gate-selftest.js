@@ -100,7 +100,12 @@ function testLint() {
     "src/.lint-ok-temp.js": "export const dose = 1;\n",
     "src/.lint-ok-temp.cjs": "\"use strict\";\nmodule.exports = { dose: 1 };\n",
     "src/.lint-ok-temp.mjs": "export const dose = 1;\nexport function formatDose(value) {\n  return String(value);\n}\n",
-    "src/.lint-probe-temp.ts": "const dose: number = 1;\nexport { dose };\n",
+    "src/.lint-ok-temp.ts": "import type { Dose } from './.lint-ok-temp-types';\nconst dose: Dose = 1;\nexport { dose };\n",
+    "src/.lint-ok-temp-types.ts": "export type Dose = number;\n",
+    "src/.lint-ok-temp.tsx": "import type { Dose } from './.lint-ok-temp-types';\nexport function DoseLabel({ value }: { value: Dose }) {\n  return <span>{String(value)}</span>;\n}\n",
+    "src/.lint-probe-temp.ts": "debugger;\nconst dose: number = 1;\nexport { dose };\n",
+    "src/.lint-probe-unused-temp.ts": "const unused: number = 1;\n",
+    "src/.lint-probe-temp.tsx": "debugger;\nexport function Probe() {\n  return <span />;\n}\n",
   };
 
   fs.mkdirSync(srcDir, { recursive: true });
@@ -129,20 +134,59 @@ function testLint() {
       assert(ok.status === 0, `passes lint on a valid .${ext} fixture`);
     }
 
+    const tsOk = runCheck(
+      "check-lint.js",
+      lintEnv(allowDir, baseRoot, "src/.lint-ok-temp.ts")
+    );
+    const tsOkOut = `${tsOk.stdout || ""}\n${tsOk.stderr || ""}`;
+    assert(tsOk.status === 0, "passes lint on valid TypeScript (const dose: number / typed import)");
+    assert(
+      !/Parsing error|typed linting|TypeScript\/TSX is outside/i.test(tsOkOut),
+      "parses valid TypeScript with typescript-eslint instead of fail-closed or Espree"
+    );
+
+    const tsxOk = runCheck(
+      "check-lint.js",
+      lintEnv(allowDir, baseRoot, "src/.lint-ok-temp.tsx")
+    );
+    const tsxOkOut = `${tsxOk.stdout || ""}\n${tsxOk.stderr || ""}`;
+    assert(tsxOk.status === 0, "passes lint on a valid .tsx fixture");
+    assert(
+      !/Parsing error|typed linting|TypeScript\/TSX is outside/i.test(tsxOkOut),
+      "parses valid TSX with typescript-eslint instead of fail-closed or Espree"
+    );
+
     const tsHit = runCheck(
       "check-lint.js",
       lintEnv(allowDir, baseRoot, "src/.lint-probe-temp.ts")
     );
     const tsOut = `${tsHit.stdout || ""}\n${tsHit.stderr || ""}`;
-    assert(tsHit.status !== 0, "fails closed when a TypeScript file is introduced");
+    assert(tsHit.status !== 0, "fails lint on a debugger violation in .ts");
+    assert(/debugger/.test(tsOut), "reports the debugger violation for .ts");
     assert(
-      /typed linting|TypeScript\/TSX is outside/i.test(tsOut),
-      "points TypeScript files at the typed-linting prerequisite instead of parsing them as JS"
+      !/typed linting|TypeScript\/TSX is outside/i.test(tsOut),
+      "does not fail-closed TypeScript after typed linting landed"
     );
     assert(
       !/Parsing error/i.test(tsOut),
       "does not report a stock Espree parse error for TypeScript"
     );
+
+    const unusedHit = runCheck(
+      "check-lint.js",
+      lintEnv(allowDir, baseRoot, "src/.lint-probe-unused-temp.ts")
+    );
+    const unusedOut = `${unusedHit.stdout || ""}\n${unusedHit.stderr || ""}`;
+    assert(unusedHit.status !== 0, "fails lint on an unused TypeScript binding");
+    assert(/unused/i.test(unusedOut), "reports the unused TypeScript binding");
+
+    const tsxHit = runCheck(
+      "check-lint.js",
+      lintEnv(allowDir, baseRoot, "src/.lint-probe-temp.tsx")
+    );
+    const tsxOut = `${tsxHit.stdout || ""}\n${tsxHit.stderr || ""}`;
+    assert(tsxHit.status !== 0, "fails lint on a debugger violation in .tsx");
+    assert(/debugger/.test(tsxOut), "reports the debugger violation for .tsx");
 
     const skippedLegacy = runCheck("check-lint.js", lintEnv(allowDir, baseRoot, "app.js"));
     assert(skippedLegacy.status === 0, "does not lint grandfathered legacy paths");
@@ -155,6 +199,53 @@ function testLint() {
 
   const clean = spawnSync("npm", ["run", "lint"], { cwd: ROOT, encoding: "utf8" });
   assert(clean.status === 0, "passes lint on the current changed-file surface");
+}
+
+function testEslintLanguageOptions() {
+  console.log("eslint.config.js languageOptions");
+  const config = require(path.join(ROOT, "eslint.config.js"));
+  const blocks = config.filter((block) => block && Array.isArray(block.files) && block.languageOptions);
+
+  function hasFile(block, glob) {
+    return block.files.includes(glob);
+  }
+
+  const scriptsJs = blocks.find((block) => hasFile(block, "scripts/**/*.js"));
+  const browserJs = blocks.find((block) => hasFile(block, "**/*.js") && Array.isArray(block.ignores));
+  const scriptsTs = blocks.find((block) => hasFile(block, "scripts/**/*.ts"));
+  const backendTs = blocks.find((block) => hasFile(block, "backend/**/*.ts"));
+  const browserTs = blocks.find((block) => hasFile(block, "**/*.ts") && Array.isArray(block.ignores));
+  const fixtureEsm = blocks.find((block) => hasFile(block, "scripts/ci/fixtures/lint/esm/**/*.ts"));
+
+  assert(
+    scriptsJs && scriptsJs.languageOptions.sourceType === "commonjs" && scriptsJs.languageOptions.globals === require("globals").node,
+    "scripts/backend JS stay CommonJS + Node languageOptions"
+  );
+  assert(
+    browserJs && browserJs.languageOptions.sourceType === "module",
+    "browser JS stays ES-module languageOptions"
+  );
+  assert(
+    scriptsTs &&
+      backendTs === scriptsTs &&
+      scriptsTs.languageOptions.sourceType === "commonjs" &&
+      scriptsTs.languageOptions.globals === require("globals").node &&
+      scriptsTs.languageOptions.parser,
+    "scripts/backend TypeScript stay CommonJS + Node languageOptions with typescript-eslint"
+  );
+  assert(
+    browserTs &&
+      browserTs.languageOptions.sourceType === "module" &&
+      browserTs.languageOptions.parser &&
+      Array.isArray(browserTs.ignores) &&
+      browserTs.ignores.includes("scripts/**") &&
+      browserTs.ignores.includes("backend/**"),
+    "non-scripts/backend TypeScript stays ES-module languageOptions with typescript-eslint"
+  );
+  assert(
+    fixtureEsm && fixtureEsm.languageOptions.sourceType === "module" && fixtureEsm.languageOptions.parser,
+    "typed ESM lint fixtures use module languageOptions with typescript-eslint"
+  );
 }
 
 function testLockfiles() {
@@ -379,6 +470,7 @@ function main() {
   console.log("P0.0 CI baseline self-tests (gates only; calculator goldens run next).\n");
   try {
     testLint();
+    testEslintLanguageOptions();
     testLockfiles();
     testNoNewFix();
     testForbiddenCopy();
