@@ -1,25 +1,28 @@
-# FitGen Product Specification v1.1
+# FitGen Product Specification v1.2
 
 ## 1. Document control
 
 | Field | Value |
 | --- | --- |
-| **Title** | FitGen (peptide-calculator-v2) Product Specification v1.1 |
+| **Title** | FitGen (peptide-calculator-v2) Product Specification v1.2 |
 | **Date** | 2026-09-08 |
 | **Issue** | [#2](https://github.com/lotustemplar/peptide-calculator-v2/issues/2) |
+| **Draft PR** | [#3](https://github.com/lotustemplar/peptide-calculator-v2/pull/3) (docs-only) |
 | **Evidence SHA** | `4741e6f227676ff5c0f511edf173ecc03bc298df` (`main`) |
 | **Authors** | **Atlas** consolidates; sources: **Mira** (UX), **Sage** (architecture), **Sentinel** (QA/security), **Aegis** (med-safety), **CoS** (discovery inventory) |
-| **Status** | Revised for Codex re-review |
-| **Spec revision** | **v1.1** (resolves Codex blocking findings 1–8 on Spec v1) |
-| **Prior gist rev (Codex-reviewed)** | `7963e44e0ee0757c13f51d554250db2aa8e46b2b` |
-| **Current gist rev (v1.1)** | `4a801d7702857203161960f7fd6691013ffa431b` |
-| **Mode** | Read-only discovery synthesis — markdown under `/workspace/fitgen-issue2/` only; **no** application code, git remotes, or GitHub mutations from this deliverable |
+| **Status** | Revised for Codex v1.1 re-review (five blockers) |
+| **Spec revision** | **v1.2** (resolves Codex blocking findings 1–5 on Spec v1.1; findings 1–8 on Spec v1 remain addressed) |
+| **Prior gist rev (Codex-reviewed v1)** | `7963e44e0ee0757c13f51d554250db2aa8e46b2b` |
+| **Pinned gist rev (working copy)** | `4a801d7702857203161960f7fd6691013ffa431b` |
+| **Mode** | Docs-only under repository `docs/`; **no** application code, config, backend, workflows, or `*-fix.js` |
 
 **Versioning notes**
 
-- Spec **v1** (gist rev `7963e44…`) was reviewed by Codex with **changes requested** (`CODEX_REVIEW_SPEC_V1.md`).
-- Spec **v1.1** addresses all eight blocking findings via new/changed requirement IDs (see `CODEX_RESPONSE_MATRIX.md`).
-- After Codex re-approval, the approved specification should become a versioned repository artifact under `docs/` (docs-only PR; no application-code changes). Gist: https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599 (rev `4a801d7702857203161960f7fd6691013ffa431b`).
+- Spec **v1** (gist rev `7963e44e0ee0757c13f51d554250db2aa8e46b2b`) was reviewed by Codex with **changes requested**: [Issue #2 comment](https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588921595).
+- Spec **v1.1** addressed those eight blocking findings (see historical section of [CODEX_RESPONSE_MATRIX.md](./CODEX_RESPONSE_MATRIX.md)).
+- Spec **v1.2** addresses the five blocking findings from the Codex re-review of PR #3 head `09e563a7fbe51cf64105a48eaebfdb37dff8324c`: [PR review](https://github.com/lotustemplar/peptide-calculator-v2/pull/3#pullrequestreview-5145040134).
+- Canonical repository artifacts: [PRODUCT_SPEC_V1.md](./PRODUCT_SPEC_V1.md), [PRODUCT_SPEC_V1_SUMMARY.md](./PRODUCT_SPEC_V1_SUMMARY.md), [CODEX_RESPONSE_MATRIX.md](./CODEX_RESPONSE_MATRIX.md), [README.md](./README.md).
+- Pinned gist (same revision in every doc): https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599/4a801d7702857203161960f7fd6691013ffa431b
 
 **How to read tags**
 
@@ -37,7 +40,7 @@
 | **derived** | Computed from authoritative fields; may be recomputed |
 | **optional** | May be absent; consumers must tolerate null/missing |
 | **migrated** | Introduced by schema migration; dual-read until cutover |
-| **prohibited from leaving device** | Must not leave the device without a **Serious** decision (DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD / encryption) |
+| **prohibited from leaving device** | Must not leave via **app-initiated network egress, cloud sharing, or sync** without a **Serious** decision (DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD / encryption). Does **not** forbid an explicit user-initiated **local JSON file export** when FR-EXP-001 / FR-IMP-003 warning rules are met |
 
 ---
 
@@ -51,7 +54,7 @@ FitGen is a **planner and measurement calculator** for **user-entered** peptide 
 
 ### 2.2 Supported platform matrix (v1 baseline)
 
-| Surface | Spec v1.1 status |
+| Surface | Spec v1.2 status |
 | --- | --- |
 | **Static web app** (current SPA as served) | **Supported baseline** — primary characterization and test target |
 | **Median-wrapped Android** APK (as investigated at evidence SHA) | **Supported investigated target** — file export/import, install, offline, and permission AC judged against this path when native bridges are present |
@@ -120,7 +123,7 @@ All ranking and copy use **measurement framing** (“easiest to measure”, “v
 
 ## 4. Architecture decision (ADR)
 
-**Decision:** Incremental **TypeScript / ES modules** behind the existing **DOM / CSS**. **Reject** a React/Vue/Svelte (or similar) framework rewrite for Spec v1.1.
+**Decision:** Incremental **TypeScript / ES modules** behind the existing **DOM / CSS**. **Reject** a React/Vue/Svelte (or similar) framework rewrite. Unchanged from Spec v1 / v1.1; Spec v1.2 does not reopen this ADR.
 
 **Citation:** Sage `SAGE_AUDIT_FULL.md` §4; `SAGE_AUDIT_SUMMARY.md` ADR; aligns with AGENTS.md (no new `*-fix.js`, preserve visual identity).
 
@@ -163,7 +166,7 @@ All ranking and copy use **measurement framing** (“easiest to measure”, “v
 
 ## 6. Canonical data model
 
-Plain-language + typed-contract fields Forge must implement against. Marks: **authoritative** | **derived** | **optional** | **migrated** | **prohibited from leaving device** (without Serious decision).
+Plain-language + typed-contract fields Forge must implement against. Marks: **authoritative** | **derived** | **optional** | **migrated** | **prohibited from leaving device** (network/cloud egress without Serious decision; local JSON export is FR-EXP-001).
 
 ### 6.1 BackupEnvelope
 
@@ -171,16 +174,18 @@ Top-level export/import document.
 
 | Field | Type (contract) | Marks | Notes |
 | --- | --- | --- | --- |
-| `schemaVersion` | `number` (integer ≥ 1; target additive ≥ 3) | authoritative | Gates migrations; dual-read during cutover |
+| `schemaVersion` | `number` (integer ≥ 1) | authoritative | **Canonical target = 3**, named **BACKUP_SCHEMA_V3**. See FR-IMP-001 classification/migration gate |
 | `exportedAt` | `string` (ISO-8601 timestamp) | authoritative | Wall-clock of export |
-| `userId` | `string \| null` | optional; **prohibited from leaving device** without Serious | Prefer omit; if present, treat as install-local opaque id |
+| `userId` | `string \| null` | optional; **prohibited from leaving device** (network/cloud) | Prefer omit; if present, treat as install-local opaque id. May appear in a user-initiated local export only under FR-EXP-001 |
 | `entities` | `BackupEntities` | authoritative | Bundle of fills, schedules/occurrences, settings, notification port state, med identities |
+
+**Named target schema:** `BACKUP_SCHEMA_V3` means `schemaVersion === 3`. This is the single P0 export/import contract. Additive fields may appear later only as a new named version (4+).
 
 ```text
 BackupEnvelope = {
-  schemaVersion: number,          // authoritative
+  schemaVersion: 3,               // authoritative; BACKUP_SCHEMA_V3
   exportedAt: string,             // authoritative ISO-8601
-  userId?: string | null,         // optional; prohibited off-device w/o Serious
+  userId?: string | null,         // optional; network/cloud egress Serious
   entities: BackupEntities        // authoritative
 }
 BackupEntities = {
@@ -193,7 +198,7 @@ BackupEntities = {
 }
 ```
 
-**Deletion / lifecycle:** Export is a snapshot. Import never mutates until after validate+preview and user confirm (FR-IMP-002). Replace All requires pre-import recovery snapshot (FR-IMP-003).
+**Deletion / lifecycle:** A user-initiated local JSON export is a snapshot (FR-EXP-001). Import never mutates until after validate+preview and user confirm (FR-IMP-002). Replace All requires a pre-import recovery snapshot (FR-IMP-003).
 
 ### 6.2 Fill / reconstitution record (`FillRecord`)
 
@@ -203,7 +208,7 @@ BackupEntities = {
 | `displayName` | `string` | authoritative | User-entered peptide/fill name |
 | `medicationId` | `string \| null` | optional; migrated | Link to MedicationIdentity when Spec B ships |
 | `vialAmount` | `number` (finite > 0) | authoritative | Same shared unit as desired dose (FR-UNIT-001) |
-| `desiredDose` | `number` (finite > 0) **or** empty at first-run per DEC-DEFAULTS | authoritative | Therapeutic amount is user-owned |
+| `desiredDose` | `number` (finite > 0) | authoritative | **Required on persist.** Empty/absent desired dose is invalid on a stored `FillRecord`. First-run empty input lives only in `FillDraft` (§6.2.1). Does **not** decide live production defaults (**DEC-DEFAULTS** remains open) |
 | `unit` | `"mg" \| "mcg" \| "IU"` | authoritative | **Single shared unit** for vialAmount and desiredDose (Spec recommendation) |
 | `waterMl` | `number` | authoritative | Selected reconstitution water |
 | `drawMl` | `number` | derived or authoritative once saved | Must match displayed rounding policy after DEC-FORMULA |
@@ -218,6 +223,31 @@ BackupEntities = {
 **Deletion behavior:** Delete fill with confirm (UX-CAB-001). Cascade: archive or delete linked schedule series + future pending occurrences; retain historical taken/skipped logs unless user chooses purge. Hard delete removes IDs from subsequent exports.
 
 **Unit fields:** Do **not** store separate vialUnit vs doseUnit in the target model. Same-unit invariant is mandatory (FR-UNIT-001).
+
+**Persist gate:** A writer MUST reject persisting a `FillRecord` unless `desiredDose` is a finite number `> 0` (and `vialAmount` is finite `> 0`). This is a stored-entity rule, not a first-run form default.
+
+### 6.2.1 Fill draft / form state (`FillDraft`)
+
+Wizard and edit-fill **form state** is a separate contract from a persisted `FillRecord`. `FillDraft` is **not** a `BackupEnvelope` entity and MUST NOT be written into `entities.fills`.
+
+| Field | Type | Marks | Notes |
+| --- | --- | --- | --- |
+| `desiredDose` | `number` (finite > 0) **or** empty / absent | draft-only | Empty is allowed here. **DEC-DEFAULTS** decides first-run form defaults; live 30/3 values remain characterization only |
+| `vialAmount` / `unit` / packaging fields | same types as FillRecord or empty | draft-only | May be incomplete until Save |
+| `stepIndex` | `number` | draft-only | UX-WIZ-005 |
+| `sourceFillId` | `string \| null` | draft-only | Set when Load/edit of an existing fill |
+
+```text
+FillDraft = {
+  desiredDose?: number | null,    // empty allowed; not a FillRecord
+  vialAmount?: number | null,
+  unit?: "mg" | "mcg" | "IU" | null,
+  stepIndex: number,
+  sourceFillId?: string | null
+}
+```
+
+**Save (UX-SAVE-001):** persist a `FillRecord` only after the draft satisfies the FillRecord persist gate (finite positive `desiredDose` and `vialAmount`). Cancel/Discard may leave or clear the draft without writing a fill.
 
 ### 6.3 Medication / peptide identity (`MedicationIdentity`)
 
@@ -253,20 +283,38 @@ BackupEntities = {
 
 Prerequisite to UX-SCH-001 / UX-SCH-004 (see **FR-SCH-000**).
 
+**Present model (P0):** one occurrence per series per local civil date (one-time-per-series-per-day). Multiple same-day times for one series are **out of scope** until a later Spec explicitly changes this identity rule.
+
+**Logical identity (normative):** unique `(scheduleId, localCivilDate)`. This pair is the occurrence identity. A random UUID alone is **not** sufficient.
+
+**Deterministic lookup / materialization:**
+
+1. Look up by `(scheduleId, localCivilDate)` first.
+2. If a record exists, return it — do **not** insert another row and do **not** mint a second `id`.
+3. If none exists, create exactly one record. `id` is assigned once at first successful persist (UUID or a deterministic string derived from the pair). Subsequent rematerialization, calendar rebuild, or restart MUST reuse that record.
+4. Writers MUST enforce a uniqueness constraint on `(scheduleId, localCivilDate)`. Duplicate materialization is a defect.
+
 | Field | Type | Marks | Notes |
 | --- | --- | --- | --- |
-| `id` | `string` (stable UUID) | authoritative | One-occurrence identity |
-| `scheduleId` | `string` | authoritative | FK to ScheduleSeries |
-| `localCivilDate` | `string` (`YYYY-MM-DD`) | authoritative | In series `timeZone` |
+| `id` | `string` (stable; UUID or deterministic key) | authoritative | Surrogate assigned once. **Uniqueness rule is `(scheduleId, localCivilDate)`**, not “any new UUID” |
+| `scheduleId` | `string` | authoritative | FK to ScheduleSeries; part of logical identity |
+| `localCivilDate` | `string` (`YYYY-MM-DD`) | authoritative | In series `timeZone`; part of logical identity |
 | `timeZone` | `string` (IANA) | authoritative | Copied/resolved at materialization |
 | `status` | `"pending" \| "taken" \| "skipped" \| "snoozed" \| "rescheduled"` | authoritative | P0 requires pending/taken (+ undo→pending); skip/snooze/reschedule are P1 |
 | `takenAt` | ISO-8601 \| null | optional | Set when status=taken |
-| `depletionApplied` | `boolean` | authoritative | True only if Taken decremented fill depletion |
+| `appliedDepletionAmount` | `number` (finite > 0) \| null | authoritative | **Immutable snapshot** of the amount applied to fill depletion at Taken commit. Required when Taken decrements depletion. Undo uses **this** value, not the current `FillRecord.desiredDose` |
+| `appliedDepletionUnit` | `"mg" \| "mcg" \| "IU"` \| null | authoritative | **Immutable** unit of `appliedDepletionAmount` at Taken commit (same shared-unit enum as the fill at that moment) |
+| `depletionApplied` | `boolean` | derived | `true` iff `appliedDepletionAmount` is a finite number `> 0` |
 | `snoozeUntil` | ISO-8601 \| null | optional; P1 | |
 | `note` | `string \| null` | optional | |
 | `updatedAt` | ISO-8601 | authoritative | Supports Undo after restart |
 
-**Idempotency:** Mark-taken on already-taken occurrence is a **no-op** (double-tap safe). Undo restores `pending`, clears `takenAt`, and reverses depletion iff `depletionApplied` was true. Persistence must survive app restart (not snackbar-only).
+**Taken / Undo + depletion (one atomic writer operation):**
+
+- **Taken:** In a **single** FR-PERS-001 writer commit: set `status=taken`, set `takenAt`, store immutable `appliedDepletionAmount` + `appliedDepletionUnit` from the fill’s then-current `desiredDose` + `unit`, and decrement `FillRecord.depletionRemaining` by that same amount/unit. If the writer fails, **neither** the occurrence nor the fill changes (UI must not show Taken).
+- **Already taken (double-tap):** no-op — do not apply depletion again, do not overwrite the immutable snapshot.
+- **Undo:** In a **single** FR-PERS-001 writer commit: set `status=pending`, clear `takenAt`, add `appliedDepletionAmount` back to `FillRecord.depletionRemaining` using `appliedDepletionUnit` (ignore any later edit to `FillRecord.desiredDose`), then clear `appliedDepletionAmount` / `appliedDepletionUnit` so a later Taken can snapshot the then-current dose. If the writer fails, occurrence stays taken and fill depletion stays as it was.
+- Persistence must survive app restart (not snackbar-only).
 
 **Deletion:** Soft-cancel pending future occurrences when series archived; do not delete historical taken/skipped without explicit purge.
 
@@ -294,16 +342,35 @@ iOS and multi-port simultaneous delivery are out of scope until separately appro
 | `syringeCalibrationDefault` | `"none" \| "U-100"` | optional | Default **none** until DEC-SYRINGE |
 | `updatedAt` | ISO-8601 | authoritative | |
 
-Settings may contain health-adjacent preferences; treat export as sensitive plaintext (FR-IMP-003 disclosure).
+Settings may contain health-adjacent preferences; treat a user-initiated local JSON export as sensitive plaintext (FR-EXP-001 / FR-IMP-003 disclosure).
 
 ### 6.8 Cross-cutting rules
 
-1. **Stable IDs:** UUIDs for fills, schedules, occurrences, medication identities; import collision policy per FR-IMP-002.
+1. **Stable IDs:** UUIDs (or one-time-assigned surrogates) for fills, schedules, medication identities; occurrence **logical** identity is `(scheduleId, localCivilDate)` (§6.5). Import collision policy per FR-IMP-002.
 2. **Timestamps:** Prefer ISO-8601 with explicit offset or UTC `Z` for event times; civil `YYYY-MM-DD` + IANA TZ for schedule identity (never UTC `toISOString` date for “today”).
 3. **Units:** One shared unit field on the fill; never silent cross-unit conversion; never IU↔mass.
 4. **Active/archived:** Soft-archive by default; hard delete is explicit and cascading with confirm.
-5. **Prohibited off-device without Serious:** medication/peptide names and doses, RxCUI/normalized concepts, full med lists, notification tokens, `userId` if identifying, unencrypted backup contents shared externally — require DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD / encryption decision as applicable.
+5. **Network / cloud egress vs local file export:**
+   - **App-initiated network egress, cloud sharing, or sync** of medication/peptide names and doses, RxCUI/normalized concepts, full med lists, notification tokens, identifying `userId`, or backup contents is **prohibited** until the applicable Serious decision (DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD / encryption). **Do not add network sharing in P0.**
+   - **Explicit user-initiated local JSON file export** is **allowed in P0** only after the plaintext-sensitive-data warning (FR-EXP-001). That local file save is **not** cloud sharing and does **not** by itself require a Serious encryption decision.
 6. **Unknown fields:** Quarantine/passthrough on import (FR-IMP-002); do not silently strip future identity fields (SR-SCHEMA-001).
+7. **Persisted fills vs drafts:** empty desired dose is valid only on `FillDraft` (§6.2.1), never on a stored `FillRecord`.
+
+### 6.9 Recovery snapshot (local restore point)
+
+Local-only; **not** a `BackupEnvelope` export entity. See FR-IMP-003.
+
+| Field | Type | Marks | Notes |
+| --- | --- | --- | --- |
+| `createdAt` | ISO-8601 | authoritative | Write time of this restore point |
+| `expiresAt` | ISO-8601 | derived | `createdAt + 168 hours` (7 × 24 hours) |
+| `envelope` | `BackupEnvelope` | authoritative | Snapshot of authoritative state **before** the import that created this slot |
+
+**Cardinality (normative P0):** exactly **one** current restore-point slot.
+
+**Replacement:** the older snapshot MAY be replaced only as part of a confirmed Replace All / full apply, and **only after** a newer recovery snapshot of the then-current authoritative state has been **durably written and verified readable**. Never delete/overwrite the prior slot before that write+verify succeeds.
+
+**Expiry:** the current snapshot expires **168 hours** after `createdAt`. After expiry, Restore is unavailable and the slot MAY be deleted. Expiry does not block a later import from creating a new snapshot.
 
 ---
 
@@ -374,6 +441,7 @@ Acceptance criteria use Given / When / Then.
 
 **UX-SAVE-001 Confirm before persist** — P0 — Mira
 - Given selected water option; When proceeding to save; Then confirmation summary shown; nothing written until Save succeeds.
+- Persist writes a `FillRecord` only when `desiredDose` is finite `> 0` (§6.2). Empty desired dose may exist only on `FillDraft` (§6.2.1).
 - Disclaimer: You entered this dose. FitGen only calculates water and draw volume.
 
 **UX-SAVE-002 Cancel preserves selection** — P0 — Mira
@@ -390,7 +458,7 @@ Acceptance criteria use Given / When / Then.
 #### Schedule / Calendar
 
 **UX-SCH-001 Taken** — P0 — Mira — **requires FR-SCH-000**
-- Given due today, not taken; When Mark taken; Then Taken status; Undo snackbar >=8s; depletion updates via occurrence model (FR-SCH-000).
+- Given due today, not taken; When Mark taken; Then Taken status; Undo snackbar >=8s; occurrence identity + immutable depletion snapshot + fill decrement commit in one atomic writer (FR-SCH-000 / §6.5).
 - **Blocked:** Cannot ship before FR-SCH-000.
 
 **UX-SCH-002 Skip** — P1 — Mira — extends FR-SCH-000 via FR-SCH-001
@@ -400,7 +468,7 @@ Acceptance criteria use Given / When / Then.
 - Given due occurrence; When Snooze (preset); Then next reminder time shifts for that occurrence only; calendar reflects it.
 
 **UX-SCH-004 Undo taken** — P0 — Mira — **requires FR-SCH-000**
-- Given just marked taken; When Undo; Then occurrence returns to pending; depletion reversed if applied; survives restart.
+- Given just marked taken; When Undo; Then occurrence returns to pending; fill depletion is increased by the stored `appliedDepletionAmount` / `appliedDepletionUnit` (not the current `desiredDose`); one atomic writer; survives restart.
 - **Blocked:** Cannot ship before FR-SCH-000. (Legacy “remove date from takenDates” is insufficient alone.)
 
 **UX-SCH-005 Edit occurrence vs series** — P1 — Mira
@@ -423,7 +491,7 @@ Acceptance criteria use Given / When / Then.
 
 **UX-SYS-003 Import atomicity + rollback** — P0 — Mira / Sage / **FR-IMP-003**
 - Given confirmed import; When apply runs; Then all accepted records apply or none on hard failure; **and** a pre-import recovery snapshot exists so the user can restore prior state after a successful but unwanted Replace All (rollback ≠ only “atomic apply”).
-- Before export/share: explicit **plaintext sensitive-data warning** (health-adjacent JSON may include peptide/med names and doses).
+- Before a **user-initiated local JSON file export** (FR-EXP-001): explicit **plaintext sensitive-data warning** (health-adjacent JSON may include peptide/med names and doses). This is not an app-initiated network share.
 
 #### Accessibility
 
@@ -474,7 +542,17 @@ AC pattern for A11Y: Given the relevant control/surface; When used with keyboard
 - Given any save/delete/import/mark-taken; When storage updates; Then one writer path with try/catch (quota UI); stop dual window.state / patch writers for the same keys.
 
 **FR-IMP-001 Versioned import schema** — P0 — Sage section 6 / Sentinel section 4
-- Given export/import; When schema evolves; Then schemaVersion (target >=3 additive) gated; unknown fields (e.g. future RxCUI) preserved or migrated — not silently stripped without policy.
+- **Named target:** `BACKUP_SCHEMA_V3` = `schemaVersion === 3`. P0 export MUST write `schemaVersion: 3`.
+- **Classification / migration gate** (required before apply):
+
+  | Input | Class | Gate |
+  | --- | --- | --- |
+  | Missing `schemaVersion` or non-integer / non-finite version | `legacy-unversioned` | Preview must label it legacy. Apply is **blocked** until a documented v3 migration maps the file, or the user Cancels. No silent treat-as-v3. |
+  | `schemaVersion` 1 or 2 | `legacy-versioned` | Same gate: classify in preview; migrate to v3 via a documented dual-read path, or Cancel. |
+  | `schemaVersion === 3` | `current` | Validate against the §6 v3 contract; then FR-IMP-002 preview. |
+  | `schemaVersion` ≥ 4 | `unknown-newer` | Do **not** apply as v3. Preview shows unsupported/newer; unknown fields stay quarantined (FR-IMP-002). Do not silently strip. |
+
+- Unknown fields on a v3 file (e.g. future RxCUI) are preserved or quarantined — not silently stripped (SR-SCHEMA-001).
 
 **FR-IMP-002 Validate, preview, collision, quarantine** — P0 — Codex finding 6 / expands UX-SYS-002
 - Given a backup file; When user chooses Import; Then:
@@ -486,31 +564,45 @@ AC pattern for A11Y: Given the relevant control/surface; When used with keyboard
 - Tests: Cancel; corrupt file; partial entities; collision Skip vs Replace.
 
 **FR-IMP-003 Pre-import recovery snapshot, restore, disclosure** — P0 — Codex finding 6 / expands UX-SYS-003
+- **Normative P0 retention policy** (not a Settings choice; see §6.9):
+  - **Cardinality:** exactly **one** current restore-point slot.
+  - **Expiry:** **168 hours** (7 × 24 hours) from `createdAt`. Show `expiresAt` in the restore UI. After expiry, Restore is unavailable; the slot MAY be garbage-collected.
+  - **Replacement:** an older snapshot MAY be replaced **only** when a confirmed Replace All / full apply is about to mutate state, and **only after** a newer recovery snapshot has been **durably written and verified readable**. Never overwrite/delete the prior restore point first.
+  - A second import before 168 hours **does** replace the prior restore point once the newer snapshot is durable. The user can restore only the **current** (most recently written, unexpired) snapshot. Prior superseded snapshots are not retained.
 - Given user confirms Replace All (or any full apply); When apply begins; Then:
-  1. Create **pre-import recovery snapshot** of current authoritative state before mutation.
-  2. Apply is all-or-none on hard failure; on failure restore from snapshot automatically.
-  3. After successful unwanted Replace All, user can **Restore previous backup** from the recovery snapshot.
-  4. **Retention TTL:** retain recovery snapshot ≥ 7 days or until superseded by a newer successful import snapshot (whichever policy is documented in Settings); show expiry in restore UI.
-  5. **Quota failure:** if snapshot cannot be written, **abort import** with inline error; no mutation.
-  6. **Corrupt snapshot:** restore path fails closed with message; do not partially apply.
-  7. **App restart:** snapshot and restore affordance survive restart within TTL.
-  8. **Export/share disclosure:** before export or share, show explicit warning that the JSON is **plaintext** and may contain **sensitive health-adjacent data** (names, doses, schedules).
-- Tests required: Cancel; quota failure; corrupt snapshot; successful rollback; app restart then restore.
+  1. Create the **pre-import recovery snapshot** of current authoritative state (**write + verify**) before any mutation and before discarding the previous slot.
+  2. Apply is all-or-none on hard failure; on failure restore from the snapshot that was just written (or the still-intact prior slot if the new write failed).
+  3. After successful unwanted Replace All, user can **Restore previous backup** from the **current** recovery snapshot.
+  4. **Quota failure:** if the newer snapshot cannot be written or verified, **abort import** with inline error; **no mutation**; the prior snapshot (if any, unexpired) remains intact.
+  5. **Corrupt snapshot:** restore path fails closed with message; do not partially apply.
+  6. **App restart:** the current snapshot and restore affordance survive restart until `expiresAt`.
+  7. **Local-export disclosure:** before a **user-initiated local JSON file export**, show the FR-EXP-001 warning. Do **not** implement app-initiated network share of backups in P0.
+- Tests required: Cancel; quota failure (prior slot intact); corrupt snapshot; successful rollback; app restart then restore; newer snapshot durable before prior slot replaced; restore after a second import uses only the current snapshot; Restore hidden/disabled after 168 hours.
 
 **FR-REM-001 Reminder architecture freeze (one port)** — P0 (after DEC-REM) — Sage P0.4
 - Given Filipe chooses native-android XOR authed server XOR web-foreground-only; When implemented; Then exactly one reminder port is live; others removed or feature-flagged off; Schedule copy matches code; TZ uses civil local dates consistently.
 - Scope limited to §2.2 supported surfaces; iOS unsupported unless separately approved.
 
-**FR-SCH-000 Minimal occurrence identity/state (P0 prerequisite)** — P0 — Codex finding 2
-- Given schedules due today; When Taken/Undo are offered; Then persistence uses OccurrenceRecord (§6.5) with at least:
-  - stable `id`
+**FR-SCH-000 Minimal occurrence identity/state (P0 prerequisite)** — P0 — Codex finding 2 / v1.1 re-review finding 1
+- Given schedules due today; When Taken/Undo are offered; Then persistence uses OccurrenceRecord (§6.5) with:
+  - **logical identity** unique `(scheduleId, localCivilDate)` for the present one-time-per-series-per-day model
+  - **deterministic lookup/materialization** (lookup by that pair first; never insert a second row / second `id` for the same pair)
+  - surrogate `id` assigned **once** at first persist (UUID or deterministic key) — not a new random UUID on every rematerialization
   - `localCivilDate` + `timeZone`
   - `status` including Taken
-  - **idempotent mark-taken** (double-tap / repeat → no-op)
-  - **depletion semantics** (`depletionApplied` once; Undo reverses iff applied)
+  - **immutable applied depletion snapshot:** `appliedDepletionAmount` + `appliedDepletionUnit` stored at Taken commit (so Undo after a later `FillRecord.desiredDose` edit restores the snapshotted amount, not the edited dose)
+  - **idempotent mark-taken** (double-tap / repeat → no-op; do not re-apply depletion)
+  - **Taken/Undo + fill depletion in one atomic FR-PERS-001 writer operation**
   - **Undo after restart** (not session-only)
 - Skip/Snooze/Reschedule remain **P1** extensions on the same model (FR-SCH-001).
+- **Required tests:** duplicate materialization after restart / calendar rebuild → one record; double-tap Taken → no-op; edit `desiredDose` then Undo → restores snapshotted amount/unit; failed persistence → no status change and no depletion change.
 - **Backlog gate:** UX-SCH-001 / UX-SCH-004 / P0.UX Taken+Undo **cannot ship** before FR-SCH-000.
+
+**FR-EXP-001 User-initiated local JSON export** — P0 — Codex v1.1 re-review finding 4
+- **Allowed in P0:** explicit user action that writes a local JSON file (share-sheet / Files / browser download of a file the user chose to save).
+- **Required:** before the file is written, show an explicit warning that the JSON is **plaintext** and may contain **sensitive health-adjacent data** (names, doses, schedules). No write until the user confirms.
+- **Not in P0 / not authorized by this requirement:** app-initiated network egress, cloud backup, sync, or “share to a URL/service.” Those remain Serious-gated (DEC-REM / DEC-CLOUD / encryption). **Do not add network sharing.**
+- A local file export that includes fields marked **prohibited from leaving device** is still allowed **only** under this user-initiated + warning path. It does not approve cloud transmission of those fields.
 
 **FR-SCH-001 Occurrence model extensions** — P1 — Mira / Sentinel missing states
 - Given FR-SCH-000 in place; When Skip/Snooze/Reschedule/series-edit used; Then persistence stores occurrence-level extensions sufficient for UX-SCH-002/003/005 and UX-CAL-001.
@@ -546,11 +638,12 @@ AC pattern for A11Y: Given the relevant control/surface; When used with keyboard
 - Given DEC-REM pending; When interim change ships; Then do not re-enable unauthenticated sync or expand push payload fields.
 
 **SR-PRIV-001 Health-adjacent data minimization** — P0 policy / P1 optional encryption — Sage S4-S5 / Aegis
-- Given reminders/export/normalization; When data leaves device; Then only after applicable Serious decision (DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD); prefer on-device; no false encrypted badge; passphrase encryption Elevated/Serious — not P0.
+- Given reminders/normalization/cloud; When data leaves the device via **app-initiated network egress**; Then only after the applicable Serious decision (DEC-REM / DEC-NORM-REMOTE / DEC-CLOUD); prefer on-device; no false encrypted badge; passphrase encryption Elevated/Serious — not P0.
+- **Exception (P0):** user-initiated local JSON file export is allowed with FR-EXP-001 warning; it is not network egress.
 - Default RxNorm path is **local** (SAF-NORM-001); remote is opt-in Serious.
 
 **SR-SCHEMA-001 Additive schemaVersion** — P0 with FR-IMP-001 — Sage section 6
-- Given migrations; When applied; Then non-destructive dual-read; do not drop new identity fields once Spec B ships; align with Canonical data model §6.
+- Given migrations; When applied; Then non-destructive dual-read toward **BACKUP_SCHEMA_V3**; do not drop new identity fields once Spec B ships; align with Canonical data model §6. Later named versions (4+) are additive; the P0 target is exactly `BACKUP_SCHEMA_V3`.
 
 **SR-ARCH-001 No framework rewrite without override** — P0 process — ADR section 4
 - Given implementation PRs; When scoped; Then incremental modules only unless Filipe overrides DEC-FW.
@@ -564,7 +657,7 @@ AC pattern for A11Y: Given the relevant control/surface; When used with keyboard
 ### 7.4 Safety requirements (SAF-*) — Aegis posture B
 
 **SAF-SCOPE-001 Near-term scope = B only** — P0 — Aegis section 9 / handoff
-- Given Spec v1.1; When features proposed; Then interaction screening, allergy/duplicate engines, and dose advice are out of scope. C-prerequisites are release blockers if scope expands.
+- Given Spec v1.2; When features proposed; Then interaction screening, allergy/duplicate engines, and dose advice are out of scope. C-prerequisites are release blockers if scope expands.
 
 **SAF-MEDLIST-001 Personal med list (logging/display)** — P1 — Aegis section 1
 - Given user-entered meds; When stored/displayed; Then list/chart semantics only — no automated clinical conclusions.
@@ -607,11 +700,11 @@ Merged Sage P0.0–P0.6 with Mira / Sentinel / Aegis P0s. Owner **Forge** = late
 | P0.0 | CI + lockfiles + no-new-*-fix.js + forbidden-copy grep | SR-CI-001, SR-CI-002, SAF-COPY-001 | Forge | routine | No |
 | P0.1 | Golden tests both calculator paths as **legacy evidence** (not target oracles) + FR-CALC-010 domain fixtures | FR-CALC-001, FR-CALC-010 | Forge | routine tests | No (pick winner later) |
 | P0.2 | Single Generate path | FR-CALC-002, FR-CALC-003 | Forge | serious (math) | **Yes** (DEC-FORMULA) |
-| P0.3 | Single persistence writer; versioned import preview + recovery snapshot/rollback + plaintext disclosure | FR-PERS-001, FR-IMP-001/002/003, UX-SYS-002/003, SR-SCHEMA-001, §6 model | Forge | elevated | Prefer no visible math change |
+| P0.3 | Single persistence writer; versioned import preview + one-slot recovery snapshot/rollback + local-export warning | FR-PERS-001, FR-IMP-001/002/003, FR-EXP-001, UX-SYS-002/003, SR-SCHEMA-001, §6 / §6.9 | Forge | elevated | Prefer no visible math change |
 | P0.4 | One reminder port; copy/TZ match; no unauth sync; platform matrix | FR-REM-001, SR-SEC-002, SR-PLAT-001, UX-COPY-001 | Forge | serious | **Yes** (DEC-REM, DEC-CLOUD) |
 | P0.5 | Backend CORS allowlist; kill/auth debug+test-push; rate-limit; no PHI logs | SR-SEC-001 | Forge | serious | **Yes** (auth/PHI) |
 | P0.6 | Docs/copy match code; MED-FLAG replacements | UX-COPY-001, UX-RES-002, UX-WIZ-020 | Forge | routine | No if measurement-only |
-| P0.OCC | **Minimal occurrence model** before Taken/Undo | **FR-SCH-000**, §6.5 | Forge | elevated | No |
+| P0.OCC | **Minimal occurrence model** before Taken/Undo (composite identity + immutable depletion snapshot + atomic writer) | **FR-SCH-000**, §6.5 | Forge | elevated | No |
 | P0.UX | Wizard Back/Cancel/validate; Save confirm; Cabinet delete confirm; Taken+Undo (**after P0.OCC**); a11y focus/targets/modals; no validation alerts | UX-WIZ-001..003, UX-SAVE-001/002, UX-CAB-001, UX-SCH-001/004, UX-SYS-001, UX-A11Y-002..004 | Forge | elevated (UX) | No |
 | P0.UNIT | Unit/syringe policy gates (shared unit; mL-only unless U-100 selected); characterize-only until DEC | FR-UNIT-001, FR-SYRINGE-001 | Spec→Forge | serious if converting | **Yes** before conversion / U-100 target (DEC-UNIT, DEC-SYRINGE) |
 | P0.SAF | Lock posture B; unknown-state + forbidden-copy gates; no DDI/dose PRs | SAF-SCOPE-001, SAF-UNK-001, SAF-COPY-001, SAF-C-BLOCK-001 | Spec then Forge | serious if violated | Counsel before leaving B |
@@ -645,19 +738,19 @@ Merged Sage P0.0–P0.6 with Mira / Sentinel / Aegis P0s. Owner **Forge** = late
 
 ## 9. Release definition of done (DoD)
 
-### 9.1 Spec v1.1 approval (this document)
+### 9.1 Spec v1.2 approval (this document)
 
-- [ ] Codex re-reviews Spec v1.1; FACT/REQ/HYP separation intact
-- [ ] Blocking findings 1–8 mapped in `CODEX_RESPONSE_MATRIX.md` and addressed
-- [ ] Canonical data model §6 present with field marks
+- [ ] Codex re-reviews Spec v1.2; FACT/REQ/HYP separation intact
+- [ ] Spec v1 findings 1–8 remain addressed; v1.1 re-review findings 1–5 mapped in [CODEX_RESPONSE_MATRIX.md](./CODEX_RESPONSE_MATRIX.md)
+- [ ] Canonical data model §6 present with field marks; occurrence identity + depletion snapshot; FillDraft vs FillRecord; BACKUP_SCHEMA_V3; one-slot recovery; local-export vs network
 - [ ] ADR accepted (incremental TS/ES modules; no framework rewrite)
 - [ ] Aegis posture **B** locked; no DDI/dose implementable requirements; local-default normalization
-- [ ] Mira UX IDs preserved; FR/SR/SAF IDs unique and traced (incl. FR-SCH-000, FR-CALC-010, FR-UNIT-001, FR-SYRINGE-001, FR-IMP-002/003)
+- [ ] Mira UX IDs preserved; FR/SR/SAF IDs unique and traced (incl. FR-SCH-000, FR-CALC-010, FR-UNIT-001, FR-SYRINGE-001, FR-IMP-001/002/003, FR-EXP-001)
 - [ ] Platform matrix + intended user in product intent; reminder promise tied to DEC-REM
 - [ ] P0 backlog coherent (incl. P0.OCC before Taken/Undo; P0.DEF / P0.UNIT gates)
 - [ ] Serious decision stubs listed (section 11) — **not** yet posted as [DECISION REQUIRED] from this file alone
 - [ ] Discovery remains read-only: no app code / merge / deploy from Issue #2 discovery work
-- [ ] After approval: docs-only PR under `docs/` recording gist rev + evidence SHA (Codex artifact requirement)
+- [ ] Docs-only PR under `docs/` records pinned gist rev `4a801d7702857203161960f7fd6691013ffa431b` + evidence SHA `4741e6f227676ff5c0f511edf173ecc03bc298df`
 
 ### 9.2 First post-Spec merge gates (Sentinel section 6 + Sage P0.0)
 
@@ -666,8 +759,8 @@ Before any implementation merge to `main`:
 - [ ] ci.yml on pull_request (do **not** require keep-alive)
 - [ ] Lockfiles for root and backend
 - [ ] Test runner script exists; calculator golden tests labeled **legacy evidence** for **both** paths (FR-CALC-001); input-domain tests (FR-CALC-010)
-- [ ] Import tests: preview-without-mutation; recovery snapshot; Cancel; quota failure; corrupt snapshot; rollback; restart (FR-IMP-002/003)
-- [ ] Reminder/TZ tests: local vs Z, UTC setDefaultDates, occurrence Taken/Undo idempotency (FR-SCH-000); playerId drop
+- [ ] Import tests: preview-without-mutation; FR-IMP-001 class/migration gate; recovery snapshot write-before-replace; one-slot cardinality; 168-hour expiry; Cancel; quota failure (prior slot intact); corrupt snapshot; rollback; restart (FR-IMP-002/003); FR-EXP-001 warning before local export
+- [ ] Reminder/TZ tests: local vs Z, UTC setDefaultDates; occurrence identity/materialization; Taken/Undo atomic writer; duplicate rematerialization; double-tap; edit-dose-then-Undo; failed persistence (FR-SCH-000); playerId drop
 - [ ] Unit/syringe characterization tests; no approved unconditional U-100 target without DEC-SYRINGE
 - [ ] Forbidden-copy grep (SR-CI-002) — P0 **now** even without med engine
 - [ ] CI fails on new *-fix.js
@@ -686,7 +779,8 @@ Before any implementation merge to `main`:
 2. Alias source of truth: curated map vs parse parentheticals in peptide-list.js.
 3. My Medications section collapsed-by-default IA when >=1 fill exists.
 4. Whether optional DailyMed/openFDA label viewer (SAF-LABEL-001) ships in the same milestone as RxNorm chips or later.
-5. Recovery snapshot TTL exact duration / Settings UX copy (FR-IMP-003 baseline ≥ 7 days).
+
+Recovery snapshot cardinality, 168-hour expiry, and write-before-replace are **normative in FR-IMP-003 / §6.9** (not an open Settings policy).
 
 ### Serious (see also section 11 — do not implement until decided)
 
@@ -727,25 +821,38 @@ Before any implementation merge to `main`:
 
 | Requirement IDs | Source artifacts | Planned test class (Sentinel) |
 | --- | --- | --- |
-| §6 Canonical data model | Sage schema notes; Sentinel import; Codex finding 1 | Schema/round-trip; migration dual-read; prohibited-field egress checks |
-| UX-WIZ-*, UX-CHIP-*, UX-RES-*, UX-NAME-*, UX-SAVE-*, UX-CAB-*, UX-SCH-*, UX-CAL-*, UX-SYS-*, UX-A11Y-*, UX-COPY-001 | MIRA_UX_SPEC_V1.md (+ section 10 errata) | Smoke journeys section 1; MED-FLAG copy section 5.1; a11y manual/CI |
-| FR-CALC-001/002/003/010 | Sage C1–C2, P0.1–P0.2; Sentinel section 2; Codex finding 8 | Calculator math matrix; dual-path **legacy evidence**; input-domain; no therapeutic oracles |
-| FR-UNIT-001, FR-SYRINGE-001 | Sage C12; Codex finding 3 | Permitted unit combinations; U-100 gated vs mL-only |
-| FR-PERS-001, FR-IMP-001/002/003, FR-UI-001 | Sage C5–C8, sections 6–8; CoS #7; Codex finding 6 | Backup/import section 4; preview; snapshot/rollback; disclosure |
-| FR-REM-001, FR-SCH-000, FR-SCH-001 | Sage C3–C4, P0.4; Mira schedule; Sentinel section 3; Codex finding 2 | Scheduling matrix; TZ/DST; occurrence Taken/Undo idempotency; one-port assertion |
-| SR-CI-*, SR-SEC-*, SR-PRIV-*, SR-SCHEMA-*, SR-ARCH-*, SR-A11Y-*, SR-PLAT-001 | Sage P0.0/P0.5, section 3; Sentinel sections 5–6; CoS #1; Codex finding 7 | CI gates section 6; threat model section 5; platform AC tags |
-| SAF-* (incl. SAF-NORM-001 local default) | Aegis brief + handoff; Sentinel section 5.1; Codex finding 5 | Forbidden-copy; unknown-state; local dictionary; remote blocked without DEC-NORM-REMOTE |
-| DEC-DEFAULTS / DEC-UNIT / DEC-SYRINGE / DEC-NORM-REMOTE | Codex findings 3–5 | Decision stubs only until [DECISION] issues filed |
+| §6 Canonical data model (incl. §6.2.1 FillDraft, §6.5 identity, §6.9 RecoverySnapshot) | Sage schema notes; Sentinel import; Codex v1 finding 1; v1.1 re-review 1–4 | Schema/round-trip; migration dual-read; local-export vs network egress checks |
+| UX-WIZ-*, UX-CHIP-*, UX-RES-*, UX-NAME-*, UX-SAVE-*, UX-CAB-*, UX-SCH-*, UX-CAL-*, UX-SYS-*, UX-A11Y-*, UX-COPY-001 | [Mira UX gist](https://gist.github.com/lotustemplar/53412d64afc1ab3e521e3917dd44e1be) (+ section 10 errata) | Smoke journeys section 1; MED-FLAG copy section 5.1; a11y manual/CI |
+| FR-CALC-001/002/003/010 | Sage C1–C2, P0.1–P0.2; Sentinel section 2; Codex v1 finding 8 | Calculator math matrix; dual-path **legacy evidence**; input-domain; no therapeutic oracles |
+| FR-UNIT-001, FR-SYRINGE-001 | Sage C12; Codex v1 finding 3 | Permitted unit combinations; U-100 gated vs mL-only |
+| FR-PERS-001, FR-IMP-001/002/003, FR-EXP-001, FR-UI-001 | Sage C5–C8, sections 6–8; CoS #7; Codex v1 finding 6; v1.1 re-review 2–4 | Backup/import; BACKUP_SCHEMA_V3 gate; preview; one-slot snapshot; local-export warning |
+| FR-REM-001, FR-SCH-000, FR-SCH-001 | Sage C3–C4, P0.4; Mira schedule; Sentinel section 3; Codex v1 finding 2; v1.1 re-review 1 | Scheduling matrix; TZ/DST; composite occurrence identity; atomic Taken/Undo; one-port assertion |
+| SR-CI-*, SR-SEC-*, SR-PRIV-*, SR-SCHEMA-*, SR-ARCH-*, SR-A11Y-*, SR-PLAT-001 | Sage P0.0/P0.5, section 3; Sentinel sections 5–6; CoS #1; Codex v1 finding 7 | CI gates section 6; threat model section 5; platform AC tags |
+| SAF-* (incl. SAF-NORM-001 local default) | Aegis brief + handoff; Sentinel section 5.1; Codex v1 finding 5 | Forbidden-copy; unknown-state; local dictionary; remote blocked without DEC-NORM-REMOTE |
+| DEC-DEFAULTS / DEC-UNIT / DEC-SYRINGE / DEC-NORM-REMOTE | Codex v1 findings 3–5 | Decision stubs only until [DECISION] issues filed; DEC-DEFAULTS still open |
 
 ---
 
 ## 13. Deliverable index
 
-### Durable GitHub anchors (canonical for Codex)
+### Canonical repository documents
+
+| Artifact | Path |
+| --- | --- |
+| **This Spec v1.2** | [docs/PRODUCT_SPEC_V1.md](./PRODUCT_SPEC_V1.md) |
+| Spec summary | [docs/PRODUCT_SPEC_V1_SUMMARY.md](./PRODUCT_SPEC_V1_SUMMARY.md) |
+| Codex response matrix | [docs/CODEX_RESPONSE_MATRIX.md](./CODEX_RESPONSE_MATRIX.md) |
+| Docs index | [docs/README.md](./README.md) |
+
+### Durable GitHub / gist anchors
 
 | Artifact | URL |
 | --- | --- |
-| **Spec v1.1 (gist)** | *(placeholder — re-publish revised gist after this revision; prior Codex-reviewed rev `7963e44e0ee0757c13f51d554250db2aa8e46b2b` at https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599 )* |
+| **Pinned gist rev (working copy)** | https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599/4a801d7702857203161960f7fd6691013ffa431b |
+| Gist (current tip; same gist id) | https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599 |
+| Prior Codex-reviewed Spec v1 gist rev | `7963e44e0ee0757c13f51d554250db2aa8e46b2b` |
+| Codex Spec v1 review | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588921595 |
+| Codex Spec v1.1 re-review (PR #3) | https://github.com/lotustemplar/peptide-calculator-v2/pull/3#pullrequestreview-5145040134 |
 | Mira UX Spec (+ §10 errata) | https://gist.github.com/lotustemplar/53412d64afc1ab3e521e3917dd44e1be |
 | Sage audit summary | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588482865 |
 | Sage audit full (8 sections) | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588483125 |
@@ -754,34 +861,29 @@ Before any implementation merge to `main`:
 | Aegis medication-safety brief | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588456913 |
 | CoS discovery inventory | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588412542 |
 | Issue #2 | https://github.com/lotustemplar/peptide-calculator-v2/issues/2 |
+| Draft PR #3 | https://github.com/lotustemplar/peptide-calculator-v2/pull/3 |
 
-### Shared-box working copies (agents)
+Ephemeral agent working copies (if any exist outside this repository) are **non-authoritative**. GitHub issues, pull requests, commits, and `docs/` are the source of truth.
 
-| Artifact | Path |
-| --- | --- |
-| **This Spec v1.1** | `/workspace/fitgen-issue2/PRODUCT_SPEC_V1.md` |
-| Spec summary (GitHub comment) | `/workspace/fitgen-issue2/PRODUCT_SPEC_V1_SUMMARY.md` |
-| Codex response matrix | `/workspace/fitgen-issue2/CODEX_RESPONSE_MATRIX.md` |
-| Codex review (input) | `/workspace/fitgen-issue2/CODEX_REVIEW_SPEC_V1.md` |
-| Mira / Sage / Sentinel / CoS / Aegis packs | under `/workspace/fitgen-issue2/` |
+### Atlas notes (updated for v1.2)
 
-### Atlas notes (updated for v1.1)
-
-1. **First-run defaults:** Prior “elevated reversible assumption” that kept 30/3/1/3 as Spec target is **removed/reclassified**. Live values = characterization only; Spec target pending **DEC-DEFAULTS** (empty desired-dose; no therapeutic chips).
+1. **First-run defaults:** Live 30/3/1/3 values = characterization only; Spec **form** target pending **DEC-DEFAULTS** (empty desired-dose; no therapeutic chips). A persisted `FillRecord` still requires finite positive `desiredDose` (§6.2 / §6.2.1).
 2. **Snooze presets:** Default to 15m / 1h / tomorrow if P1 snooze ships.
 3. **Alias source of truth:** Prefer curated alias map over parsing parentheticals alone.
 4. **SAF-LABEL-001:** Ships **after** SAF-NORM-001 / unknown-state, not same milestone.
 5. **P0 sequencing:** P0.0 + P0.1 first; **P0.OCC (FR-SCH-000)** before Taken/Undo in P0.UX; **P0.SAF (copy gates)** may run in parallel with P0.0/P0.1; do **not** combine P0.2 + P0.4 + P0.5.
 6. **Units/syringe:** Split DEC-UNIT / DEC-SYRINGE; characterize-only until decided.
 7. **Normalization:** Local dictionary default; remote needs DEC-NORM-REMOTE.
+8. **Recovery:** one slot; 168-hour expiry; write-and-verify newer snapshot before replacing the prior restore point (FR-IMP-003).
+9. **Export:** user-initiated local JSON + warning is P0 (FR-EXP-001); network/cloud share is not.
 
 **Evidence SHA for repo claims:** `4741e6f227676ff5c0f511edf173ecc03bc298df`
 
-**Prior gist rev Codex reviewed:** `7963e44e0ee0757c13f51d554250db2aa8e46b2b`
+**Pinned gist revision:** `4a801d7702857203161960f7fd6691013ffa431b`
 
-**Next owner:** Codex — re-review Spec v1.1 using `CODEX_RESPONSE_MATRIX.md`.  
+**Next owner:** Codex — re-review Spec v1.2 using [CODEX_RESPONSE_MATRIX.md](./CODEX_RESPONSE_MATRIX.md).  
 **Implementation:** Forge stays read-only until Spec approval + appropriate [DECISION] answers for P0.2 / P0.4 / P0.5 / DEC-DEFAULTS (before changing defaults) / DEC-UNIT+DEC-SYRINGE (before conversion or U-100 target) / DEC-NORM-REMOTE (before remote lookup).
 
 ---
 
-*End of Product Specification v1.1 — Atlas consolidation, 2026-09-08. Revised for Codex re-review. Not legal or clinical advice. No application code modified.*
+*End of Product Specification v1.2 — Atlas consolidation, 2026-09-08. Revised for Codex v1.1 re-review. Not legal or clinical advice. No application code modified.*

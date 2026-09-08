@@ -1,127 +1,152 @@
-# Codex Response Matrix — Spec v1 → v1.1
+# Codex Response Matrix — Spec v1.1 → v1.2 (and historical v1 → v1.1)
 
-**Input review:** `/workspace/fitgen-issue2/CODEX_REVIEW_SPEC_V1.md`  
-**Revised spec:** `/workspace/fitgen-issue2/PRODUCT_SPEC_V1.md` (v1.1)  
+**Spec v1.1 re-review (five blockers):** https://github.com/lotustemplar/peptide-calculator-v2/pull/3#pullrequestreview-5145040134  
+**Reviewed head:** `09e563a7fbe51cf64105a48eaebfdb37dff8324c`  
+**Revised spec:** [docs/PRODUCT_SPEC_V1.md](./PRODUCT_SPEC_V1.md) (**v1.2**)  
+**Summary:** [docs/PRODUCT_SPEC_V1_SUMMARY.md](./PRODUCT_SPEC_V1_SUMMARY.md)  
 **Evidence SHA:** `4741e6f227676ff5c0f511edf173ecc03bc298df`  
-**Prior gist rev Codex reviewed:** `7963e44e0ee0757c13f51d554250db2aa8e46b2b`  
+**Pinned gist rev:** [`4a801d7702857203161960f7fd6691013ffa431b`](https://gist.github.com/lotustemplar/6b7c927411da24208219cd1dba53e599/4a801d7702857203161960f7fd6691013ffa431b)  
+**Prior gist rev (Codex-reviewed Spec v1):** `7963e44e0ee0757c13f51d554250db2aa8e46b2b`  
+**Spec v1 review:** https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588921595  
 **Date:** 2026-09-08
 
-Maps each blocking finding → changed requirement IDs / sections + how addressed.
+Maps each blocking finding → changed requirement IDs / sections + how addressed. The **v1.2** section is the re-review surface. The historical v1 → v1.1 section remains for traceability.
 
 ---
+
+# Part A — Spec v1.1 re-review findings (v1.2)
+
+## Finding 1 — Occurrence idempotency + depletion reversal
+
+| | |
+| --- | --- |
+| **Status** | Addressed in v1.2 |
+| **Sections** | **§6.5 OccurrenceRecord** (identity, materialization, immutable snapshot, atomic Taken/Undo); **§7.2 FR-SCH-000**; UX-SCH-001/004; §8 P0.OCC; §9.2 occurrence tests |
+| **IDs** | **Changed: FR-SCH-000**, **UX-SCH-001**, **UX-SCH-004**, **OccurrenceRecord** fields. Cross-ref **FR-PERS-001** |
+| **How addressed** | For the present one-time-per-series-per-day model, logical identity is unique `(scheduleId, localCivilDate)`. Materialization is lookup-first: never insert a second row or mint a second `id` for the same pair; `id` is assigned once. Taken stores immutable `appliedDepletionAmount` + `appliedDepletionUnit` (Undo uses that snapshot, not a later `FillRecord.desiredDose`). `depletionApplied` is derived. Taken/Undo and the fill depletion update are **one atomic FR-PERS-001 writer**. Required tests: duplicate materialization/restart, double-tap, edit-dose-then-Undo, failed persistence. |
+
+## Finding 2 — FillRecord vs form state + canonical schema version
+
+| | |
+| --- | --- |
+| **Status** | Addressed in v1.2 |
+| **Sections** | **§6.2 FillRecord.desiredDose** persist gate; **§6.2.1 FillDraft**; **§6.1 / FR-IMP-001** named **BACKUP_SCHEMA_V3**; **SR-SCHEMA-001**; UX-SAVE-001 |
+| **IDs** | **Changed: FillRecord**, **FR-IMP-001**, **SR-SCHEMA-001**, **UX-SAVE-001**. **New named contract: FillDraft**, **BACKUP_SCHEMA_V3**. **DEC-DEFAULTS unchanged (still open)** |
+| **How addressed** | Empty desired dose is allowed only on explicit `FillDraft` form state (not a `BackupEnvelope` entity). A persisted `FillRecord` requires finite `desiredDose > 0`. This does **not** decide live first-run HTML defaults. The single named target backup schema is **BACKUP_SCHEMA_V3** (`schemaVersion === 3`). FR-IMP-001 classifies `legacy-unversioned`, `legacy-versioned` (1–2), `current` (3), and `unknown-newer` (4+) and blocks apply until the documented migration gate (or Cancel). |
+
+## Finding 3 — Recovery retention (one normative P0 policy)
+
+| | |
+| --- | --- |
+| **Status** | Addressed in v1.2 |
+| **Sections** | **§6.9 RecoverySnapshot**; **§7.2 FR-IMP-003**; **§10** (retention no longer an open policy); §8 P0.3; §9.2 import tests |
+| **IDs** | **Changed: FR-IMP-003**, **UX-SYS-003**. **New model: RecoverySnapshot** |
+| **How addressed** | One normative policy: **exactly one** current restore-point slot; **expiry = 168 hours** from `createdAt`; Restore uses only the current unexpired snapshot; an older snapshot MAY be replaced only as part of a confirmed Replace All / full apply, and **only after** the newer snapshot is durably written and verified readable. Quota failure aborts import and leaves the prior slot intact. §10 no longer asks implementers to pick a TTL. |
+
+## Finding 4 — Export vs off-device sharing
+
+| | |
+| --- | --- |
+| **Status** | Addressed in v1.2 |
+| **Sections** | **§1** field-mark definition; **§6.8** rule 5; **FR-EXP-001**; FR-IMP-003 item 7; UX-SYS-003; **SR-PRIV-001** |
+| **IDs** | **New: FR-EXP-001**. **Changed: FR-IMP-003**, **UX-SYS-003**, **SR-PRIV-001**, “prohibited from leaving device” mark |
+| **How addressed** | Distinguishes (a) **explicit user-initiated local JSON file export** — allowed in P0 only with the plaintext-sensitive-data warning — from (b) **app-initiated network egress / cloud sharing / sync** — Serious-gated (DEC-REM / DEC-CLOUD / encryption) and **not in P0**. Does not add network sharing. Resolves the prior conflict between “unencrypted backup contents shared externally require Serious” and “warn before export or share.” |
+
+## Finding 5 — Durable artifact references
+
+| | |
+| --- | --- |
+| **Status** | Addressed in v1.2 |
+| **Sections** | §1 document control; **§13 Deliverable index**; this matrix header; [PRODUCT_SPEC_V1_SUMMARY.md](./PRODUCT_SPEC_V1_SUMMARY.md); [README.md](./README.md) |
+| **IDs** | Documentation only (no new FR-*) |
+| **How addressed** | Every doc pins gist revision `4a801d7702857203161960f7fd6691013ffa431b` (durable URL includes that SHA). Canonical links are repository-relative `docs/` files plus Issue #2 / PR #3 review URLs. Spec v1 review is https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5588921595. Ephemeral agent working copies outside the repo are labeled non-authoritative and are not cited as paths. |
+
+---
+
+# Part B — Historical Spec v1 findings (v1.1; still in force)
 
 ## Finding 1 — Data model / lifecycle
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | **§6 Canonical data model** (new); field lifecycle marks in §1; SR-SCHEMA-001 cross-ref; P0.3 backlog refs §6 |
-| **IDs** | Model entities (not FR-* IDs): `BackupEnvelope`, `FillRecord`, `MedicationIdentity`, `ScheduleSeries`, `OccurrenceRecord`, `NotificationPortState`, `SettingsRecord` |
-| **How addressed** | Added plain-language + typed-contract tables for all required entities: schemaVersion/exportedAt/userId?/entities; fill/reconstitution; medication identity (user text + optional RxCUI/normalized concept); schedule series; occurrence/dose-log; notification port state; settings/time zone. Specified stable IDs, timestamps, unit fields, active/archived lifecycle, deletion/cascade behavior. Marked fields **authoritative \| derived \| optional \| migrated \| prohibited from leaving device** without Serious decision. |
-
----
+| **Status** | Addressed in v1.1; tightened in v1.2 |
+| **Sections** | **§6 Canonical data model**; field lifecycle marks in §1; SR-SCHEMA-001; P0.3 |
+| **IDs** | `BackupEnvelope`, `FillRecord`, `FillDraft`, `MedicationIdentity`, `ScheduleSeries`, `OccurrenceRecord`, `NotificationPortState`, `SettingsRecord`, `RecoverySnapshot` |
+| **How addressed** | Plain-language + typed-contract tables; stable IDs; timestamps; unit fields; active/archived; deletion/cascade; marks **authoritative \| derived \| optional \| migrated \| prohibited from leaving device** (network/cloud sense). |
 
 ## Finding 2 — Occurrence model P0
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §6.5 OccurrenceRecord; §7.2 FR-SCH-000; UX-SCH-001/004 gated notes; §8 P0.OCC + backlog gate; FR-SCH-001 reclassified as P1 extensions |
-| **IDs** | **New: FR-SCH-000** (P0). **Changed: FR-SCH-001** (P1 extensions only). **Changed: UX-SCH-001, UX-SCH-004** (explicit prerequisite on FR-SCH-000). Backlog **P0.OCC** before P0.UX Taken/Undo |
-| **How addressed** | Promoted minimal occurrence identity/state to **P0** as prerequisite to UX-SCH-001/004. FR-SCH-000 requires occurrence ID, local civil date/TZ, Taken state, idempotent mark-taken (double-tap no-op), depletion semantics (`depletionApplied`), Undo after restart. Skip/Snooze/Reschedule remain P1 on the same model via FR-SCH-001. Backlog explicitly states Taken/Undo cannot ship before FR-SCH-000. |
-
----
+| **Status** | Addressed in v1.1; implementable detail added in v1.2 (Part A finding 1) |
+| **Sections** | §6.5; FR-SCH-000; UX-SCH-001/004; P0.OCC |
+| **IDs** | **FR-SCH-000** (P0). **FR-SCH-001** (P1 extensions). **UX-SCH-001**, **UX-SCH-004** |
+| **How addressed** | Minimal occurrence identity/state is P0 before Taken/Undo. v1.2 adds composite uniqueness, deterministic materialization, immutable depletion amount/unit, and atomic writer tests. |
 
 ## Finding 3 — Units / syringe
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §5 hard constraints; §6.2 unit + syringeCalibration fields; §7.2 FR-UNIT-001 / FR-SYRINGE-001; UX-WIZ-010 / UX-RES-001 notes; §8 P0.UNIT; §11 DEC-UNIT + **DEC-SYRINGE** |
-| **IDs** | **New: FR-UNIT-001, FR-SYRINGE-001, DEC-SYRINGE**. **Changed: DEC-UNIT** (shared-unit recommendation; no mg↔mcg until specified; never IU↔mass). **Changed: UX-WIZ-010, UX-RES-001, UX-CAB-002** |
-| **How addressed** | Split **DEC-UNIT** vs **DEC-SYRINGE**. Spec REQ: vial amount and desired dose **MUST share one unit field** (same-unit invariant). Do not ship mg↔mcg conversion until DEC-UNIT + tests. Never IU↔mass. U-100 marks only after U-100 syringe calibration explicitly selected; otherwise **mL only**. Boundary/golden tests for every permitted unit combination. Safe default: characterize production only; do not approve unconditional U-100 or new mcg conversion as target. |
-
----
+| **Status** | Addressed in v1.1 (unchanged in v1.2) |
+| **Sections** | §5; §6.2; FR-UNIT-001 / FR-SYRINGE-001; UX-WIZ-010 / UX-RES-001; P0.UNIT; DEC-UNIT + DEC-SYRINGE |
+| **IDs** | **FR-UNIT-001, FR-SYRINGE-001, DEC-SYRINGE**, **DEC-UNIT** |
+| **How addressed** | Same-unit invariant; no mg↔mcg until DEC-UNIT + tests; never IU↔mass; U-100 marks only after explicit calibration; otherwise mL only. |
 
 ## Finding 4 — Defaults Serious
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §3.1 Defaults FACT row; §5 constraint; UX-WIZ-002/020, UX-CHIP-001 notes; §8 **P0.DEF**; §10 Serious list; §11 **DEC-DEFAULTS**; §13 Atlas notes item 1 reclassified |
-| **IDs** | **New: DEC-DEFAULTS** (Serious). **Changed:** removed prior “elevated reversible assumption” that kept 30/3/1/3 as Spec target |
-| **How addressed** | Added DEC-DEFAULTS. Recommended: empty desired-dose; no therapeutic amount chips; packaging/syringe/BAC convenience presets OK if non-therapeutic. Safe default while waiting: do not change live 30/3/1/3; **do not approve** as target design. Prior Atlas assumption #1 removed/reclassified to characterization-only. |
-
----
+| **Status** | Addressed in v1.1; persist-vs-form split clarified in v1.2 (Part A finding 2) |
+| **Sections** | §3.1 Defaults FACT; DEC-DEFAULTS; §6.2.1 FillDraft |
+| **IDs** | **DEC-DEFAULTS** (Serious; **still open**) |
+| **How addressed** | Live 30/3/1/3 = characterization only; not approved target. Recommended form target = empty desired-dose; no therapeutic chips. v1.2 forbids persisting an empty `FillRecord.desiredDose` without deciding the live default. |
 
 ## Finding 5 — RxNorm privacy
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §6.3 MedicationIdentity privacy notes; §7.4 **SAF-NORM-001** rewrite; SR-PRIV-001; §8 P1 med-list row Filipe? column; §11 **DEC-NORM-REMOTE** |
-| **IDs** | **Changed: SAF-NORM-001**. **New: DEC-NORM-REMOTE**. **Changed: SR-PRIV-001**. P1 backlog Filipe? = No for local identity-only; **Yes** if remote |
-| **How addressed** | Default path = **offline/local** normalization dictionary (bundled/subset). Remote RxNorm/API = Serious → DEC-NORM-REMOTE. If remote ever approved: data minimization, consent copy, retention/logging, timeout/offline→unknown, **no** batch send of full med list by default. |
-
----
+| **Status** | Addressed in v1.1 (unchanged in v1.2) |
+| **Sections** | §6.3; SAF-NORM-001; SR-PRIV-001; DEC-NORM-REMOTE |
+| **IDs** | **SAF-NORM-001**, **DEC-NORM-REMOTE**, **SR-PRIV-001** |
+| **How addressed** | Default = offline/local dictionary. Remote = Serious. No batch full med list. |
 
 ## Finding 6 — Backup rollback + disclosure
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §7.1 UX-SYS-002/003 expanded; §7.2 **FR-IMP-002**, **FR-IMP-003**; §8 P0.3; §9.2 import test gates; §10 elevated TTL question |
-| **IDs** | **New: FR-IMP-002, FR-IMP-003**. **Changed: UX-SYS-002, UX-SYS-003**. Ties to FR-IMP-001 / SR-SCHEMA-001 / §6.1 |
-| **How addressed** | Validate+preview without mutation; pre-import recovery snapshot before Replace All; restore UX + retention TTL (≥7 days baseline); duplicate/ID collision per entity; unknown-field quarantine/passthrough; explicit plaintext sensitive-data warning before export/share; tests for Cancel, quota failure, corrupt snapshot, successful rollback, app restart. |
-
----
+| **Status** | Addressed in v1.1; retention + export split tightened in v1.2 (Part A findings 3–4) |
+| **Sections** | UX-SYS-002/003; FR-IMP-002/003; FR-EXP-001; §6.9 |
+| **IDs** | **FR-IMP-002, FR-IMP-003, FR-EXP-001** |
+| **How addressed** | Validate+preview without mutation; one-slot recovery with 168-hour expiry and write-before-replace; collision + quarantine; local-export warning; no P0 network share. |
 
 ## Finding 7 — Platform matrix
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | **§2.1 Intended user**; **§2.2 Supported platform matrix**; §5 reminder constraint; FR-REM-001 scope note; **SR-PLAT-001**; DEC-REM recommended option text; §8 P0.4 |
-| **IDs** | **New: SR-PLAT-001**. **Changed: §2 Product intent, FR-REM-001, DEC-REM** |
-| **How addressed** | Documented intended user (self-managed planner, not clinician CDS). Supported v1 baseline: **static web app + Median-wrapped Android**; **iOS unsupported/uncommitted** unless separately approved. Final platform reminder promise tied to **DEC-REM** — does not imply all reminder paths supported. |
-
----
+| **Status** | Addressed in v1.1 (unchanged in v1.2) |
+| **Sections** | §2.1–2.2; SR-PLAT-001; FR-REM-001; DEC-REM |
+| **IDs** | **SR-PLAT-001** |
+| **How addressed** | Static web + Median Android supported; iOS uncommitted; reminder promise tied to DEC-REM. |
 
 ## Finding 8 — Calculator input domain
 
 | | |
 | --- | --- |
-| **Status** | Addressed |
-| **Sections** | §7.2 **FR-CALC-010**; FR-CALC-001 legacy-evidence labeling; FR-CALC-003 target vs FACT C2; UX-WIZ-003 / UX-RES-003 links; §8 P0.1; §9.2 test gates; DEC-FORMULA safe default |
-| **IDs** | **New: FR-CALC-010**. **Changed: FR-CALC-001** (legacy evidence, not target oracles), **FR-CALC-003** (target consistency; C2 = FACT defect) |
-| **How addressed** | Added normative input-domain safety **without** choosing disputed formula: finite positive numbers; dose ≤ vial content (same unit); impossible configs → inline error / no options; minimum non-zero draw after rounding = TBD pending DEC-FORMULA with UX-RES-003 when no option fits; precision/display policy = consistent rounded values in target design. P0.1 golden snapshots labeled **legacy evidence**, not target correctness oracles. |
+| **Status** | Addressed in v1.1 (unchanged in v1.2) |
+| **Sections** | FR-CALC-010; FR-CALC-001 legacy-evidence; FR-CALC-003 |
+| **IDs** | **FR-CALC-010**, **FR-CALC-001**, **FR-CALC-003** |
+| **How addressed** | Finite positive domain; dose ≤ vial same unit; no fabricated options; goldens labeled legacy evidence. |
 
 ---
 
-## Also updated (cross-cutting)
+## Confirmation checklist (v1.2 re-review)
 
-| Area | Change |
-| --- | --- |
-| Document control | Status = Revised for Codex re-review; Spec revision = v1.1; prior gist rev recorded; versioning notes |
-| §11 Decision stubs | Added DEC-DEFAULTS, DEC-SYRINGE, DEC-NORM-REMOTE; updated DEC-UNIT / DEC-REM / DEC-FORMULA text |
-| §8 P0/P1 backlog | P0.OCC, P0.UNIT, P0.DEF; Taken/Undo gate; SAF-NORM Filipe? column; P0.3 import rollback |
-| §12 Traceability | Rows for §6 model, FR-SCH-000, FR-CALC-010, FR-UNIT/SYRINGE, FR-IMP-002/003, SR-PLAT-001, DEC-* |
-| §13 Deliverable index | Spec v1.1 paths; gist placeholder note; Codex response matrix path; Atlas notes reclassified |
-| Summary | `/workspace/fitgen-issue2/PRODUCT_SPEC_V1_SUMMARY.md` updated for GitHub comment |
-
----
-
-## Confirmation checklist
-
-| Finding | Addressed in this matrix | Spec v1.1 contains fix |
+| Finding (v1.1 re-review) | Addressed in this matrix | Spec v1.2 contains fix |
 | --- | ---: | ---: |
-| 1 Data model | Yes | Yes — §6 |
-| 2 Occurrence P0 | Yes | Yes — FR-SCH-000 |
-| 3 Units / syringe | Yes | Yes — FR-UNIT-001, FR-SYRINGE-001, DEC-SYRINGE |
-| 4 Defaults Serious | Yes | Yes — DEC-DEFAULTS; assumption removed |
-| 5 RxNorm privacy | Yes | Yes — SAF-NORM-001, DEC-NORM-REMOTE |
-| 6 Backup rollback | Yes | Yes — FR-IMP-002/003, UX-SYS-002/003 |
-| 7 Platform matrix | Yes | Yes — §2.1–2.2, SR-PLAT-001 |
-| 8 Calculator domain | Yes | Yes — FR-CALC-010; legacy-evidence P0.1 |
+| 1 Occurrence identity + depletion snapshot | Yes | Yes — §6.5, FR-SCH-000 |
+| 2 FillDraft vs FillRecord + BACKUP_SCHEMA_V3 | Yes | Yes — §6.2, §6.2.1, FR-IMP-001 |
+| 3 One-slot 168-hour recovery policy | Yes | Yes — §6.9, FR-IMP-003; §10 not a choice |
+| 4 Local export vs network share | Yes | Yes — FR-EXP-001, §6.8, SR-PRIV-001 |
+| 5 Durable pins and docs/ links | Yes | Yes — §1, §13, this file, SUMMARY, README |
 
-**All eight blocking findings are addressed.** No application code, git remotes, or production systems were modified.
+**All five v1.1 re-review blockers are addressed.** Historical v1 findings 1–8 remain in force. No application code, config, backend, workflows, or `*-fix.js` were modified. **DEC-DEFAULTS remains undecided.**
