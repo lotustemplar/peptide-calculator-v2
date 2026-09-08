@@ -376,7 +376,7 @@ function testForbiddenCopy() {
 }
 
 function main() {
-  console.log("P0.0 CI baseline self-tests (gates only; no calculator goldens yet).\n");
+  console.log("P0.0 CI baseline self-tests (gates only; calculator goldens run next).\n");
   try {
     testLint();
     testLockfiles();

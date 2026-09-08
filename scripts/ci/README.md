@@ -65,10 +65,11 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS outside the legacy-path allowlist; a new `.ts`/`.tsx` file fails closed until Issue #9 |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
-| Test runner | `scripts/test.js` | Gate self-tests fail |
+| Test runner | `scripts/test.js` | Gate self-tests or P0.1 calculator tests fail |
 
-Calculator golden fixtures are **not** in this slice (P0.1 / Issue #5). The
-runner is intentionally minimal and currently executes gate self-tests only.
+P0.1 calculator **legacy-evidence** goldens and FR-CALC-010 domain fixtures
+live in `scripts/calc/` and are invoked by `scripts/test.js` / `npm test`.
+Those snapshots lock current dual-path outputs; they are not target oracles.
 
 ## Allowlist rationale
 
