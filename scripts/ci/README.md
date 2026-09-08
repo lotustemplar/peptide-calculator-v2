@@ -148,6 +148,7 @@ unused-binding probes are covered by `gate-selftest.js`.
 The self-tests in `gate-selftest.js` create temporary fixtures (removed in
 `finally`) for failure cases, including allowlist-bypass attempts, relocated
 forbidden copy, lowercase recommended, literal Take/draw, and every pattern ID.
+Lint probes write under `src/` and must not delete other `src/` files (P0.OCC).
 
 A PR that adds `*-fix.js`, new forbidden copy, or a lint violation on a
 non-legacy file should show a red **PR quality gates** check on the pull
