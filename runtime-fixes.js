@@ -492,7 +492,7 @@ async function syncRemindersToBackend() {
     }
 
     if (doseAmount > vialAmount) {
-      return { error: "The desired dose cannot be larger than the total amount in the vial.", options: [], mode: "empty" };
+      return { error: "The planned dose cannot be larger than the total amount in the vial.", options: [], mode: "empty" };
     }
 
     const cleanOptions = buildCleanTargetDraws(syringeMax)
@@ -599,7 +599,7 @@ async function syncRemindersToBackend() {
       } else if (nextReminder.fill) {
         fireBrowserNotification(
           `${nextReminder.fill.name} dose due`,
-          `Take ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)} and draw ${formatDrawMl(nextReminder.schedule.doseMl)}.`
+          `Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.`
         );
       }
       renderScheduleIndicator();
@@ -1161,7 +1161,7 @@ async function syncRemindersToBackend() {
     }
 
     resultsGrid.innerHTML = options.map((option, index) => {
-      const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : "";
+      const recommendedBadge = index === 0 ? '<span class="badge">Easiest to measure</span>' : "";
       const precisionBadge = option.isPrecisionFallback ? '<span class="badge warning">Precision</span>' : "";
       const cautionBadge = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : "";
       const cardClass = option.waterMl > RUNTIME_FIX_DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";

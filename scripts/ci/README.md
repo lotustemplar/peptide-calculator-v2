@@ -74,8 +74,9 @@ Those snapshots lock current dual-path outputs; they are not target oracles.
 ## Allowlist rationale
 
 Content and lint-skip lists are **forward-looking**. Pre-existing matches on
-`main` (`4741e6f`) are allowlisted so P0.0 can land without a live copy rewrite
-(P0.6 / UX-COPY-001). Head allowlists are frozen against the PR base.
+`main` (`4741e6f`) were allowlisted so P0.0 could land without a live copy rewrite.
+Issue #12 / P0.6 / UX-COPY-001 rewrote live user-facing strings and **removed**
+those allowlist rows. Head allowlists are frozen against the PR base.
 
 ### `allowlists/runtime-fix-js.txt`
 
@@ -89,12 +90,12 @@ Each exception is bound to **one exact normalized line** (`context`) plus
 `file` + `patternId`. A different “Recommended” (or any other token) in the
 same file does **not** consume that exception.
 
-Pre-existing MED-FLAG / clinical-adjacent strings already on `main`:
+Remaining allowlisted matches after P0.6:
 
-- results **Recommended** badge/heading (`index.html`, `app.js`, `runtime-fixes.js`)
-- **Saved prescriptions**, **how much to take**, **safety-first**, **usually preferred**
-- reminder **Take … and draw** payloads (literal amounts or `${…}` interpolation)
+- CSS class token `recommended` on result cards (`app.js`, `runtime-fixes.js`) — not user-facing copy
+- unloaded `native-reminder-fix.js` **Take … and draw** payload (still scanned; sync not re-enabled)
 - non-clinical `MEDIAN_SETUP.md` “Recommended stack”
+- process/docs “recommended” in `AGENTS.md` and `.github/AI_COLLABORATION.md`
 
 `docs/` is excluded so the Spec record can discuss forbidden phrases without
 tripping the live-copy gate. `scripts/ci/` is excluded so the gate source can

@@ -510,7 +510,7 @@ function renderMedications() {
   if (!container) return;
 
   if (!state.medications.length) {
-    container.innerHTML = '<p class="empty-state">No medications saved yet.</p>';
+    container.innerHTML = '<p class="empty-state">No peptides/plans saved yet.</p>';
     return;
   }
 
@@ -582,7 +582,7 @@ function renderCalculator() {
   if (doseAmount > vialAmount) {
     state.latestOptions = [];
     elements.resultsGrid.innerHTML =
-      '<div class="empty-state">The desired dose cannot be larger than the total amount in the vial.</div>';
+      '<div class="empty-state">The planned dose cannot be larger than the total amount in the vial.</div>';
     return;
   }
 
@@ -601,7 +601,7 @@ function renderCalculator() {
 
   elements.resultsGrid.innerHTML = options
     .map((option, index) => {
-      const recommendedBadge = index === 0 ? '<span class="badge">Recommended</span>' : "";
+      const recommendedBadge = index === 0 ? '<span class="badge">Easiest to measure</span>' : "";
       const cautionBadge = option.waterMl > DEFAULT_MAX_WATER_ML ? '<span class="badge warning">Above 3 mL</span>' : "";
       const cardClass = option.waterMl > DEFAULT_MAX_WATER_ML ? "result-card caution" : "result-card";
       return `
@@ -1561,7 +1561,7 @@ function queueNextReminder() {
 function fireReminder(schedule) {
   const fill = resolveScheduleFill(schedule);
   const title = `${fill ? fill.name : "Peptide"} Reminder`;
-  const body = `Take ${formatDose(schedule.doseAmount, schedule.unitLabel)} and draw ${formatDrawMl(schedule.doseMl)} from the constituted vial.`;
+  const body = `Planned dose: ${formatDose(schedule.doseAmount, schedule.unitLabel)}. Measure ${formatDrawMl(schedule.doseMl)} from the constituted vial.`;
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
@@ -1599,7 +1599,7 @@ function renderNotificationState(forcedPermission) {
 function updateUnitLabels() {
   const unitLabel = getCurrentUnitLabel();
   elements.vialAmountLabel.textContent = `Amount in vial (${unitLabel})`;
-  elements.doseAmountLabel.textContent = `Desired dose (${unitLabel})`;
+  elements.doseAmountLabel.textContent = `Planned dose (${unitLabel})`;
   elements.modalDoseLabel.textContent = `Dosage amount (${unitLabel})`;
   updateScheduleDoseLabel();
 }
@@ -1619,7 +1619,7 @@ function updateWaterWarning() {
     return;
   }
 
-  elements.waterWarning.textContent = "Staying at or under 3 mL is usually preferred for vial fit.";
+  elements.waterWarning.textContent = "Staying at or under 3 mL is a typical physical fit for many vials.";
   elements.waterWarning.className = "form-message";
 }
 
