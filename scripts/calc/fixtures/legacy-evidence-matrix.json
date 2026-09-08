@@ -1,0 +1,135 @@
+{
+  "label": "legacy-evidence",
+  "requirement": "FR-CALC-001",
+  "notATargetOracle": true,
+  "notes": [
+    "These cases lock current dual-path outputs as legacy evidence.",
+    "They are not target correctness oracles and do not pick DEC-FORMULA.",
+    "mg and IU are labels-only in production; numeric math is shared.",
+    "app.js water-step uses min-draw 0.05; runtime-fixes clean draws start at 0.10."
+  ],
+  "cases": [
+    {
+      "id": "default-mg-30-3-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "default-iu-30-3-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "IU"
+      }
+    },
+    {
+      "id": "small-dose-mg-10-1-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 10,
+        "doseAmount": 1,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "high-water-mg-30-3-1-5",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 1,
+        "maxWaterMl": 5,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "half-syringe-mg-30-3-0.5-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 0.5,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "tight-water-mg-30-3-1-1",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 1,
+        "maxWaterMl": 1,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "high-ratio-mg-10-5-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 10,
+        "doseAmount": 5,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "tiny-dose-mg-30-0.5-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 0.5,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "equal-dose-vial-mg-5-5-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 5,
+        "doseAmount": 5,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    },
+    {
+      "id": "iu-10-2-1-3",
+      "label": "legacy-evidence",
+      "inputs": {
+        "vialAmount": 10,
+        "doseAmount": 2,
+        "syringeMax": 1,
+        "maxWaterMl": 3,
+        "unitLabel": "IU"
+      }
+    },
+    {
+      "id": "syringe-below-app-min-draw-mg-30-3-0.04-3",
+      "label": "legacy-evidence",
+      "notes": "Locks current path-specific behavior. app.js min-draw 0.05 cannot fit; runtime-fixes clean draws still start at 0.10.",
+      "inputs": {
+        "vialAmount": 30,
+        "doseAmount": 3,
+        "syringeMax": 0.04,
+        "maxWaterMl": 3,
+        "unitLabel": "mg"
+      }
+    }
+  ]
+}

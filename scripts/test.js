@@ -2,22 +2,36 @@
 "use strict";
 
 /**
- * Minimal test-runner invoked by CI (SR-CI-001).
- * P0.0 wires the harness. Calculator goldens / FR-CALC-010 land in P0.1.
+ * CI test-runner (SR-CI-001).
+ * P0.0: gate self-tests.
+ * P0.1: dual-path calculator legacy-evidence goldens + FR-CALC-010 domain fixtures.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
 
-const selftest = path.join(__dirname, "ci", "gate-selftest.js");
-console.log("Running P0.0 CI gate self-tests via scripts/test.js");
+const jobs = [
+  { name: "P0.0 CI gate self-tests", file: path.join(__dirname, "ci", "gate-selftest.js") },
+  {
+    name: "P0.1 calculator legacy-evidence + FR-CALC-010",
+    file: path.join(__dirname, "calc", "legacy-evidence-test.js"),
+  },
+];
 
-const result = spawnSync(process.execPath, [selftest], {
-  stdio: "inherit",
-});
+let failed = false;
 
-if (result.error) {
-  console.error(result.error.message);
-  process.exit(1);
+for (const job of jobs) {
+  console.log(`Running ${job.name} via scripts/test.js`);
+  const result = spawnSync(process.execPath, [job.file], {
+    stdio: "inherit",
+  });
+  if (result.error) {
+    console.error(result.error.message);
+    failed = true;
+    continue;
+  }
+  if (result.status !== 0) {
+    failed = true;
+  }
 }
 
-process.exit(result.status === null ? 1 : result.status);
+process.exit(failed ? 1 : 0);

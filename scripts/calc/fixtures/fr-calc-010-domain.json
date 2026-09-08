@@ -1,0 +1,164 @@
+{
+  "label": "legacy-evidence",
+  "requirement": "FR-CALC-010",
+  "notATargetOracle": true,
+  "notes": [
+    "Domain fixtures assert rejection / empty-state behavior on both live paths.",
+    "They are not therapeutic-dose oracles and do not pick DEC-FORMULA.",
+    "NaN/Infinity are encoded as strings because JSON cannot store those values."
+  ],
+  "cases": [
+    {
+      "id": "nan-vial",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "vialAmount",
+      "inputs": { "vialAmount": "NaN", "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "nan-dose",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "doseAmount",
+      "inputs": { "vialAmount": 30, "doseAmount": "NaN", "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "nan-water",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "maxWaterMl",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": "NaN", "unitLabel": "mg" }
+    },
+    {
+      "id": "nan-syringe",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "syringeMax",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": "NaN", "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "inf-vial",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "vialAmount",
+      "inputs": { "vialAmount": "Infinity", "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "inf-dose",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "doseAmount",
+      "inputs": { "vialAmount": 30, "doseAmount": "Infinity", "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "inf-water",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "maxWaterMl",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": "Infinity", "unitLabel": "mg" }
+    },
+    {
+      "id": "inf-syringe",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "syringeMax",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": "Infinity", "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "ninf-vial",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "vialAmount",
+      "inputs": { "vialAmount": "-Infinity", "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "zero-vial",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "vialAmount",
+      "inputs": { "vialAmount": 0, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "neg-vial",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "vialAmount",
+      "inputs": { "vialAmount": -10, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "zero-dose",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "doseAmount",
+      "inputs": { "vialAmount": 30, "doseAmount": 0, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "neg-dose",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "doseAmount",
+      "inputs": { "vialAmount": 30, "doseAmount": -3, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "blank-dose-when-provided",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "doseAmount",
+      "inputs": { "vialAmount": 30, "doseAmount": "", "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "zero-water",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "maxWaterMl",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": 0, "unitLabel": "mg" }
+    },
+    {
+      "id": "neg-water",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "maxWaterMl",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": 1, "maxWaterMl": -1, "unitLabel": "mg" }
+    },
+    {
+      "id": "zero-syringe",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "syringeMax",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": 0, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "neg-syringe",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "non-finite-or-non-positive",
+      "field": "syringeMax",
+      "inputs": { "vialAmount": 30, "doseAmount": 3, "syringeMax": -1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "dose-gt-vial-mg",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "dose-exceeds-vial",
+      "inputs": { "vialAmount": 10, "doseAmount": 15, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "dose-gt-vial-iu",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "dose-exceeds-vial",
+      "inputs": { "vialAmount": 100, "doseAmount": 250, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "IU" }
+    },
+    {
+      "id": "impossible-tiny-dose-both-paths",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "impossible-config",
+      "notes": "Dose is so small that no legal draw fits under either current min-draw / water-step policy.",
+      "inputs": { "vialAmount": 30, "doseAmount": 0.4, "syringeMax": 1, "maxWaterMl": 3, "unitLabel": "mg" }
+    },
+    {
+      "id": "impossible-syringe-and-water-ceiling",
+      "label": "legacy-evidence FR-CALC-010",
+      "reason": "impossible-config",
+      "notes": "Syringe capacity and water ceiling cannot fit any legal draw on either live path.",
+      "inputs": { "vialAmount": 30, "doseAmount": 0.1, "syringeMax": 0.04, "maxWaterMl": 0.01, "unitLabel": "mg" }
+    }
+  ]
+}

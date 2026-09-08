@@ -43,6 +43,9 @@ in `scripts/ci/README.md`. Keep-alive is not a PR quality check. Lockfiles for
 the root package and `backend/` are committed and used by CI installs. Lint
 covers `scripts/` plus changed/new JS/CJS/MJS outside the legacy-path allowlist.
 TypeScript linting is a prerequisite (Issue #9) before the first `.ts`/`.tsx` source PR.
+`npm test` also runs P0.1 dual-path calculator **legacy-evidence** goldens and
+FR-CALC-010 domain fixtures (`scripts/calc/`). Those snapshots lock current
+outputs; they are not target correctness oracles.
 
 ## Notes
 
