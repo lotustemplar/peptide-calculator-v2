@@ -7,6 +7,7 @@
 export {
   ENVELOPE_STORAGE_KEY,
   FILLS_STORAGE_KEY,
+  MEDICATIONS_STORAGE_KEY,
   OCCURRENCES_STORAGE_KEY,
   PERSIST_WRITE_STEPS,
   SCHEDULES_STORAGE_KEY,
@@ -14,8 +15,6 @@ export {
 
 /** August 2026 rebuild envelope. Stage 3 must not setItem or removeItem this key. */
 export const BASELINE_ENVELOPE_KEY = "fitgen-peptide-rebuild-v1";
-
-export const MEDICATIONS_STORAGE_KEY = "peptide-calculator-v2-medications";
 
 /** FR-IMP-003: exactly one current restore-point slot (GitHub generation only). */
 export const RECOVERY_SLOT_KEY = "peptide-calculator-v2-recovery-slot";

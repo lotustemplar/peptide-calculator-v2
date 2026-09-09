@@ -10,7 +10,7 @@ Plan source: Issue #2 recovery plan; Stage 0 evidence in [`docs/evidence/baselin
 | Generation | Identity | Shape |
 | --- | --- | --- |
 | Baseline rebuild | localStorage key `fitgen-peptide-rebuild-v1` | Single envelope `{ fills, histories, activeView, lastReminderDigestDate }` |
-| GitHub `main` | Multi-keys + P0.UX envelope `peptide-calculator-v2-p0ux-store` + OCC `peptide-calculator-v2-occurrences` | Coupled fills / schedules / occurrences via `commitAppState`; medications on `peptide-calculator-v2-medications` |
+| GitHub `main` | Multi-keys + P0.UX envelope `peptide-calculator-v2-p0ux-store` + OCC `peptide-calculator-v2-occurrences` | Coupled fills / schedules / occurrences / medications via one envelope `setItem`; legacy keys are mirrors |
 
 Stage 3 **never** `setItem`s or `removeItem`s `fitgen-peptide-rebuild-v1`. Import writes only the GitHub-generation keys listed below.
 
@@ -18,11 +18,11 @@ Stage 3 **never** `setItem`s or `removeItem`s `fitgen-peptide-rebuild-v1`. Impor
 
 | Key | Role |
 | --- | --- |
-| `peptide-calculator-v2-p0ux-store` | Canonical envelope `{ version: 1, fills, schedules, occurrences }` — FR-PERS-001 writer |
+| `peptide-calculator-v2-p0ux-store` | Canonical envelope `{ version: 1, fills, schedules, occurrences, medications }` — FR-PERS-001 writer |
 | `peptide-calculator-v2-fills` | Legacy mirror |
 | `peptide-calculator-v2-schedules` | Legacy mirror |
 | `peptide-calculator-v2-occurrences` | OCC mirror |
-| `peptide-calculator-v2-medications` | Optional med-list satellite, included in import atomic unit |
+| `peptide-calculator-v2-medications` | Best-effort mirror after the envelope commit |
 | `peptide-calculator-v2-recovery-slot` | FR-IMP-003 one restore-point slot |
 | `peptide-calculator-v2-recovery-slot-pending` | Write+verify staging for the slot |
 
@@ -38,12 +38,12 @@ Documented dual-read aliases. Mapping defaults are planner fields, not therapeut
 | `fills[].waterMl` | `waterMl` |
 | `fills[].unitLabel` | `unit` / `unitLabel` |
 | `fills[].recommendedDoseAmount` (`doseAmount` / `desiredDose`) | `desiredDose` (must be finite `> 0` or the fill is quarantined) |
-| `histories[]` `status=taken` + date | Synthetic schedule `id = baseline-sched:{savedId}`; `takenDates`; OCC `taken` **without** inventing depletion snapshots |
+| `histories[]` `status=taken` + date | OCC `taken` **only** when the source fill also has a complete schedule (`intervalDays` + `reminderTime`/`timeOfDay` + `startDate`/`startCivilDate`). Schedule id `baseline-sched:{savedId}`. No depletion snapshots invented. Missing those schedule fields: taken history is quarantined (`taken-history-no-source-schedule`); **no** active series and **no** reminder. |
 | `histories[]` `status=missed` | **Quarantined.** Not applied. Mark missed is out of Stage 3 |
 | `activeView` | Quarantine/passthrough only (not a GitHub view write) |
 | `lastReminderDigestDate` | Quarantine/passthrough only (reminders are out of Stage 3) |
 
-Synthetic schedule defaults when the rebuild has no `ScheduleSeries`: `intervalDays` from fill if a positive integer, else `1`; `reminderTime` `09:00`; `startDate` earliest taken civil date (else fill `savedAt` date). `doseMl` is `doseAmount / (vialAmount / waterMl)` so `app.js` `isValidSchedule` will keep the row on hydrate. These defaults are mapping completeness, not a recommended interval.
+Stage 3 does **not** invent `intervalDays`, `reminderTime`, or `startDate` when the rebuild envelope omits them. Partial schedule fields are quarantined as `incomplete-source-schedule`. `doseMl` is derived from source vial/water/dose only after those three schedule fields are present, so `app.js` `isValidSchedule` can keep a faithfully mapped row.
 
 ## GitHub backups → BACKUP_SCHEMA_V3
 
@@ -56,7 +56,7 @@ Synthetic schedule defaults when the rebuild has no `ScheduleSeries`: `intervalD
 
 Unknown fields (example fixture: `rxCui`) are kept on the entity object (passthrough) and listed in the quarantine summary. They are not silently stripped.
 
-P0.UX envelope `{ version: 1, fills, schedules, occurrences }` is GitHub-generation, still `legacy-unversioned` until exported as `schemaVersion: 3`.
+P0.UX envelope `{ version: 1, fills, schedules, occurrences, medications? }` is GitHub-generation, still `legacy-unversioned` until exported as `schemaVersion: 3`. Medications belong in that envelope JSON so reload cannot observe new fills with old medications.
 
 ## Export dual-read (non-stranding)
 

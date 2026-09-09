@@ -812,6 +812,8 @@ function importClassLabel(schemaClass, generation) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildExportDocument = buildExportDocument;
 exports.exportDocumentJson = exportDocumentJson;
+exports.chooseLocalExportMode = chooseLocalExportMode;
+exports.writeLocalBackup = writeLocalBackup;
 const keys_1 = require("./keys");
 const fields_1 = require("./fields");
 const map_github_1 = require("./map-github");
@@ -844,6 +846,35 @@ function buildExportDocument(state, exportedAt, settings) {
 }
 function exportDocumentJson(state, exportedAt, settings) {
     return `${JSON.stringify(buildExportDocument(state, exportedAt, settings), null, 2)}\n`;
+}
+function chooseLocalExportMode(nativeBackup) {
+    if (nativeBackup && typeof nativeBackup.exportBackup === "function") {
+        return "native";
+    }
+    return "download";
+}
+function writeLocalBackup(json, filename, writer) {
+    if (typeof writer.nativeExport === "function") {
+        try {
+            const raw = writer.nativeExport(json, filename);
+            let parsed = raw;
+            if (typeof raw === "string") {
+                try {
+                    parsed = JSON.parse(raw);
+                }
+                catch {
+                    parsed = { ok: true };
+                }
+            }
+            if (parsed && typeof parsed === "object" && parsed.ok !== false) {
+                return "native";
+            }
+        }
+        catch {
+        }
+    }
+    writer.download(json, filename);
+    return "download";
 }
 
   })(
@@ -1094,7 +1125,7 @@ function restoreFromSlot(storage, nowMs) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.githubStateEqual = exports.applyDuplicatePolicy = exports.previewBodyHtml = exports.previewImport = exports.parseBackupText = exports.mapGithubDocument = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.mapBaselineDocument = exports.mapToV3 = exports.schemaClassFromVersion = exports.detectGeneration = exports.classifyBackup = exports.importClassLabel = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_COEXIST_NOTE = exports.SCHEDULES_STORAGE_KEY = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.PROTECTED_WRITE_KEYS = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.BASELINE_ENVELOPE_KEY = exports.BACKUP_SCHEMA_V3 = void 0;
-exports.writeRecoverySlot = exports.restoreAvailable = exports.readRecoverySlot = exports.isRecoveryExpired = exports.isQuotaError = exports.inspectRestore = exports.guardedSetItem = exports.guardedRemoveItem = exports.buildRecoverySnapshot = exports.readGithubState = exports.readBaselineRaw = exports.commitGithubState = exports.cloneGithubState = exports.baselineKeyUnchanged = exports.restoreFromSlot = exports.previewImportFromStorage = exports.applyImport = exports.exportDocumentJson = exports.buildExportDocument = void 0;
+exports.writeRecoverySlot = exports.restoreAvailable = exports.readRecoverySlot = exports.isRecoveryExpired = exports.isQuotaError = exports.inspectRestore = exports.guardedSetItem = exports.guardedRemoveItem = exports.buildRecoverySnapshot = exports.readGithubState = exports.readBaselineRaw = exports.commitGithubState = exports.cloneGithubState = exports.baselineKeyUnchanged = exports.restoreFromSlot = exports.previewImportFromStorage = exports.applyImport = exports.writeLocalBackup = exports.exportDocumentJson = exports.chooseLocalExportMode = exports.buildExportDocument = void 0;
 var keys_1 = require("./keys");
 Object.defineProperty(exports, "BACKUP_SCHEMA_V3", { enumerable: true, get: function () { return keys_1.BACKUP_SCHEMA_V3; } });
 Object.defineProperty(exports, "BASELINE_ENVELOPE_KEY", { enumerable: true, get: function () { return keys_1.BASELINE_ENVELOPE_KEY; } });
@@ -1155,7 +1186,9 @@ Object.defineProperty(exports, "applyDuplicatePolicy", { enumerable: true, get: 
 Object.defineProperty(exports, "githubStateEqual", { enumerable: true, get: function () { return policy_1.githubStateEqual; } });
 var export_1 = require("./export");
 Object.defineProperty(exports, "buildExportDocument", { enumerable: true, get: function () { return export_1.buildExportDocument; } });
+Object.defineProperty(exports, "chooseLocalExportMode", { enumerable: true, get: function () { return export_1.chooseLocalExportMode; } });
 Object.defineProperty(exports, "exportDocumentJson", { enumerable: true, get: function () { return export_1.exportDocumentJson; } });
+Object.defineProperty(exports, "writeLocalBackup", { enumerable: true, get: function () { return export_1.writeLocalBackup; } });
 var import_1 = require("./import");
 Object.defineProperty(exports, "applyImport", { enumerable: true, get: function () { return import_1.applyImport; } });
 Object.defineProperty(exports, "previewImportFromStorage", { enumerable: true, get: function () { return import_1.previewImportFromStorage; } });
@@ -1188,15 +1221,15 @@ Object.defineProperty(exports, "writeRecoverySlot", { enumerable: true, get: fun
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROTECTED_WRITE_KEYS = exports.BACKUP_SCHEMA_V3 = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.BASELINE_ENVELOPE_KEY = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = void 0;
+exports.PROTECTED_WRITE_KEYS = exports.BACKUP_SCHEMA_V3 = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.BASELINE_ENVELOPE_KEY = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = void 0;
 var persist_1 = require("../ux/persist");
 Object.defineProperty(exports, "ENVELOPE_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.ENVELOPE_STORAGE_KEY; } });
 Object.defineProperty(exports, "FILLS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.FILLS_STORAGE_KEY; } });
+Object.defineProperty(exports, "MEDICATIONS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.MEDICATIONS_STORAGE_KEY; } });
 Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.OCCURRENCES_STORAGE_KEY; } });
 Object.defineProperty(exports, "PERSIST_WRITE_STEPS", { enumerable: true, get: function () { return persist_1.PERSIST_WRITE_STEPS; } });
 Object.defineProperty(exports, "SCHEDULES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.SCHEDULES_STORAGE_KEY; } });
 exports.BASELINE_ENVELOPE_KEY = "fitgen-peptide-rebuild-v1";
-exports.MEDICATIONS_STORAGE_KEY = "peptide-calculator-v2-medications";
 exports.RECOVERY_SLOT_KEY = "peptide-calculator-v2-recovery-slot";
 exports.RECOVERY_SLOT_PENDING_KEY = "peptide-calculator-v2-recovery-slot-pending";
 exports.RECOVERY_TTL_MS = 168 * 60 * 60 * 1000;
@@ -1216,12 +1249,12 @@ exports.PROTECTED_WRITE_KEYS = [exports.BASELINE_ENVELOPE_KEY];
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = void 0;
 exports.mapBaselineDocument = mapBaselineDocument;
-const types_1 = require("../occ/types");
 const validate_1 = require("../occ/validate");
 const adapter_1 = require("../ux/adapter");
 const fields_1 = require("./fields");
 const map_github_1 = require("./map-github");
 exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = "baseline-sched:";
+const TIME_RE = /^\d{2}:\d{2}$/;
 function emptyState() {
     return { fills: [], schedules: [], occurrences: [], medications: [] };
 }
@@ -1301,15 +1334,42 @@ function collectHistories(raw, fills, quarantine) {
     }
     return collected;
 }
-function civilFromIso(value) {
-    const text = (0, fields_1.firstString)(value);
-    if (!text) {
+function scheduleSourceRecord(fill) {
+    const record = fill;
+    return (0, fields_1.asRecord)(record.schedule) || record;
+}
+function sourceScheduleFields(fill) {
+    const nested = scheduleSourceRecord(fill);
+    const intervalRaw = (0, fields_1.readFiniteNumber)(nested.intervalDays);
+    const recurrence = (0, fields_1.asRecord)(nested.recurrence);
+    const recurrenceInterval = recurrence ? (0, fields_1.readFiniteNumber)(recurrence.intervalDays) : null;
+    let intervalDays = null;
+    if (intervalRaw !== null && Number.isInteger(intervalRaw) && intervalRaw >= 1) {
+        intervalDays = intervalRaw;
+    }
+    else if (recurrenceInterval !== null && Number.isInteger(recurrenceInterval) && recurrenceInterval >= 1) {
+        intervalDays = recurrenceInterval;
+    }
+    const reminderTime = (0, fields_1.firstString)(nested.reminderTime, nested.timeOfDay);
+    const startDate = (0, validate_1.normalizeLocalCivilDate)(nested.startDate) || (0, validate_1.normalizeLocalCivilDate)(nested.startCivilDate);
+    if (intervalDays === null || !reminderTime || !TIME_RE.test(reminderTime) || !startDate) {
         return null;
     }
-    const day = text.slice(0, 10);
-    return types_1.LOCAL_CIVIL_DATE_RE.test(day) ? day : null;
+    return { intervalDays, reminderTime, startDate };
 }
-function syntheticSchedule(fill, takenDates, timeZone) {
+function hasPartialScheduleFields(fill) {
+    const nested = scheduleSourceRecord(fill);
+    const recurrence = (0, fields_1.asRecord)(nested.recurrence);
+    return (nested.intervalDays != null ||
+        (recurrence != null && recurrence.intervalDays != null) ||
+        Boolean((0, fields_1.firstString)(nested.reminderTime, nested.timeOfDay)) ||
+        Boolean((0, fields_1.firstString)(nested.startDate, nested.startCivilDate)));
+}
+function mapSourceSchedule(fill, takenDates, timeZone) {
+    const fields = sourceScheduleFields(fill);
+    if (!fields) {
+        return null;
+    }
     const vialAmount = Number(fill.vialAmount);
     const waterMl = Number(fill.waterMl);
     const doseAmount = Number(fill.recommendedDoseAmount);
@@ -1321,33 +1381,37 @@ function syntheticSchedule(fill, takenDates, timeZone) {
     if (!(doseMl >= 0.05)) {
         return null;
     }
-    const intervalRaw = (0, fields_1.readFiniteNumber)(fill.intervalDays);
-    const intervalDays = intervalRaw !== null && Number.isInteger(intervalRaw) && intervalRaw >= 1 ? intervalRaw : 1;
-    const startDate = [...takenDates].sort()[0] ||
-        civilFromIso(fill.savedAt) ||
-        civilFromIso(fill.createdAt) ||
-        "2026-01-01";
     return {
         id: `${exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
         fillSavedId: fill.savedId,
         doseAmount,
         doseMl,
         unitLabel: String(fill.unitLabel || "mg"),
-        intervalDays,
-        reminderTime: "09:00",
-        startDate,
+        intervalDays: fields.intervalDays,
+        reminderTime: fields.reminderTime,
+        startDate: fields.startDate,
         fillSnapshot: fill,
         takenDates,
         lifecycle: fill.lifecycle === "archived" ? "archived" : "active",
         timeZone,
     };
 }
+function quarantineTakenWithoutSchedule(fillId, takenDates, quarantine) {
+    for (const date of takenDates) {
+        quarantine.push({
+            entity: "history",
+            id: `${fillId}:${date}`,
+            reason: "taken-history-no-source-schedule",
+            payload: { fillSavedId: fillId, localCivilDate: date, status: "taken" },
+        });
+    }
+}
 function mapBaselineDocument(raw, timeZone, nowIso = "2026-09-09T00:00:00.000Z") {
     const record = (0, fields_1.asRecord)(raw);
     const quarantine = [];
     const notes = [
         "baseline-rebuild-mapped-to-BACKUP_SCHEMA_V3",
-        "synthetic-schedule-id-prefix:" + exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX,
+        "source-schedule-required-interval-time-start",
         "missed-histories-quarantined-not-applied",
     ];
     if (!record) {
@@ -1401,17 +1465,21 @@ function mapBaselineDocument(raw, timeZone, nowIso = "2026-09-09T00:00:00.000Z")
     const occurrences = [];
     for (const fill of fills) {
         const takenDates = takenByFill.get(fill.savedId) || [];
-        const schedule = syntheticSchedule(fill, takenDates, zone);
+        const schedule = mapSourceSchedule(fill, takenDates, zone);
         if (!schedule) {
-            quarantine.push({
-                entity: "schedule",
-                id: `${exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
-                reason: "could-not-synthesize-schedule",
-                payload: fill,
-            });
+            if (hasPartialScheduleFields(fill)) {
+                quarantine.push({
+                    entity: "schedule",
+                    id: `${exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
+                    reason: "incomplete-source-schedule",
+                    payload: fill,
+                });
+            }
+            quarantineTakenWithoutSchedule(fill.savedId, takenDates, quarantine);
             continue;
         }
         schedules.push(schedule);
+        notes.push("source-schedule-mapped:" + schedule.id);
         for (const date of takenDates) {
             occurrences.push({
                 id: `occ:${schedule.id}:${date}`,
@@ -2389,24 +2457,13 @@ const copy_1 = require("./copy");
 const fields_1 = require("./fields");
 const keys_1 = require("./keys");
 const map_github_1 = require("./map-github");
-const recovery_1 = require("./recovery");
 function readGithubState(storage) {
     const persisted = (0, persist_1.readAppState)(storage);
     const medications = [];
-    const raw = storage.getItem(keys_1.MEDICATIONS_STORAGE_KEY);
-    if (raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-                for (const row of parsed) {
-                    const mapped = (0, map_github_1.githubMedicationFromUnknown)(row, []);
-                    if (mapped) {
-                        medications.push(mapped);
-                    }
-                }
-            }
-        }
-        catch {
+    for (const row of (0, persist_1.readMedications)(storage)) {
+        const mapped = (0, map_github_1.githubMedicationFromUnknown)(row, []);
+        if (mapped) {
+            medications.push(mapped);
         }
     }
     return {
@@ -2427,8 +2484,7 @@ function commitGithubState(storage, next) {
         fills: next.fills,
         schedules: next.schedules,
         occurrences: next.occurrences,
-    });
-    (0, recovery_1.guardedSetItem)(storage, keys_1.MEDICATIONS_STORAGE_KEY, JSON.stringify(next.medications));
+    }, { medications: next.medications });
 }
 function tryRollbackGithubState(storage, previous) {
     try {
@@ -2905,9 +2961,9 @@ function dialogAria(titleId) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OCCURRENCES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.snapshotEqual = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = void 0;
-exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = void 0;
+exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -2963,6 +3019,7 @@ Object.defineProperty(exports, "trapTabKey", { enumerable: true, get: function (
 var persist_1 = require("./persist");
 Object.defineProperty(exports, "ENVELOPE_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.ENVELOPE_STORAGE_KEY; } });
 Object.defineProperty(exports, "FILLS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.FILLS_STORAGE_KEY; } });
+Object.defineProperty(exports, "MEDICATIONS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.MEDICATIONS_STORAGE_KEY; } });
 Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.OCCURRENCES_STORAGE_KEY; } });
 Object.defineProperty(exports, "PERSIST_WRITE_STEPS", { enumerable: true, get: function () { return persist_1.PERSIST_WRITE_STEPS; } });
 Object.defineProperty(exports, "SCHEDULES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.SCHEDULES_STORAGE_KEY; } });
@@ -2971,6 +3028,7 @@ Object.defineProperty(exports, "commitAppState", { enumerable: true, get: functi
 Object.defineProperty(exports, "emptyAppState", { enumerable: true, get: function () { return persist_1.emptyAppState; } });
 Object.defineProperty(exports, "hydrateLegacyMirrors", { enumerable: true, get: function () { return persist_1.hydrateLegacyMirrors; } });
 Object.defineProperty(exports, "readAppState", { enumerable: true, get: function () { return persist_1.readAppState; } });
+Object.defineProperty(exports, "readMedications", { enumerable: true, get: function () { return persist_1.readMedications; } });
 Object.defineProperty(exports, "snapshotEqual", { enumerable: true, get: function () { return persist_1.snapshotEqual; } });
 var adapter_1 = require("./adapter");
 Object.defineProperty(exports, "applyWriterSnapshot", { enumerable: true, get: function () { return adapter_1.applyWriterSnapshot; } });
@@ -3012,7 +3070,6 @@ Object.defineProperty(exports, "IMPORT_REPLACE_LINK", { enumerable: true, get: f
 Object.defineProperty(exports, "IMPORT_REPLACE_PRIMARY", { enumerable: true, get: function () { return index_2.IMPORT_REPLACE_PRIMARY; } });
 Object.defineProperty(exports, "IMPORT_REPLACE_TITLE", { enumerable: true, get: function () { return index_2.IMPORT_REPLACE_TITLE; } });
 Object.defineProperty(exports, "IMPORT_SKIP_PRIMARY", { enumerable: true, get: function () { return index_2.IMPORT_SKIP_PRIMARY; } });
-Object.defineProperty(exports, "MEDICATIONS_STORAGE_KEY", { enumerable: true, get: function () { return index_2.MEDICATIONS_STORAGE_KEY; } });
 Object.defineProperty(exports, "RECOVERY_SLOT_KEY", { enumerable: true, get: function () { return index_2.RECOVERY_SLOT_KEY; } });
 Object.defineProperty(exports, "RECOVERY_SLOT_PENDING_KEY", { enumerable: true, get: function () { return index_2.RECOVERY_SLOT_PENDING_KEY; } });
 Object.defineProperty(exports, "RECOVERY_TTL_MS", { enumerable: true, get: function () { return index_2.RECOVERY_TTL_MS; } });
@@ -3026,6 +3083,7 @@ Object.defineProperty(exports, "RESTORE_UNAVAILABLE", { enumerable: true, get: f
 Object.defineProperty(exports, "applyDuplicatePolicy", { enumerable: true, get: function () { return index_2.applyDuplicatePolicy; } });
 Object.defineProperty(exports, "applyImport", { enumerable: true, get: function () { return index_2.applyImport; } });
 Object.defineProperty(exports, "buildExportDocument", { enumerable: true, get: function () { return index_2.buildExportDocument; } });
+Object.defineProperty(exports, "chooseLocalExportMode", { enumerable: true, get: function () { return index_2.chooseLocalExportMode; } });
 Object.defineProperty(exports, "classifyBackup", { enumerable: true, get: function () { return index_2.classifyBackup; } });
 Object.defineProperty(exports, "exportDocumentJson", { enumerable: true, get: function () { return index_2.exportDocumentJson; } });
 Object.defineProperty(exports, "githubStateEqual", { enumerable: true, get: function () { return index_2.githubStateEqual; } });
@@ -3039,6 +3097,7 @@ Object.defineProperty(exports, "previewImportFromStorage", { enumerable: true, g
 Object.defineProperty(exports, "readGithubState", { enumerable: true, get: function () { return index_2.readGithubState; } });
 Object.defineProperty(exports, "restoreAvailable", { enumerable: true, get: function () { return index_2.restoreAvailable; } });
 Object.defineProperty(exports, "restoreFromSlot", { enumerable: true, get: function () { return index_2.restoreFromSlot; } });
+Object.defineProperty(exports, "writeLocalBackup", { enumerable: true, get: function () { return index_2.writeLocalBackup; } });
 
   })(
     modules["ux/index"].exports,
@@ -3051,10 +3110,11 @@ Object.defineProperty(exports, "restoreFromSlot", { enumerable: true, get: funct
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PERSIST_WRITE_STEPS = exports.SCHEDULES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.OCCURRENCES_STORAGE_KEY = void 0;
+exports.PERSIST_WRITE_STEPS = exports.MEDICATIONS_STORAGE_KEY = exports.SCHEDULES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.OCCURRENCES_STORAGE_KEY = void 0;
 exports.emptyAppState = emptyAppState;
 exports.cloneAppState = cloneAppState;
 exports.readAppState = readAppState;
+exports.readMedications = readMedications;
 exports.commitAppState = commitAppState;
 exports.hydrateLegacyMirrors = hydrateLegacyMirrors;
 exports.snapshotEqual = snapshotEqual;
@@ -3063,11 +3123,13 @@ Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, ge
 exports.ENVELOPE_STORAGE_KEY = "peptide-calculator-v2-p0ux-store";
 exports.FILLS_STORAGE_KEY = "peptide-calculator-v2-fills";
 exports.SCHEDULES_STORAGE_KEY = "peptide-calculator-v2-schedules";
+exports.MEDICATIONS_STORAGE_KEY = "peptide-calculator-v2-medications";
 exports.PERSIST_WRITE_STEPS = [
     exports.ENVELOPE_STORAGE_KEY,
     exports.FILLS_STORAGE_KEY,
     exports.SCHEDULES_STORAGE_KEY,
     adapter_1.OCCURRENCES_STORAGE_KEY,
+    exports.MEDICATIONS_STORAGE_KEY,
 ];
 function parseJsonArray(raw) {
     if (!raw) {
@@ -3098,6 +3160,7 @@ function parseEnvelope(raw) {
             fills: parsed.fills,
             schedules: parsed.schedules,
             occurrences: parsed.occurrences,
+            medications: Array.isArray(parsed.medications) ? parsed.medications : undefined,
         };
     }
     catch {
@@ -3125,6 +3188,13 @@ function readAppState(storage) {
         occurrences: parseJsonArray(storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY)),
     };
 }
+function readMedications(storage) {
+    const envelope = parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY));
+    if (envelope && Array.isArray(envelope.medications)) {
+        return envelope.medications;
+    }
+    return parseJsonArray(storage.getItem(exports.MEDICATIONS_STORAGE_KEY));
+}
 function writeMirror(storage, key, value) {
     try {
         storage.setItem(key, value);
@@ -3132,32 +3202,42 @@ function writeMirror(storage, key, value) {
     catch {
     }
 }
-function commitAppState(storage, next) {
+function commitAppState(storage, next, options) {
+    const medications = options && Object.prototype.hasOwnProperty.call(options, "medications")
+        ? Array.isArray(options.medications)
+            ? options.medications
+            : []
+        : readMedications(storage);
     const envelope = {
         version: 1,
         fills: next.fills,
         schedules: next.schedules,
         occurrences: next.occurrences,
+        medications,
     };
     const envelopeJson = JSON.stringify(envelope);
     const fillsJson = JSON.stringify(next.fills);
     const schedulesJson = JSON.stringify(next.schedules);
     const occurrencesJson = JSON.stringify(next.occurrences);
+    const medicationsJson = JSON.stringify(medications);
     storage.setItem(exports.ENVELOPE_STORAGE_KEY, envelopeJson);
     writeMirror(storage, exports.FILLS_STORAGE_KEY, fillsJson);
     writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, schedulesJson);
     writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, occurrencesJson);
+    writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, medicationsJson);
 }
 function hydrateLegacyMirrors(storage) {
     const state = readAppState(storage);
+    const medications = readMedications(storage);
     const hasEnvelope = Boolean(parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY)));
     if (!hasEnvelope) {
         const hasLegacy = storage.getItem(exports.FILLS_STORAGE_KEY) !== null ||
             storage.getItem(exports.SCHEDULES_STORAGE_KEY) !== null ||
-            storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY) !== null;
+            storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY) !== null ||
+            storage.getItem(exports.MEDICATIONS_STORAGE_KEY) !== null;
         if (hasLegacy) {
             try {
-                commitAppState(storage, state);
+                commitAppState(storage, state, { medications });
             }
             catch {
                 return state;
@@ -3168,6 +3248,7 @@ function hydrateLegacyMirrors(storage) {
     writeMirror(storage, exports.FILLS_STORAGE_KEY, JSON.stringify(state.fills));
     writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
     writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
+    writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, JSON.stringify(medications));
     return state;
 }
 function snapshotEqual(left, right) {

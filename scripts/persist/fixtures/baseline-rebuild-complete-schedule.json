@@ -1,0 +1,29 @@
+{
+  "fills": [
+    {
+      "savedId": "syn-fill-baseline-complete-1",
+      "name": "Synthetic Gamma Peptide",
+      "vialAmount": 10,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 1,
+      "intervalDays": 3,
+      "reminderTime": "08:15",
+      "startDate": "2026-01-10",
+      "savedAt": "2026-01-09T12:00:00.000Z"
+    }
+  ],
+  "histories": [
+    {
+      "fillSavedId": "syn-fill-baseline-complete-1",
+      "localCivilDate": "2026-01-10",
+      "status": "taken"
+    },
+    {
+      "fillSavedId": "syn-fill-baseline-complete-1",
+      "localCivilDate": "2026-01-13",
+      "status": "missed"
+    }
+  ],
+  "activeView": "cabinet-view"
+}

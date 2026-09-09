@@ -685,30 +685,16 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function writeLocalExport(json, filename) {
-    if (window.FitGenNativeBackup && typeof window.FitGenNativeBackup.exportBackup === "function") {
-      try {
-        const raw = window.FitGenNativeBackup.exportBackup(json, filename);
-        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        if (parsed && parsed.ok !== false) {
-          return "native";
-        }
-      } catch {
-        // fall through to file save
-      }
-    }
-    if (navigator.share && navigator.canShare) {
-      try {
-        const file = new File([json], filename, { type: "application/json" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: "FitGen Backup" });
-          return "share";
-        }
-      } catch (error) {
-        if (error && error.name === "AbortError") {
-          return "cancelled";
-        }
-      }
+  function writeLocalExport(json, filename) {
+    const native = window.FitGenNativeBackup;
+    if (typeof ux.writeLocalBackup === "function") {
+      return ux.writeLocalBackup(json, filename, {
+        nativeExport:
+          native && typeof native.exportBackup === "function"
+            ? (text, name) => native.exportBackup(text, name)
+            : undefined,
+        download: downloadJsonFile,
+      });
     }
     downloadJsonFile(json, filename);
     return "download";
@@ -724,16 +710,13 @@
       allowEscape: true,
       onPrimary() {
         const json = ux.exportDocumentJson(persistState(), new Date().toISOString());
-        writeLocalExport(json, filenameForExport())
-          .then((mode) => {
-            if (mode !== "cancelled") {
-              setBackupStatus("Plaintext JSON backup saved on this device.");
-            }
-            closeDialog(true);
-          })
-          .catch(() => {
-            setDialogError(ux.IMPORT_APPLY_ERROR);
-          });
+        try {
+          writeLocalExport(json, filenameForExport());
+          setBackupStatus("Plaintext JSON backup saved on this device.");
+          closeDialog(true);
+        } catch {
+          setDialogError(ux.IMPORT_APPLY_ERROR);
+        }
       },
     });
   }

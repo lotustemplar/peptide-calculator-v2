@@ -22,6 +22,9 @@ node scripts/persist/persist-test.js
 - Skip existing vs confirmed Replace All
 - One recovery slot; 168h expiry; write+verify before replace; quota abort
 - Rollback; restart restore; current-slot-only after a second import
+- Envelope atomic commit includes medications; mirrors are best-effort
+- Baseline schedules mapped only from complete source interval/time/start
+- Local-only export (native file bridge or download; no `navigator.share`)
 - Round-trip; unknown-field passthrough; **no baseline key mutate/delete**
 
 ## Out of scope

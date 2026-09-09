@@ -67,6 +67,7 @@ export type { ConfirmDialogModel, ConfirmKind } from "./dialog";
 export {
   ENVELOPE_STORAGE_KEY,
   FILLS_STORAGE_KEY,
+  MEDICATIONS_STORAGE_KEY,
   OCCURRENCES_STORAGE_KEY,
   PERSIST_WRITE_STEPS,
   SCHEDULES_STORAGE_KEY,
@@ -75,6 +76,7 @@ export {
   emptyAppState,
   hydrateLegacyMirrors,
   readAppState,
+  readMedications,
   snapshotEqual,
 } from "./persist";
 export type { PersistEnvelope, StorageLike } from "./persist";
@@ -131,7 +133,6 @@ export {
   IMPORT_REPLACE_PRIMARY,
   IMPORT_REPLACE_TITLE,
   IMPORT_SKIP_PRIMARY,
-  MEDICATIONS_STORAGE_KEY,
   RECOVERY_SLOT_KEY,
   RECOVERY_SLOT_PENDING_KEY,
   RECOVERY_TTL_MS,
@@ -145,6 +146,7 @@ export {
   applyDuplicatePolicy,
   applyImport,
   buildExportDocument,
+  chooseLocalExportMode,
   classifyBackup,
   exportDocumentJson,
   githubStateEqual,
@@ -158,6 +160,7 @@ export {
   readGithubState,
   restoreAvailable,
   restoreFromSlot,
+  writeLocalBackup,
 } from "../persist/index";
 export type {
   ApplyResult,

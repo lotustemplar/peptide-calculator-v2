@@ -1,4 +1,4 @@
-import { LOCAL_CIVIL_DATE_RE, type OccurrenceRecord } from "../occ/types";
+import type { OccurrenceRecord } from "../occ/types";
 import { normalizeLocalCivilDate } from "../occ/validate";
 import { resolveTimeZone } from "../ux/adapter";
 import { asRecord, firstString, readFiniteNumber } from "./fields";
@@ -7,11 +7,19 @@ import type { GitHubAppState, GitHubFill, GitHubSchedule, MapResult, QuarantineI
 
 export const BASELINE_SYNTHETIC_SCHEDULE_PREFIX = "baseline-sched:";
 
+const TIME_RE = /^\d{2}:\d{2}$/;
+
 interface BaselineHistory {
   fillSavedId: string;
   localCivilDate: string;
   status: "taken" | "missed" | "unknown";
   raw: unknown;
+}
+
+interface SourceScheduleFields {
+  intervalDays: number;
+  reminderTime: string;
+  startDate: string;
 }
 
 function emptyState(): GitHubAppState {
@@ -104,20 +112,51 @@ function collectHistories(raw: unknown, fills: readonly GitHubFill[], quarantine
   return collected;
 }
 
-function civilFromIso(value: unknown): string | null {
-  const text = firstString(value);
-  if (!text) {
-    return null;
-  }
-  const day = text.slice(0, 10);
-  return LOCAL_CIVIL_DATE_RE.test(day) ? day : null;
+function scheduleSourceRecord(fill: GitHubFill): Record<string, unknown> {
+  const record = fill as Record<string, unknown>;
+  return asRecord(record.schedule) || record;
 }
 
-function syntheticSchedule(
+function sourceScheduleFields(fill: GitHubFill): SourceScheduleFields | null {
+  const nested = scheduleSourceRecord(fill);
+  const intervalRaw = readFiniteNumber(nested.intervalDays);
+  const recurrence = asRecord(nested.recurrence);
+  const recurrenceInterval = recurrence ? readFiniteNumber(recurrence.intervalDays) : null;
+  let intervalDays: number | null = null;
+  if (intervalRaw !== null && Number.isInteger(intervalRaw) && intervalRaw >= 1) {
+    intervalDays = intervalRaw;
+  } else if (recurrenceInterval !== null && Number.isInteger(recurrenceInterval) && recurrenceInterval >= 1) {
+    intervalDays = recurrenceInterval;
+  }
+  const reminderTime = firstString(nested.reminderTime, nested.timeOfDay);
+  const startDate =
+    normalizeLocalCivilDate(nested.startDate) || normalizeLocalCivilDate(nested.startCivilDate);
+  if (intervalDays === null || !reminderTime || !TIME_RE.test(reminderTime) || !startDate) {
+    return null;
+  }
+  return { intervalDays, reminderTime, startDate };
+}
+
+function hasPartialScheduleFields(fill: GitHubFill): boolean {
+  const nested = scheduleSourceRecord(fill);
+  const recurrence = asRecord(nested.recurrence);
+  return (
+    nested.intervalDays != null ||
+    (recurrence != null && recurrence.intervalDays != null) ||
+    Boolean(firstString(nested.reminderTime, nested.timeOfDay)) ||
+    Boolean(firstString(nested.startDate, nested.startCivilDate))
+  );
+}
+
+function mapSourceSchedule(
   fill: GitHubFill,
   takenDates: string[],
   timeZone: string
 ): GitHubSchedule | null {
+  const fields = sourceScheduleFields(fill);
+  if (!fields) {
+    return null;
+  }
   const vialAmount = Number(fill.vialAmount);
   const waterMl = Number(fill.waterMl);
   const doseAmount = Number(fill.recommendedDoseAmount);
@@ -129,22 +168,15 @@ function syntheticSchedule(
   if (!(doseMl >= 0.05)) {
     return null;
   }
-  const intervalRaw = readFiniteNumber(fill.intervalDays);
-  const intervalDays = intervalRaw !== null && Number.isInteger(intervalRaw) && intervalRaw >= 1 ? intervalRaw : 1;
-  const startDate =
-    [...takenDates].sort()[0] ||
-    civilFromIso(fill.savedAt) ||
-    civilFromIso(fill.createdAt) ||
-    "2026-01-01";
   return {
     id: `${BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
     fillSavedId: fill.savedId,
     doseAmount,
     doseMl,
     unitLabel: String(fill.unitLabel || "mg"),
-    intervalDays,
-    reminderTime: "09:00",
-    startDate,
+    intervalDays: fields.intervalDays,
+    reminderTime: fields.reminderTime,
+    startDate: fields.startDate,
     fillSnapshot: fill,
     takenDates,
     lifecycle: fill.lifecycle === "archived" ? "archived" : "active",
@@ -152,12 +184,27 @@ function syntheticSchedule(
   };
 }
 
+function quarantineTakenWithoutSchedule(
+  fillId: string,
+  takenDates: string[],
+  quarantine: QuarantineItem[]
+): void {
+  for (const date of takenDates) {
+    quarantine.push({
+      entity: "history",
+      id: `${fillId}:${date}`,
+      reason: "taken-history-no-source-schedule",
+      payload: { fillSavedId: fillId, localCivilDate: date, status: "taken" },
+    });
+  }
+}
+
 export function mapBaselineDocument(raw: unknown, timeZone?: string, nowIso = "2026-09-09T00:00:00.000Z"): MapResult {
   const record = asRecord(raw);
   const quarantine: QuarantineItem[] = [];
   const notes: string[] = [
     "baseline-rebuild-mapped-to-BACKUP_SCHEMA_V3",
-    "synthetic-schedule-id-prefix:" + BASELINE_SYNTHETIC_SCHEDULE_PREFIX,
+    "source-schedule-required-interval-time-start",
     "missed-histories-quarantined-not-applied",
   ];
   if (!record) {
@@ -214,17 +261,21 @@ export function mapBaselineDocument(raw: unknown, timeZone?: string, nowIso = "2
   const occurrences: OccurrenceRecord[] = [];
   for (const fill of fills) {
     const takenDates = takenByFill.get(fill.savedId) || [];
-    const schedule = syntheticSchedule(fill, takenDates, zone);
+    const schedule = mapSourceSchedule(fill, takenDates, zone);
     if (!schedule) {
-      quarantine.push({
-        entity: "schedule",
-        id: `${BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
-        reason: "could-not-synthesize-schedule",
-        payload: fill,
-      });
+      if (hasPartialScheduleFields(fill)) {
+        quarantine.push({
+          entity: "schedule",
+          id: `${BASELINE_SYNTHETIC_SCHEDULE_PREFIX}${fill.savedId}`,
+          reason: "incomplete-source-schedule",
+          payload: fill,
+        });
+      }
+      quarantineTakenWithoutSchedule(fill.savedId, takenDates, quarantine);
       continue;
     }
     schedules.push(schedule);
+    notes.push("source-schedule-mapped:" + schedule.id);
     for (const date of takenDates) {
       occurrences.push({
         id: `occ:${schedule.id}:${date}`,

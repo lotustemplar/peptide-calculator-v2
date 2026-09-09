@@ -19,7 +19,8 @@ It does **not** migrate, overwrite, or delete `fitgen-peptide-rebuild-v1`.
 
 ## GitHub-generation data after revert
 
-- Live fills/schedules/OCC stay in `peptide-calculator-v2-p0ux-store` (and mirrors). Pre-Stage-3 `readAppState` still loads them.
+- Live fills/schedules/OCC stay in `peptide-calculator-v2-p0ux-store` (and mirrors). Pre-Stage-3 `readAppState` still loads fills/schedules/OCC and ignores additive `medications` on the envelope.
+- Stage 3 writes medications into that same envelope, then mirrors `peptide-calculator-v2-medications`. A reverted reader uses the medications key; the mirror is written after a successful envelope commit.
 - Stage 3 exports include **top-level** `fills` / `schedules` / `occurrences` / `medications` plus `schemaVersion: 3`. Old `importData()` reads those arrays and merge-skips by id. Users are not stranded on nested `entities` alone.
 - Leftover `peptide-calculator-v2-recovery-slot` / `-pending` keys are ignored by old code. They may be left in place; they are not the baseline envelope.
 

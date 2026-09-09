@@ -48,7 +48,13 @@ export { mapBaselineDocument, BASELINE_SYNTHETIC_SCHEDULE_PREFIX } from "./map-b
 export { mapGithubDocument } from "./map-github";
 export { parseBackupText, previewImport, previewBodyHtml } from "./preview";
 export { applyDuplicatePolicy, githubStateEqual } from "./policy";
-export { buildExportDocument, exportDocumentJson } from "./export";
+export {
+  buildExportDocument,
+  chooseLocalExportMode,
+  exportDocumentJson,
+  writeLocalBackup,
+} from "./export";
+export type { LocalBackupWriter, LocalExportMode } from "./export";
 export {
   applyImport,
   previewImportFromStorage,

@@ -111,17 +111,62 @@ function seedGithub(storage, state) {
   const mapped = persist.mapToV3(JSON.parse(loadFixture("baseline-rebuild-v1.json")), TZ, NOW_ISO);
   assert(mapped.ok === true, "baseline maps to v3");
   assertEqual(mapped.state.fills.length, 1, "baseline fill mapped");
-  assertEqual(mapped.state.schedules.length, 1, "synthetic schedule created");
-  assert(
-    mapped.state.schedules[0].id.startsWith(persist.BASELINE_SYNTHETIC_SCHEDULE_PREFIX),
-    "synthetic schedule id is stable"
-  );
-  assertEqual(mapped.state.occurrences.length, 1, "only taken history becomes OCC");
-  assertEqual(mapped.state.occurrences[0].status, "taken", "taken history maps to taken");
+  assertEqual(mapped.state.schedules.length, 0, "incomplete baseline does not invent a schedule");
+  assertEqual(mapped.state.occurrences.length, 0, "taken history without a source schedule is not OCC");
   assert(
     mapped.quarantine.some((row) => row.reason === "missed-status-unmapped"),
     "missed history is quarantined, not applied"
   );
+  assert(
+    mapped.quarantine.some((row) => row.reason === "taken-history-no-source-schedule"),
+    "taken history without interval/time/start is quarantined"
+  );
+})();
+
+(function mapBaselineCompleteSourceSchedule() {
+  const mapped = persist.mapToV3(JSON.parse(loadFixture("baseline-rebuild-complete-schedule.json")), TZ, NOW_ISO);
+  assert(mapped.ok === true, "complete baseline maps");
+  assertEqual(mapped.state.schedules.length, 1, "complete source schedule is mapped");
+  assert(
+    mapped.state.schedules[0].id.startsWith(persist.BASELINE_SYNTHETIC_SCHEDULE_PREFIX),
+    "mapped schedule id is stable"
+  );
+  assertEqual(mapped.state.schedules[0].intervalDays, 3, "source intervalDays preserved");
+  assertEqual(mapped.state.schedules[0].reminderTime, "08:15", "source reminderTime preserved");
+  assertEqual(mapped.state.schedules[0].startDate, "2026-01-10", "source startDate preserved");
+  assertEqual(mapped.state.occurrences.length, 1, "only taken history becomes OCC when schedule is complete");
+  assertEqual(mapped.state.occurrences[0].status, "taken", "taken history maps to taken");
+  assert(
+    mapped.quarantine.some((row) => row.reason === "missed-status-unmapped"),
+    "complete fixture still quarantines missed"
+  );
+})();
+
+(function mapBaselineMissingScheduleFieldsNeverInvent() {
+  const complete = JSON.parse(loadFixture("baseline-rebuild-complete-schedule.json"));
+  for (const field of ["intervalDays", "reminderTime", "startDate"]) {
+    const copy = JSON.parse(JSON.stringify(complete));
+    delete copy.fills[0][field];
+    const mapped = persist.mapToV3(copy, TZ, NOW_ISO);
+    assertEqual(mapped.state.schedules.length, 0, `missing ${field} creates no schedule`);
+    assertEqual(mapped.state.occurrences.length, 0, `missing ${field} creates no OCC`);
+    assert(
+      mapped.state.schedules.every((row) => row.lifecycle !== "active"),
+      `missing ${field} does not produce an active series`
+    );
+    assert(
+      mapped.state.schedules.every((row) => !row.reminderTime),
+      `missing ${field} does not invent a reminder`
+    );
+    assert(
+      mapped.quarantine.some((row) => row.reason === "taken-history-no-source-schedule"),
+      `missing ${field} quarantines taken history`
+    );
+    assert(
+      mapped.quarantine.some((row) => row.reason === "incomplete-source-schedule"),
+      `missing ${field} is incomplete-source-schedule`
+    );
+  }
 })();
 
 (function previewCancelZeroWrites() {
@@ -216,6 +261,7 @@ function seedGithub(storage, state) {
   assert(result.wrote === false, "quota writes no app state");
   assertEqual(failing.getItem(persist.RECOVERY_SLOT_KEY), priorSlot, "prior slot intact on quota");
   assertEqual(persist.readGithubState(failing).fills[0].savedId, "syn-fill-github-1", "quota leaves fills");
+  assertEqual(persist.readGithubState(failing).medications[0].id, "syn-med-github-1", "quota leaves medications");
 })();
 
 (function envelopeFailureRollsBack() {
@@ -231,7 +277,54 @@ function seedGithub(storage, state) {
   const second = persist.previewImportFromStorage(failing, loadFixture("github-backup-v2.json"), TZ, NOW_ISO);
   const result = persist.applyImport(failing, second, "replace-all", NOW_MS + 8000, true);
   assert(result.ok === false, "envelope failure is not success");
-  assertEqual(persist.readGithubState(failing).fills[0].savedId, "syn-fill-github-1", "rollback restored previous fills");
+  const reloaded = persist.readGithubState(failing);
+  assertEqual(reloaded.fills[0].savedId, "syn-fill-github-1", "rollback restored previous fills");
+  assertEqual(reloaded.medications[0].id, "syn-med-github-1", "rollback restored previous medications");
+})();
+
+(function mirrorFailuresArePostOpIncludingMedications() {
+  persist.PERSIST_WRITE_STEPS.filter((key) => key !== persist.ENVELOPE_STORAGE_KEY).forEach((mirrorKey) => {
+    const storage = memoryStorage({});
+    const first = persist.previewImport({
+      text: loadFixture("github-backup-v1.json"),
+      current: persist.readGithubState(storage),
+      timeZone: TZ,
+      nowIso: NOW_ISO,
+    });
+    persist.applyImport(storage, first, "skip-existing", NOW_MS, false);
+    const failing = memoryStorage({ ...storage.data }, { failAlways: [mirrorKey] });
+    const second = persist.previewImportFromStorage(failing, loadFixture("github-backup-v2.json"), TZ, NOW_ISO);
+    const result = persist.applyImport(failing, second, "replace-all", NOW_MS + 9000, true);
+    assert(result.ok === true && result.wrote === true, `import succeeds when only ${mirrorKey} mirror fails`);
+    const reloaded = persist.readGithubState(failing);
+    assertEqual(reloaded.fills[0].savedId, "syn-fill-github-2", `reload after ${mirrorKey} fail is fully imported fills`);
+    assertEqual(reloaded.medications.length, 0, `reload after ${mirrorKey} fail is fully imported medications`);
+    assert(
+      reloaded.fills[0].savedId !== "syn-fill-github-1" || reloaded.medications.length !== 1,
+      `reload after ${mirrorKey} fail is not mixed generations`
+    );
+  });
+})();
+
+(function takenPreservesEnvelopeMedications() {
+  const storage = memoryStorage({});
+  const first = persist.previewImport({
+    text: loadFixture("github-backup-v1.json"),
+    current: persist.readGithubState(storage),
+    timeZone: TZ,
+    nowIso: NOW_ISO,
+  });
+  persist.applyImport(storage, first, "skip-existing", NOW_MS, false);
+  const before = persist.readGithubState(storage);
+  ux.commitAppState(storage, {
+    fills: before.fills,
+    schedules: before.schedules,
+    occurrences: before.occurrences,
+  });
+  const after = persist.readGithubState(storage);
+  assertEqual(after.medications[0].id, "syn-med-github-1", "commitAppState without medications option preserves the list");
+  const envelope = JSON.parse(storage.getItem(persist.ENVELOPE_STORAGE_KEY));
+  assertEqual(envelope.medications[0].id, "syn-med-github-1", "preserved medications stay in the envelope");
 })();
 
 (function restoreAfterRestartAndSecondImport() {
@@ -342,8 +435,56 @@ function seedGithub(storage, state) {
   const baselineExport = persist.exportDocumentJson(baselineMapped.state, NOW_ISO);
   const round = persist.mapToV3(JSON.parse(baselineExport), TZ, NOW_ISO);
   assertEqual(round.state.fills[0].savedId, baselineMapped.state.fills[0].savedId, "baseline map round-trip fill");
-  assertEqual(round.state.schedules[0].id, baselineMapped.state.schedules[0].id, "baseline synthetic schedule stable");
-  assertEqual(round.state.occurrences.length, baselineMapped.state.occurrences.length, "baseline taken OCC round-trip");
+  assertEqual(round.state.schedules.length, 0, "incomplete baseline round-trip has no invented schedule");
+  assertEqual(round.state.occurrences.length, 0, "incomplete baseline taken history stays quarantined");
+
+  const completeMapped = persist.mapToV3(JSON.parse(loadFixture("baseline-rebuild-complete-schedule.json")), TZ, NOW_ISO);
+  const completeExport = persist.exportDocumentJson(completeMapped.state, NOW_ISO);
+  const completeRound = persist.mapToV3(JSON.parse(completeExport), TZ, NOW_ISO);
+  assertEqual(completeRound.state.schedules[0].id, completeMapped.state.schedules[0].id, "complete source schedule id stable");
+  assertEqual(completeRound.state.occurrences.length, completeMapped.state.occurrences.length, "complete taken OCC round-trip");
+})();
+
+(function exportIsLocalFileOnly() {
+  const bind = readText(path.join(repoRoot(), "p0-ux-bind.js"));
+  assert(!/navigator\.share\s*\(/.test(bind), "p0-ux-bind must not invoke navigator.share");
+  const exportSrc = readText(path.join(repoRoot(), "src/persist/export.ts"));
+  assert(!/navigator\.share\s*\(/.test(exportSrc), "persist export helper must not invoke navigator.share");
+  assertEqual(persist.chooseLocalExportMode(null), "download", "no native bridge => download");
+  assertEqual(
+    persist.chooseLocalExportMode({
+      exportBackup() {
+        return { ok: true };
+      },
+    }),
+    "native",
+    "native local-file bridge preferred"
+  );
+  let shareInvoked = false;
+  const share = () => {
+    shareInvoked = true;
+    throw new Error("navigator.share must not be invoked");
+  };
+  let downloaded = 0;
+  const downloadMode = persist.writeLocalBackup("{}\n", "syn-export.json", {
+    download() {
+      downloaded += 1;
+    },
+  });
+  assertEqual(downloadMode, "download", "writeLocalBackup downloads when native is absent");
+  assertEqual(downloaded, 1, "download writer used once");
+  assert(shareInvoked === false, "share must not run on the download path");
+  const nativeMode = persist.writeLocalBackup("{}\n", "syn-export.json", {
+    nativeExport() {
+      return { ok: true };
+    },
+    download() {
+      downloaded += 1;
+    },
+  });
+  assertEqual(nativeMode, "native", "native file operation used when present");
+  assertEqual(downloaded, 1, "successful native export does not also download");
+  assert(typeof share === "function" && shareInvoked === false, "navigator.share spy was never invoked");
 })();
 
 (function exportWarningCopyPresent() {
@@ -367,6 +508,12 @@ function seedGithub(storage, state) {
   assert(generated.includes("fitgen-peptide-rebuild-v1"), "bundle names baseline key as protected");
   assert(typeof ux.applyImport === "function", "ux index re-exports applyImport");
   assert(typeof ux.previewImport === "function", "ux index re-exports previewImport");
+  assert(typeof ux.writeLocalBackup === "function", "ux index re-exports writeLocalBackup");
+  assert(generated.includes("writeLocalBackup"), "browser bundle includes writeLocalBackup");
+  assert(
+    persist.PERSIST_WRITE_STEPS.includes(persist.MEDICATIONS_STORAGE_KEY),
+    "medications key is a persist write step"
+  );
 })();
 
 (function htmlHasRestoreControl() {

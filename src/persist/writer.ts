@@ -1,28 +1,17 @@
-import { commitAppState, readAppState, type StorageLike } from "../ux/persist";
+import { commitAppState, readAppState, readMedications, type StorageLike } from "../ux/persist";
 import { IMPORT_APPLY_ERROR } from "./copy";
 import { cloneJson } from "./fields";
-import { BASELINE_ENVELOPE_KEY, MEDICATIONS_STORAGE_KEY } from "./keys";
+import { BASELINE_ENVELOPE_KEY } from "./keys";
 import { githubMedicationFromUnknown } from "./map-github";
-import { guardedSetItem } from "./recovery";
 import type { GitHubAppState, GitHubMedication } from "./types";
 
 export function readGithubState(storage: StorageLike): GitHubAppState {
   const persisted = readAppState(storage);
   const medications: GitHubMedication[] = [];
-  const raw = storage.getItem(MEDICATIONS_STORAGE_KEY);
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) {
-        for (const row of parsed) {
-          const mapped = githubMedicationFromUnknown(row, []);
-          if (mapped) {
-            medications.push(mapped);
-          }
-        }
-      }
-    } catch {
-      // Unreadable medications stay empty; import preview still runs.
+  for (const row of readMedications(storage)) {
+    const mapped = githubMedicationFromUnknown(row, []);
+    if (mapped) {
+      medications.push(mapped);
     }
   }
   return {
@@ -42,12 +31,15 @@ export function baselineKeyUnchanged(storage: StorageLike, before: string | null
 }
 
 export function commitGithubState(storage: StorageLike, next: GitHubAppState): void {
-  commitAppState(storage, {
-    fills: next.fills,
-    schedules: next.schedules,
-    occurrences: next.occurrences,
-  });
-  guardedSetItem(storage, MEDICATIONS_STORAGE_KEY, JSON.stringify(next.medications));
+  commitAppState(
+    storage,
+    {
+      fills: next.fills,
+      schedules: next.schedules,
+      occurrences: next.occurrences,
+    },
+    { medications: next.medications }
+  );
 }
 
 export function tryRollbackGithubState(
