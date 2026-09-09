@@ -1,0 +1,32 @@
+{
+  "fills": [
+    {
+      "savedId": "syn-fill-multikey-1",
+      "name": "Synthetic Epsilon Peptide",
+      "vialAmount": 12,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 1.2,
+      "concentrationPerMl": 6,
+      "lifecycle": "active",
+      "depletionRemaining": 12,
+      "depletionUnit": "mg"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "syn-sched-multikey-1",
+      "fillSavedId": "syn-fill-multikey-1",
+      "doseAmount": 1.2,
+      "doseMl": 0.2,
+      "unitLabel": "mg",
+      "intervalDays": 4,
+      "reminderTime": "10:00",
+      "startDate": "2026-05-01",
+      "takenDates": ["2026-05-01"],
+      "lifecycle": "active"
+    }
+  ],
+  "occurrences": [],
+  "medications": []
+}

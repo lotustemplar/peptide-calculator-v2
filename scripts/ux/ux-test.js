@@ -469,6 +469,7 @@ function makeAdapter(store, options) {
   assert(html.includes("fitgen-undo-snackbar"), "undo snackbar markup present");
   assert(html.includes("p0-ux.browser.js"), "FR-SCH-000 browser bundle is loaded");
   assert(html.includes("p0-ux-bind.js"), "P0.UX bind script is loaded");
+  assert(html.includes("restore-backup-btn"), "Stage 3 restore control is present");
   assert(!/window\.alert\s*\(/.test(html), "no alert() in new markup");
 })();
 
@@ -478,6 +479,7 @@ function makeAdapter(store, options) {
   assert(!/window\.confirm\s*\(/.test(bind), "bind does not use native confirm");
   assert(bind.includes("FitGenP0Ux"), "bind uses compiled P0.UX module");
   assert(bind.includes("markTaken") || bind.includes("createTakenAdapter"), "bind calls Taken adapter");
+  assert(bind.includes("applyImport"), "bind wires Stage 3 applyImport");
 })();
 
 (function browserBundleFresh() {
@@ -494,6 +496,8 @@ function makeAdapter(store, options) {
   assert(typeof sandbox.FitGenP0Ux.validateWizardStep === "function", "bundle validateWizardStep loads");
   assert(typeof sandbox.FitGenP0Ux.markTaken === "function", "bundle markTaken loads");
   assert(typeof sandbox.FitGenP0Ux.createTakenAdapter === "function", "bundle createTakenAdapter loads");
+  assert(typeof sandbox.FitGenP0Ux.applyImport === "function", "bundle applyImport loads");
+  assert(typeof sandbox.FitGenP0Ux.previewImport === "function", "bundle previewImport loads");
 })();
 
 console.log(`P0.UX tests: ${passed} passed, ${failed} failed`);

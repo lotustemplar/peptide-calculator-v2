@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "fills": [
+    {
+      "savedId": "syn-fill-github-1",
+      "name": "Synthetic Collision Peptide",
+      "vialAmount": 30,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 3,
+      "concentrationPerMl": 15,
+      "lifecycle": "active",
+      "depletionRemaining": 30,
+      "depletionUnit": "mg"
+    },
+    {
+      "savedId": "syn-fill-collision-new",
+      "name": "Synthetic New Peptide",
+      "vialAmount": 16,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 1.6,
+      "concentrationPerMl": 8,
+      "lifecycle": "active",
+      "depletionRemaining": 16,
+      "depletionUnit": "mg"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "syn-sched-github-1",
+      "fillSavedId": "syn-fill-github-1",
+      "doseAmount": 3,
+      "doseMl": 0.2,
+      "unitLabel": "mg",
+      "intervalDays": 7,
+      "reminderTime": "09:00",
+      "startDate": "2026-02-02",
+      "takenDates": [],
+      "lifecycle": "active"
+    },
+    {
+      "id": "syn-sched-collision-new",
+      "fillSavedId": "syn-fill-collision-new",
+      "doseAmount": 1.6,
+      "doseMl": 0.2,
+      "unitLabel": "mg",
+      "intervalDays": 6,
+      "reminderTime": "11:00",
+      "startDate": "2026-08-01",
+      "takenDates": [],
+      "lifecycle": "active"
+    }
+  ],
+  "occurrences": [],
+  "medications": [
+    {
+      "id": "syn-med-github-1",
+      "name": "Synthetic Collision Plan",
+      "dose": 3,
+      "unit": "mg",
+      "interval": 7
+    }
+  ]
+}

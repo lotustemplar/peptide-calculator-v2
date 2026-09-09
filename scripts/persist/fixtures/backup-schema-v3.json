@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 3,
+  "exportedAt": "2026-06-01T12:00:00.000Z",
+  "entities": {
+    "fills": [
+      {
+        "id": "syn-fill-v3-1",
+        "displayName": "Synthetic Zeta Peptide",
+        "vialAmount": 8,
+        "desiredDose": 0.8,
+        "unit": "mg",
+        "waterMl": 2,
+        "concentration": 4,
+        "lifecycle": "active",
+        "createdAt": "2026-06-01T12:00:00.000Z",
+        "savedId": "syn-fill-v3-1",
+        "name": "Synthetic Zeta Peptide",
+        "unitLabel": "mg",
+        "recommendedDoseAmount": 0.8
+      }
+    ],
+    "schedules": [
+      {
+        "id": "syn-sched-v3-1",
+        "fillId": "syn-fill-v3-1",
+        "timeZone": "UTC",
+        "startCivilDate": "2026-06-02",
+        "timeOfDay": "09:00",
+        "recurrence": { "intervalDays": 5 },
+        "lifecycle": "active",
+        "takenDates": [],
+        "fillSavedId": "syn-fill-v3-1",
+        "doseAmount": 0.8,
+        "doseMl": 0.2,
+        "unitLabel": "mg",
+        "intervalDays": 5,
+        "reminderTime": "09:00",
+        "startDate": "2026-06-02"
+      }
+    ],
+    "occurrences": [],
+    "medications": [],
+    "settings": {
+      "timeZone": "UTC",
+      "theme": null,
+      "updatedAt": "2026-06-01T12:00:00.000Z"
+    }
+  },
+  "fills": [
+    {
+      "savedId": "syn-fill-v3-1",
+      "name": "Synthetic Zeta Peptide",
+      "vialAmount": 8,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 0.8,
+      "concentrationPerMl": 4,
+      "lifecycle": "active",
+      "depletionRemaining": 8,
+      "depletionUnit": "mg",
+      "savedAt": "2026-06-01T12:00:00.000Z"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "syn-sched-v3-1",
+      "fillSavedId": "syn-fill-v3-1",
+      "doseAmount": 0.8,
+      "doseMl": 0.2,
+      "unitLabel": "mg",
+      "intervalDays": 5,
+      "reminderTime": "09:00",
+      "startDate": "2026-06-02",
+      "takenDates": [],
+      "lifecycle": "active",
+      "timeZone": "UTC"
+    }
+  ],
+  "occurrences": [],
+  "medications": []
+}

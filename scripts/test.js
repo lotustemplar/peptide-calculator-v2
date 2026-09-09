@@ -8,6 +8,7 @@
  * P0.6: MED-FLAG measurement/planner copy replacements on loaded surfaces.
  * P0.OCC: FR-SCH-000 occurrence identity + atomic Taken/Undo writer.
  * Stage 2: chrome/assets allowlist checks (Issue #26).
+ * Stage 3: persist import safety for both data generations (Issue #28).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -33,6 +34,10 @@ const jobs = [
   {
     name: "Stage 2 chrome/assets allowlist checks",
     file: path.join(__dirname, "ci", "stage2-chrome-test.js"),
+  },
+  {
+    name: "Stage 3 persist import safety (both generations)",
+    file: path.join(__dirname, "persist", "persist-test.js"),
   },
 ];
 

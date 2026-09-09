@@ -74,6 +74,9 @@ Those snapshots lock current dual-path outputs; they are not target oracles.
 P0.OCC / FR-SCH-000 occurrence identity and the narrow Taken/Undo writer live
 in `src/occ/` with tests in `scripts/occ/`. They do not change live Taken UI.
 
+Stage 3 / P0.3 import-safety modules live in `src/persist/` with tests in
+`scripts/persist/`. They must not mutate `fitgen-peptide-rebuild-v1`.
+
 ## Allowlist rationale
 
 Content and lint-skip lists are **forward-looking**. Pre-existing matches on

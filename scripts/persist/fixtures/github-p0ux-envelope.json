@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "fills": [
+    {
+      "savedId": "syn-fill-p0ux-1",
+      "name": "Synthetic Delta Peptide",
+      "vialAmount": 15,
+      "waterMl": 1.5,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 1.5,
+      "concentrationPerMl": 10,
+      "lifecycle": "active",
+      "depletionRemaining": 15,
+      "depletionUnit": "mg",
+      "savedAt": "2026-04-01T12:00:00.000Z"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "syn-sched-p0ux-1",
+      "fillSavedId": "syn-fill-p0ux-1",
+      "doseAmount": 1.5,
+      "doseMl": 0.15,
+      "unitLabel": "mg",
+      "intervalDays": 2,
+      "reminderTime": "07:30",
+      "startDate": "2026-04-02",
+      "takenDates": [],
+      "lifecycle": "active"
+    }
+  ],
+  "occurrences": []
+}
