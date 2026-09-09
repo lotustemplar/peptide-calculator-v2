@@ -53,9 +53,11 @@
   modules["persist/writer"] = { exports: {}, dirname: "persist" };
   modules["ux/adapter"] = { exports: {}, dirname: "ux" };
   modules["ux/cabinet-cascade"] = { exports: {}, dirname: "ux" };
+  modules["ux/chips"] = { exports: {}, dirname: "ux" };
   modules["ux/copy"] = { exports: {}, dirname: "ux" };
   modules["ux/dialog"] = { exports: {}, dirname: "ux" };
   modules["ux/index"] = { exports: {}, dirname: "ux" };
+  modules["ux/med-names"] = { exports: {}, dirname: "ux" };
   modules["ux/persist"] = { exports: {}, dirname: "ux" };
   modules["ux/save-summary"] = { exports: {}, dirname: "ux" };
   modules["ux/tab-aria"] = { exports: {}, dirname: "ux" };
@@ -2842,7 +2844,61 @@ function activeSchedules(schedules) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CABINET_DELETE_CANCEL = exports.CABINET_DELETE_PRIMARY = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.FIELD_NUMBER_ERROR = exports.SAVE_CONFIRM_CANCEL = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_TITLE = exports.SAVE_DISCLAIMER = exports.DISCARD_CONFIRM = exports.DISCARD_KEEP = exports.DISCARD_TITLE = void 0;
+exports.CHIP_DEFAULT_SELECTION = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = void 0;
+exports.stage5NameChips = stage5NameChips;
+exports.assertNoPreselect = assertNoPreselect;
+exports.isShippableChip = isShippableChip;
+exports.forbiddenChipFraming = forbiddenChipFraming;
+exports.CHIP_FIELD_PEPTIDE_NAME = "peptide-name";
+exports.CUSTOM_CHIP_COPY = "Custom";
+exports.UNKNOWN_CHIP_COPY = "Unknown";
+exports.CHIP_DEFAULT_SELECTION = "none";
+function nameChip(id, source, copy, chipClass = "safe-MED-FLAG") {
+    return {
+        id,
+        field: exports.CHIP_FIELD_PEPTIDE_NAME,
+        source,
+        defaultSelection: exports.CHIP_DEFAULT_SELECTION,
+        copy,
+        class: chipClass,
+        selected: false,
+    };
+}
+function stage5NameChips(recentNames) {
+    const chips = [
+        nameChip("name-custom", "Custom", exports.CUSTOM_CHIP_COPY),
+        nameChip("name-unknown", "other", exports.UNKNOWN_CHIP_COPY),
+    ];
+    recentNames.forEach((name, index) => {
+        if (!name || name === exports.UNKNOWN_CHIP_COPY) {
+            return;
+        }
+        chips.push(nameChip(`name-recent-${index}`, "recent-user", name));
+    });
+    return chips;
+}
+function assertNoPreselect(chips) {
+    return chips.every((chip) => chip.selected === false && chip.defaultSelection === "none");
+}
+function isShippableChip(chip) {
+    return chip.class === "safe-MED-FLAG";
+}
+function forbiddenChipFraming(copy) {
+    return /\b(recommend(?:ed|ation)?|best|therapeutic)\b/i.test(copy);
+}
+
+  })(
+    modules["ux/chips"].exports,
+    createRequire(modules["ux/chips"].dirname),
+    modules["ux/chips"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_HELPER = exports.MED_EMPTY_LIST = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_REMOVE_LABEL = exports.MED_EDIT_LABEL = exports.MED_SAVE_NAME = exports.MED_NAME_LABEL = exports.CABINET_DELETE_CANCEL = exports.CABINET_DELETE_PRIMARY = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.FIELD_NUMBER_ERROR = exports.SAVE_CONFIRM_CANCEL = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_TITLE = exports.SAVE_DISCLAIMER = exports.DISCARD_CONFIRM = exports.DISCARD_KEEP = exports.DISCARD_TITLE = void 0;
 exports.cabinetDeleteTitle = cabinetDeleteTitle;
 exports.cabinetDeleteBody = cabinetDeleteBody;
 exports.writerErrorMessage = writerErrorMessage;
@@ -2873,6 +2929,17 @@ function cabinetDeleteBody(scheduleCount, takenCount) {
 }
 exports.CABINET_DELETE_PRIMARY = "Delete fill";
 exports.CABINET_DELETE_CANCEL = "Cancel";
+exports.MED_NAME_LABEL = "Peptide name";
+exports.MED_SAVE_NAME = "Save name";
+exports.MED_EDIT_LABEL = "Edit name";
+exports.MED_REMOVE_LABEL = "Remove";
+exports.MED_LOAD_LABEL = "Load";
+exports.MED_LOAD_UNAVAILABLE = "No saved dose";
+exports.MED_EMPTY_LIST = "No peptide names saved yet.";
+exports.MED_NAME_HELPER = "Add or edit names. Unknown stays unknown until you enter one. FitGen does not suggest therapeutic names or doses.";
+exports.MED_NAME_CHIPS_LABEL = "Name choices";
+exports.MED_NAME_AUTOCOMPLETE_LABEL = "Saved names on this device";
+exports.MED_NAME_PLACEHOLDER = "Type a name or choose Unknown";
 function writerErrorMessage(code) {
     switch (code) {
         case "PERSIST_FAILED":
@@ -2967,9 +3034,10 @@ function dialogAria(titleId) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = void 0;
+exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = void 0;
+exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -2980,6 +3048,17 @@ Object.defineProperty(exports, "DISCARD_TITLE", { enumerable: true, get: functio
 Object.defineProperty(exports, "FIELD_DOSE_GT_VIAL_ERROR", { enumerable: true, get: function () { return copy_1.FIELD_DOSE_GT_VIAL_ERROR; } });
 Object.defineProperty(exports, "FIELD_NUMBER_ERROR", { enumerable: true, get: function () { return copy_1.FIELD_NUMBER_ERROR; } });
 Object.defineProperty(exports, "MARK_TAKEN_LABEL", { enumerable: true, get: function () { return copy_1.MARK_TAKEN_LABEL; } });
+Object.defineProperty(exports, "MED_EDIT_LABEL", { enumerable: true, get: function () { return copy_1.MED_EDIT_LABEL; } });
+Object.defineProperty(exports, "MED_EMPTY_LIST", { enumerable: true, get: function () { return copy_1.MED_EMPTY_LIST; } });
+Object.defineProperty(exports, "MED_LOAD_LABEL", { enumerable: true, get: function () { return copy_1.MED_LOAD_LABEL; } });
+Object.defineProperty(exports, "MED_LOAD_UNAVAILABLE", { enumerable: true, get: function () { return copy_1.MED_LOAD_UNAVAILABLE; } });
+Object.defineProperty(exports, "MED_NAME_AUTOCOMPLETE_LABEL", { enumerable: true, get: function () { return copy_1.MED_NAME_AUTOCOMPLETE_LABEL; } });
+Object.defineProperty(exports, "MED_NAME_CHIPS_LABEL", { enumerable: true, get: function () { return copy_1.MED_NAME_CHIPS_LABEL; } });
+Object.defineProperty(exports, "MED_NAME_HELPER", { enumerable: true, get: function () { return copy_1.MED_NAME_HELPER; } });
+Object.defineProperty(exports, "MED_NAME_LABEL", { enumerable: true, get: function () { return copy_1.MED_NAME_LABEL; } });
+Object.defineProperty(exports, "MED_NAME_PLACEHOLDER", { enumerable: true, get: function () { return copy_1.MED_NAME_PLACEHOLDER; } });
+Object.defineProperty(exports, "MED_REMOVE_LABEL", { enumerable: true, get: function () { return copy_1.MED_REMOVE_LABEL; } });
+Object.defineProperty(exports, "MED_SAVE_NAME", { enumerable: true, get: function () { return copy_1.MED_SAVE_NAME; } });
 Object.defineProperty(exports, "PERSIST_FAIL_ERROR", { enumerable: true, get: function () { return copy_1.PERSIST_FAIL_ERROR; } });
 Object.defineProperty(exports, "SAVE_CONFIRM_CANCEL", { enumerable: true, get: function () { return copy_1.SAVE_CONFIRM_CANCEL; } });
 Object.defineProperty(exports, "SAVE_CONFIRM_PRIMARY", { enumerable: true, get: function () { return copy_1.SAVE_CONFIRM_PRIMARY; } });
@@ -3026,6 +3105,39 @@ var tab_aria_1 = require("./tab-aria");
 Object.defineProperty(exports, "currentActiveViewId", { enumerable: true, get: function () { return tab_aria_1.currentActiveViewId; } });
 Object.defineProperty(exports, "installTabAriaSync", { enumerable: true, get: function () { return tab_aria_1.installTabAriaSync; } });
 Object.defineProperty(exports, "syncTabAria", { enumerable: true, get: function () { return tab_aria_1.syncTabAria; } });
+var chips_1 = require("./chips");
+Object.defineProperty(exports, "CHIP_DEFAULT_SELECTION", { enumerable: true, get: function () { return chips_1.CHIP_DEFAULT_SELECTION; } });
+Object.defineProperty(exports, "CHIP_FIELD_PEPTIDE_NAME", { enumerable: true, get: function () { return chips_1.CHIP_FIELD_PEPTIDE_NAME; } });
+Object.defineProperty(exports, "CUSTOM_CHIP_COPY", { enumerable: true, get: function () { return chips_1.CUSTOM_CHIP_COPY; } });
+Object.defineProperty(exports, "UNKNOWN_CHIP_COPY", { enumerable: true, get: function () { return chips_1.UNKNOWN_CHIP_COPY; } });
+Object.defineProperty(exports, "assertNoPreselect", { enumerable: true, get: function () { return chips_1.assertNoPreselect; } });
+Object.defineProperty(exports, "forbiddenChipFraming", { enumerable: true, get: function () { return chips_1.forbiddenChipFraming; } });
+Object.defineProperty(exports, "isShippableChip", { enumerable: true, get: function () { return chips_1.isShippableChip; } });
+Object.defineProperty(exports, "stage5NameChips", { enumerable: true, get: function () { return chips_1.stage5NameChips; } });
+var med_names_1 = require("./med-names");
+Object.defineProperty(exports, "KNOWN_NAME_STATE", { enumerable: true, get: function () { return med_names_1.KNOWN_NAME_STATE; } });
+Object.defineProperty(exports, "RECENT_NAME_LIMIT", { enumerable: true, get: function () { return med_names_1.RECENT_NAME_LIMIT; } });
+Object.defineProperty(exports, "UNKNOWN_NAME_DISPLAY", { enumerable: true, get: function () { return med_names_1.UNKNOWN_NAME_DISPLAY; } });
+Object.defineProperty(exports, "UNKNOWN_NAME_STATE", { enumerable: true, get: function () { return med_names_1.UNKNOWN_NAME_STATE; } });
+Object.defineProperty(exports, "buildMedicationRecord", { enumerable: true, get: function () { return med_names_1.buildMedicationRecord; } });
+Object.defineProperty(exports, "canLoadMedication", { enumerable: true, get: function () { return med_names_1.canLoadMedication; } });
+Object.defineProperty(exports, "classifyMedName", { enumerable: true, get: function () { return med_names_1.classifyMedName; } });
+Object.defineProperty(exports, "collapseNameWhitespace", { enumerable: true, get: function () { return med_names_1.collapseNameWhitespace; } });
+Object.defineProperty(exports, "loadMedicationIntoCalculator", { enumerable: true, get: function () { return med_names_1.loadMedicationIntoCalculator; } });
+Object.defineProperty(exports, "formatMedicationMeta", { enumerable: true, get: function () { return med_names_1.formatMedicationMeta; } });
+Object.defineProperty(exports, "formatStoredDose", { enumerable: true, get: function () { return med_names_1.formatStoredDose; } });
+Object.defineProperty(exports, "formatStoredInterval", { enumerable: true, get: function () { return med_names_1.formatStoredInterval; } });
+Object.defineProperty(exports, "isUnknownNameInput", { enumerable: true, get: function () { return med_names_1.isUnknownNameInput; } });
+Object.defineProperty(exports, "matchNameSuggestions", { enumerable: true, get: function () { return med_names_1.matchNameSuggestions; } });
+Object.defineProperty(exports, "medicationFromUnknown", { enumerable: true, get: function () { return med_names_1.medicationFromUnknown; } });
+Object.defineProperty(exports, "nameMatchKey", { enumerable: true, get: function () { return med_names_1.nameMatchKey; } });
+Object.defineProperty(exports, "optionalPositiveNumber", { enumerable: true, get: function () { return med_names_1.optionalPositiveNumber; } });
+Object.defineProperty(exports, "optionalUnitLabel", { enumerable: true, get: function () { return med_names_1.optionalUnitLabel; } });
+Object.defineProperty(exports, "planMedicationLoad", { enumerable: true, get: function () { return med_names_1.planMedicationLoad; } });
+Object.defineProperty(exports, "readMedNameState", { enumerable: true, get: function () { return med_names_1.readMedNameState; } });
+Object.defineProperty(exports, "recentUserNames", { enumerable: true, get: function () { return med_names_1.recentUserNames; } });
+Object.defineProperty(exports, "removeMedication", { enumerable: true, get: function () { return med_names_1.removeMedication; } });
+Object.defineProperty(exports, "upsertMedication", { enumerable: true, get: function () { return med_names_1.upsertMedication; } });
 var persist_1 = require("./persist");
 Object.defineProperty(exports, "ENVELOPE_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.ENVELOPE_STORAGE_KEY; } });
 Object.defineProperty(exports, "FILLS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.FILLS_STORAGE_KEY; } });
@@ -3115,6 +3227,273 @@ Object.defineProperty(exports, "writeLocalBackup", { enumerable: true, get: func
     modules["ux/index"].exports,
     createRequire(modules["ux/index"].dirname),
     modules["ux/index"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = void 0;
+exports.collapseNameWhitespace = collapseNameWhitespace;
+exports.nameMatchKey = nameMatchKey;
+exports.isUnknownNameInput = isUnknownNameInput;
+exports.classifyMedName = classifyMedName;
+exports.asNameRecord = asNameRecord;
+exports.readMedNameState = readMedNameState;
+exports.medicationFromUnknown = medicationFromUnknown;
+exports.recentUserNames = recentUserNames;
+exports.matchNameSuggestions = matchNameSuggestions;
+exports.optionalPositiveNumber = optionalPositiveNumber;
+exports.optionalUnitLabel = optionalUnitLabel;
+exports.planMedicationLoad = planMedicationLoad;
+exports.canLoadMedication = canLoadMedication;
+exports.loadMedicationIntoCalculator = loadMedicationIntoCalculator;
+exports.formatStoredDose = formatStoredDose;
+exports.formatStoredInterval = formatStoredInterval;
+exports.formatMedicationMeta = formatMedicationMeta;
+exports.buildMedicationRecord = buildMedicationRecord;
+exports.upsertMedication = upsertMedication;
+exports.removeMedication = removeMedication;
+exports.UNKNOWN_NAME_DISPLAY = "Unknown";
+exports.UNKNOWN_NAME_STATE = "unknown";
+exports.KNOWN_NAME_STATE = "known";
+exports.RECENT_NAME_LIMIT = 8;
+function collapseNameWhitespace(value) {
+    return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+function nameMatchKey(value) {
+    return collapseNameWhitespace(value).toLowerCase();
+}
+function isUnknownNameInput(value) {
+    const key = nameMatchKey(String(value ?? ""));
+    return key === "" || key === "unknown";
+}
+function classifyMedName(value) {
+    if (isUnknownNameInput(value)) {
+        return {
+            displayName: exports.UNKNOWN_NAME_DISPLAY,
+            nameState: exports.UNKNOWN_NAME_STATE,
+            matchKey: nameMatchKey(exports.UNKNOWN_NAME_DISPLAY),
+        };
+    }
+    const displayName = collapseNameWhitespace(String(value));
+    return {
+        displayName,
+        nameState: exports.KNOWN_NAME_STATE,
+        matchKey: nameMatchKey(displayName),
+    };
+}
+function asNameRecord(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    return value;
+}
+function readMedNameState(row) {
+    if (row.nameState === exports.UNKNOWN_NAME_STATE || row.nameState === exports.KNOWN_NAME_STATE) {
+        return row.nameState;
+    }
+    return classifyMedName(typeof row.name === "string" ? row.name : "").nameState;
+}
+function medicationFromUnknown(value) {
+    const record = asNameRecord(value);
+    if (!record) {
+        return null;
+    }
+    const id = typeof record.id === "string" ? record.id.trim() : "";
+    if (!id) {
+        return null;
+    }
+    const classified = classifyMedName(typeof record.name === "string" ? record.name : "");
+    const nameState = readMedNameState({
+        name: record.name,
+        nameState: record.nameState,
+    });
+    return {
+        ...record,
+        id,
+        name: nameState === exports.UNKNOWN_NAME_STATE ? exports.UNKNOWN_NAME_DISPLAY : classified.displayName,
+        nameState,
+    };
+}
+function considerRecentName(raw, seen, names, limit) {
+    if (names.length >= limit || typeof raw !== "string") {
+        return;
+    }
+    const classified = classifyMedName(raw);
+    if (classified.nameState === exports.UNKNOWN_NAME_STATE || seen.has(classified.matchKey)) {
+        return;
+    }
+    seen.add(classified.matchKey);
+    names.push(classified.displayName);
+}
+function recentUserNames(medications, fills, limit = exports.RECENT_NAME_LIMIT) {
+    const seen = new Set();
+    const names = [];
+    for (let index = medications.length - 1; index >= 0 && names.length < limit; index -= 1) {
+        const row = asNameRecord(medications[index]);
+        if (row) {
+            considerRecentName(row.name, seen, names, limit);
+        }
+    }
+    for (let index = fills.length - 1; index >= 0 && names.length < limit; index -= 1) {
+        const row = asNameRecord(fills[index]);
+        if (!row) {
+            continue;
+        }
+        considerRecentName(row.displayName ?? row.name ?? row.fillName ?? row.label ?? row.peptideName, seen, names, limit);
+    }
+    return names;
+}
+function matchNameSuggestions(query, dictionary, limit = exports.RECENT_NAME_LIMIT) {
+    if (isUnknownNameInput(query)) {
+        return [];
+    }
+    const key = nameMatchKey(query);
+    const matches = [];
+    const seen = new Set();
+    for (const name of dictionary) {
+        const classified = classifyMedName(name);
+        if (classified.nameState === exports.UNKNOWN_NAME_STATE || seen.has(classified.matchKey)) {
+            continue;
+        }
+        if (!classified.matchKey.includes(key)) {
+            continue;
+        }
+        seen.add(classified.matchKey);
+        matches.push(classified.displayName);
+        if (matches.length >= limit) {
+            break;
+        }
+    }
+    return matches;
+}
+function optionalPositiveNumber(value) {
+    if (value === "" || value == null) {
+        return null;
+    }
+    const parsed = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return null;
+    }
+    return parsed;
+}
+function optionalUnitLabel(value) {
+    if (typeof value !== "string") {
+        return undefined;
+    }
+    const unit = value.trim();
+    return unit || undefined;
+}
+function planMedicationLoad(row) {
+    const dose = optionalPositiveNumber(row?.dose);
+    const unit = optionalUnitLabel(row?.unit);
+    return {
+        canLoad: dose !== null && unit !== undefined,
+        dose,
+        unit,
+    };
+}
+function canLoadMedication(row) {
+    return planMedicationLoad(row).canLoad;
+}
+function loadMedicationIntoCalculator(row, current) {
+    const plan = planMedicationLoad(row);
+    const unchanged = {
+        doseUnit: current.doseUnit,
+        doseAmount: current.doseAmount,
+    };
+    if (!plan.canLoad || plan.dose === null || !plan.unit) {
+        return { applied: false, next: unchanged };
+    }
+    return {
+        applied: true,
+        next: {
+            doseUnit: plan.unit,
+            doseAmount: String(plan.dose),
+        },
+    };
+}
+function formatStoredDose(dose, unit) {
+    const amount = optionalPositiveNumber(dose);
+    if (amount === null) {
+        return exports.UNKNOWN_NAME_DISPLAY;
+    }
+    const label = optionalUnitLabel(unit);
+    return label ? `${amount} ${label}` : String(amount);
+}
+function formatStoredInterval(value) {
+    const days = optionalPositiveNumber(value);
+    if (days === null) {
+        return exports.UNKNOWN_NAME_DISPLAY;
+    }
+    return days === 1 ? "every 1 day" : `every ${days} days`;
+}
+function formatMedicationMeta(row) {
+    const dose = formatStoredDose(row.dose, row.unit);
+    const interval = formatStoredInterval(row.interval);
+    if (dose === exports.UNKNOWN_NAME_DISPLAY && interval === exports.UNKNOWN_NAME_DISPLAY) {
+        return "Dose unknown · interval unknown";
+    }
+    if (interval === exports.UNKNOWN_NAME_DISPLAY) {
+        return `${dose} · interval unknown`;
+    }
+    if (dose === exports.UNKNOWN_NAME_DISPLAY) {
+        return `Dose unknown · ${interval}`;
+    }
+    return `${dose} · ${interval}`;
+}
+function buildMedicationRecord(input) {
+    const classified = classifyMedName(input.name);
+    const existing = input.existing && typeof input.existing === "object" ? { ...input.existing } : {};
+    const dose = optionalPositiveNumber(input.dose) ?? optionalPositiveNumber(existing.dose);
+    const interval = optionalPositiveNumber(input.interval) ?? optionalPositiveNumber(existing.interval);
+    const unit = optionalUnitLabel(input.unit) ?? optionalUnitLabel(existing.unit);
+    const next = {
+        ...existing,
+        id: input.id,
+        name: classified.displayName,
+        nameState: classified.nameState,
+    };
+    if (dose === null) {
+        delete next.dose;
+    }
+    else {
+        next.dose = dose;
+    }
+    if (!unit) {
+        delete next.unit;
+    }
+    else {
+        next.unit = unit;
+    }
+    if (interval === null) {
+        delete next.interval;
+    }
+    else {
+        next.interval = interval;
+    }
+    return next;
+}
+function upsertMedication(list, record) {
+    const next = list.slice();
+    const index = next.findIndex((row) => asNameRecord(row)?.id === record.id);
+    if (index >= 0) {
+        next[index] = record;
+        return next;
+    }
+    next.push(record);
+    return next;
+}
+function removeMedication(list, id) {
+    return list.filter((row) => asNameRecord(row)?.id !== id);
+}
+
+  })(
+    modules["ux/med-names"].exports,
+    createRequire(modules["ux/med-names"].dirname),
+    modules["ux/med-names"],
     "ux"
   );
 

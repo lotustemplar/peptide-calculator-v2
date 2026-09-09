@@ -10,6 +10,7 @@
  * Stage 2: chrome/assets allowlist checks (Issue #26).
  * Stage 3: persist import safety for both data generations (Issue #28).
  * Stage 4: shell/IA + existing P0 Back/Cancel/Taken/Undo chrome (Issue #30).
+ * Stage 5: med names + classified non-therapeutic chips (Issue #32).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -47,6 +48,18 @@ const jobs = [
   {
     name: "Stage 4 tab aria-current restore/click/programmatic",
     file: path.join(__dirname, "ux", "stage4-tab-aria-test.js"),
+  },
+  {
+    name: "Stage 5 med names + unknown-state + local autocomplete",
+    file: path.join(__dirname, "ux", "stage5-meds-test.js"),
+  },
+  {
+    name: "Stage 5 Load gate — no stale calculator dose",
+    file: path.join(__dirname, "ux", "stage5-load-test.js"),
+  },
+  {
+    name: "Stage 5 chip inventory + MED-FLAG freeze",
+    file: path.join(__dirname, "ci", "stage5-chips-test.js"),
   },
 ];
 

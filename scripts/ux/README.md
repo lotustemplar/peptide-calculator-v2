@@ -36,3 +36,13 @@ Issue #30 Stage 4 shell/nav evidence (also not part of `npm test`):
 node scripts/ux/stage4-shell-capture.js --shots before
 node scripts/ux/stage4-shell-capture.js --shots after
 ```
+
+Issue #32 Stage 5 medications / chips (unit tests are part of `npm test`):
+
+```bash
+node scripts/ux/stage5-meds-test.js
+node scripts/ux/stage5-load-test.js
+node scripts/ci/stage5-chips-test.js
+node scripts/ux/stage5-chips-capture.js --shots before
+node scripts/ux/stage5-chips-capture.js --shots after
+```

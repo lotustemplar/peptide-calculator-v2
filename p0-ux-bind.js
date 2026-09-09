@@ -700,6 +700,12 @@
     }
     rerender();
     refreshRestoreControl();
+    if (typeof refreshNameChipHosts === "function") {
+      refreshNameChipHosts();
+    }
+    if (typeof renderStage5Medications === "function") {
+      renderStage5Medications();
+    }
   }
 
   function filenameForExport() {
@@ -859,12 +865,381 @@
     });
   }
 
+  let editingMedId = null;
+  let autocompleteIndex = -1;
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function currentRecentNames() {
+    return ux.recentUserNames(ux.readMedications(window.localStorage), readFills());
+  }
+
+  function resetMedForm() {
+    const form = document.getElementById("add-medication-form");
+    if (form && typeof form.reset === "function") {
+      form.reset();
+    }
+    ["med-dose", "med-unit", "med-interval"].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) {
+        node.value = "";
+      }
+    });
+    editingMedId = null;
+  }
+
+  function writeLiveMedications(medications) {
+    ux.writeMedicationsFromUi(window.localStorage, medications);
+    if (typeof state !== "undefined") {
+      state.medications = medications;
+    }
+  }
+
+  function hideAutocomplete(list) {
+    if (!list) {
+      return;
+    }
+    list.classList.add("is-hidden");
+    list.replaceChildren();
+    autocompleteIndex = -1;
+    const input = document.getElementById(list.dataset.inputId || "");
+    if (input) {
+      input.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function renderChipRow(host, input) {
+    if (!host || typeof ux.stage5NameChips !== "function") {
+      return;
+    }
+    const chips = ux.stage5NameChips(currentRecentNames());
+    host.replaceChildren();
+    chips.forEach((chip) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fitgen-chip fitgen-target-44";
+      button.dataset.chipId = chip.id;
+      button.dataset.chipSource = chip.source;
+      button.dataset.chipClass = chip.class;
+      button.dataset.chipField = chip.field;
+      button.setAttribute("aria-pressed", "false");
+      button.textContent = chip.copy;
+      button.addEventListener("click", () => {
+        if (!input) {
+          return;
+        }
+        if (chip.source === "Custom") {
+          input.focus();
+          return;
+        }
+        input.value = chip.copy;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      });
+      host.appendChild(button);
+    });
+  }
+
+  function refreshNameChipHosts() {
+    const medInput = document.getElementById("med-name");
+    const fillInput = document.getElementById("save-fill-name");
+    renderChipRow(document.getElementById("med-name-chips"), medInput);
+    renderChipRow(document.getElementById("save-fill-name-chips"), fillInput);
+  }
+
+  function renderAutocomplete(input, list) {
+    if (!input || !list || typeof ux.matchNameSuggestions !== "function") {
+      return;
+    }
+    const matches = ux.matchNameSuggestions(input.value, currentRecentNames());
+    if (!matches.length) {
+      hideAutocomplete(list);
+      return;
+    }
+    autocompleteIndex = -1;
+    list.replaceChildren();
+    matches.forEach((name) => {
+      const item = document.createElement("li");
+      item.setAttribute("role", "none");
+      const option = document.createElement("button");
+      option.type = "button";
+      option.className = "fitgen-name-option";
+      option.setAttribute("role", "option");
+      option.setAttribute("aria-selected", "false");
+      option.textContent = name;
+      option.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        input.value = name;
+        hideAutocomplete(list);
+        input.focus();
+      });
+      item.appendChild(option);
+      list.appendChild(item);
+    });
+    list.classList.remove("is-hidden");
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  function onNameKeydown(event, input, list) {
+    if (!list || list.classList.contains("is-hidden")) {
+      return;
+    }
+    const options = Array.from(list.querySelectorAll(".fitgen-name-option"));
+    if (event.key === "Escape") {
+      hideAutocomplete(list);
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      autocompleteIndex = Math.min(options.length - 1, autocompleteIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      autocompleteIndex = Math.max(-1, autocompleteIndex - 1);
+    } else if (event.key === "Enter" && autocompleteIndex >= 0) {
+      event.preventDefault();
+      const active = options[autocompleteIndex];
+      if (active) {
+        input.value = active.textContent || "";
+        hideAutocomplete(list);
+      }
+      return;
+    }
+    options.forEach((option, index) => {
+      const active = index === autocompleteIndex;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", active ? "true" : "false");
+    });
+  }
+
+  function attachNameField(inputId, chipsId, listId) {
+    const input = document.getElementById(inputId);
+    const chips = document.getElementById(chipsId);
+    const list = document.getElementById(listId);
+    if (!input || input.dataset.stage5NameBound === "true") {
+      return;
+    }
+    input.dataset.stage5NameBound = "true";
+    if (list) {
+      list.dataset.inputId = inputId;
+    }
+    renderChipRow(chips, input);
+    input.addEventListener("input", () => renderAutocomplete(input, list));
+    input.addEventListener("focus", () => {
+      if (String(input.value || "").trim()) {
+        renderAutocomplete(input, list);
+      }
+    });
+    input.addEventListener("keydown", (event) => onNameKeydown(event, input, list));
+    input.addEventListener("blur", () => {
+      window.setTimeout(() => hideAutocomplete(list), 120);
+    });
+  }
+
+  function renderStage5Medications() {
+    const container = document.getElementById("medications-list");
+    if (!container || typeof ux.medicationFromUnknown !== "function") {
+      return;
+    }
+    const raw = ux.readMedications(window.localStorage);
+    if (typeof state !== "undefined") {
+      state.medications = raw;
+    }
+    const rows = raw.map((row) => ux.medicationFromUnknown(row)).filter(Boolean);
+    if (!rows.length) {
+      container.innerHTML = `<p class="empty-state">${ux.MED_EMPTY_LIST}</p>`;
+      return;
+    }
+    container.innerHTML = rows
+      .map((med) => {
+        const meta = ux.formatMedicationMeta(med);
+        return `<article class="med-card" data-stage5-med="1" data-name-state="${escapeHtml(med.nameState)}" data-id="${escapeHtml(med.id)}">
+        <div class="med-info">
+          <strong class="med-name">${escapeHtml(med.name)}</strong>
+          <span class="med-meta">${escapeHtml(meta)}</span>
+        </div>
+        <div class="med-actions">
+          ${
+            ux.canLoadMedication(med)
+              ? `<button class="mini-button fitgen-target-44" type="button" data-action="load-med" data-id="${escapeHtml(med.id)}">${ux.MED_LOAD_LABEL}</button>`
+              : `<span class="med-load-unavailable" role="status">${escapeHtml(ux.MED_LOAD_UNAVAILABLE)}</span>`
+          }
+          <button class="mini-button fitgen-target-44" type="button" data-action="edit-med" data-id="${escapeHtml(med.id)}">${ux.MED_EDIT_LABEL}</button>
+          <button class="mini-button fitgen-target-44" type="button" data-action="delete-med" data-id="${escapeHtml(med.id)}">${ux.MED_REMOVE_LABEL}</button>
+        </div>
+      </article>`;
+      })
+      .join("");
+
+    container.querySelectorAll("[data-action]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const id = button.getAttribute("data-id");
+        const med = rows.find((row) => row.id === id);
+        const action = button.getAttribute("data-action");
+        if (action === "load-med" && med) {
+          loadMedication(med);
+          return;
+        }
+        if (action === "edit-med" && med) {
+          startEditMedication(med);
+          return;
+        }
+        if (action === "delete-med" && id) {
+          const next = ux.removeMedication(ux.readMedications(window.localStorage), id);
+          writeLiveMedications(next);
+          if (editingMedId === id) {
+            resetMedForm();
+          }
+          renderStage5Medications();
+          refreshNameChipHosts();
+        }
+      });
+    });
+  }
+
+  function startEditMedication(med) {
+    editingMedId = med.id;
+    const nameInput = document.getElementById("med-name");
+    const dose = document.getElementById("med-dose");
+    const unit = document.getElementById("med-unit");
+    const interval = document.getElementById("med-interval");
+    if (nameInput) {
+      nameInput.value = med.nameState === ux.UNKNOWN_NAME_STATE ? ux.UNKNOWN_NAME_DISPLAY : med.name;
+    }
+    if (dose) {
+      const amount = ux.optionalPositiveNumber(med.dose);
+      dose.value = amount === null ? "" : String(amount);
+    }
+    if (unit) {
+      unit.value = ux.optionalUnitLabel(med.unit) || "";
+    }
+    if (interval) {
+      const days = ux.optionalPositiveNumber(med.interval);
+      interval.value = days === null ? "" : String(days);
+    }
+    nameInput?.focus();
+  }
+
+  function loadMedication(med) {
+    const unitEl = document.getElementById("dose-unit");
+    const doseEl = document.getElementById("dose-mg");
+    const result = ux.loadMedicationIntoCalculator(med, {
+      doseUnit: unitEl ? String(unitEl.value || "") : "",
+      doseAmount: doseEl ? String(doseEl.value || "") : "",
+    });
+    if (!result.applied) {
+      return;
+    }
+    if (unitEl) {
+      unitEl.value = result.next.doseUnit;
+    }
+    if (doseEl) {
+      doseEl.value = result.next.doseAmount;
+    }
+    if (typeof window.updateUnitLabels === "function") {
+      window.updateUnitLabels();
+    }
+    if (typeof window.renderCalculator === "function") {
+      window.renderCalculator();
+    }
+    if (typeof window.setActiveView === "function") {
+      window.setActiveView("calculator-view");
+    } else {
+      document.querySelector('[data-view-target="calculator-view"]')?.click();
+    }
+    if (typeof window.goToWizardStep === "function") {
+      window.goToWizardStep(1);
+    }
+  }
+
+  function handleMedFormSubmit(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const nameInput = document.getElementById("med-name");
+    const existingList = ux.readMedications(window.localStorage);
+    const existing = editingMedId
+      ? existingList.map((row) => ux.medicationFromUnknown(row)).find((row) => row && row.id === editingMedId)
+      : null;
+    const id =
+      editingMedId ||
+      (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `med-${Date.now()}`);
+    const record = ux.buildMedicationRecord({
+      id,
+      name: nameInput ? nameInput.value : "",
+      existing: existing || null,
+      dose: document.getElementById("med-dose")?.value,
+      unit: document.getElementById("med-unit")?.value,
+      interval: document.getElementById("med-interval")?.value,
+    });
+    writeLiveMedications(ux.upsertMedication(existingList, record));
+    resetMedForm();
+    renderStage5Medications();
+    refreshNameChipHosts();
+  }
+
+  function wrapRenderMedications() {
+    if (typeof window.renderMedications !== "function" || window.renderMedications.__stage5) {
+      return;
+    }
+    const original = window.renderMedications;
+    const wrapped = function renderMedicationsStage5() {
+      original.apply(this, arguments);
+      renderStage5Medications();
+    };
+    wrapped.__stage5 = true;
+    window.renderMedications = wrapped;
+  }
+
+  function revealMedicationsCard() {
+    const card = document.getElementById("medications-card");
+    if (!card) {
+      return;
+    }
+    card.style.removeProperty("display");
+    card.removeAttribute("hidden");
+  }
+
+  function installStage5Meds() {
+    revealMedicationsCard();
+    wrapRenderMedications();
+    const form = document.getElementById("add-medication-form");
+    if (form && form.dataset.stage5Bound !== "true") {
+      form.dataset.stage5Bound = "true";
+      form.addEventListener("submit", handleMedFormSubmit, true);
+    }
+    attachNameField("med-name", "med-name-chips", "med-name-autocomplete");
+    attachNameField("save-fill-name", "save-fill-name-chips", "save-fill-name-autocomplete");
+    renderStage5Medications();
+    refreshNameChipHosts();
+    window.setTimeout(revealMedicationsCard, 0);
+    window.setTimeout(revealMedicationsCard, 50);
+  }
+
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+      return;
+    }
+    fn();
+  }
+
   refreshRestoreControl();
   if (typeof ux.installTabAriaSync === "function") {
     ux.installTabAriaSync(document);
   } else {
     syncTabAria();
   }
+  onReady(installStage5Meds);
 
   window.FitGenP0UxBind = {
     adapter,
@@ -879,5 +1254,9 @@
     activeSchedules: ux.activeSchedules,
     refreshRestoreControl,
     syncTabAria,
+    renderStage5Medications,
+    refreshNameChipHosts,
+    loadMedication,
+    canLoadMedication: (med) => ux.canLoadMedication(med),
   };
 })();

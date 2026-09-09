@@ -42,6 +42,19 @@ export function cabinetDeleteBody(scheduleCount: number, takenCount: number): st
 export const CABINET_DELETE_PRIMARY = "Delete fill";
 export const CABINET_DELETE_CANCEL = "Cancel";
 
+export const MED_NAME_LABEL = "Peptide name";
+export const MED_SAVE_NAME = "Save name";
+export const MED_EDIT_LABEL = "Edit name";
+export const MED_REMOVE_LABEL = "Remove";
+export const MED_LOAD_LABEL = "Load";
+export const MED_LOAD_UNAVAILABLE = "No saved dose";
+export const MED_EMPTY_LIST = "No peptide names saved yet.";
+export const MED_NAME_HELPER =
+  "Add or edit names. Unknown stays unknown until you enter one. FitGen does not suggest therapeutic names or doses.";
+export const MED_NAME_CHIPS_LABEL = "Name choices";
+export const MED_NAME_AUTOCOMPLETE_LABEL = "Saved names on this device";
+export const MED_NAME_PLACEHOLDER = "Type a name or choose Unknown";
+
 export function writerErrorMessage(code: string): string {
   switch (code) {
     case "PERSIST_FAILED":

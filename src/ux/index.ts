@@ -8,6 +8,17 @@ export {
   FIELD_DOSE_GT_VIAL_ERROR,
   FIELD_NUMBER_ERROR,
   MARK_TAKEN_LABEL,
+  MED_EDIT_LABEL,
+  MED_EMPTY_LIST,
+  MED_LOAD_LABEL,
+  MED_LOAD_UNAVAILABLE,
+  MED_NAME_AUTOCOMPLETE_LABEL,
+  MED_NAME_CHIPS_LABEL,
+  MED_NAME_HELPER,
+  MED_NAME_LABEL,
+  MED_NAME_PLACEHOLDER,
+  MED_REMOVE_LABEL,
+  MED_SAVE_NAME,
   PERSIST_FAIL_ERROR,
   SAVE_CONFIRM_CANCEL,
   SAVE_CONFIRM_PRIMARY,
@@ -66,6 +77,52 @@ export type { ConfirmDialogModel, ConfirmKind } from "./dialog";
 
 export { currentActiveViewId, installTabAriaSync, syncTabAria } from "./tab-aria";
 export type { TabAriaClickEvent, TabAriaNode, TabAriaRoot } from "./tab-aria";
+
+export {
+  CHIP_DEFAULT_SELECTION,
+  CHIP_FIELD_PEPTIDE_NAME,
+  CUSTOM_CHIP_COPY,
+  UNKNOWN_CHIP_COPY,
+  assertNoPreselect,
+  forbiddenChipFraming,
+  isShippableChip,
+  stage5NameChips,
+} from "./chips";
+export type { ChipClass, ChipSource, ChipSpec } from "./chips";
+
+export {
+  KNOWN_NAME_STATE,
+  RECENT_NAME_LIMIT,
+  UNKNOWN_NAME_DISPLAY,
+  UNKNOWN_NAME_STATE,
+  buildMedicationRecord,
+  canLoadMedication,
+  classifyMedName,
+  collapseNameWhitespace,
+  loadMedicationIntoCalculator,
+  formatMedicationMeta,
+  formatStoredDose,
+  formatStoredInterval,
+  isUnknownNameInput,
+  matchNameSuggestions,
+  medicationFromUnknown,
+  nameMatchKey,
+  optionalPositiveNumber,
+  optionalUnitLabel,
+  planMedicationLoad,
+  readMedNameState,
+  recentUserNames,
+  removeMedication,
+  upsertMedication,
+} from "./med-names";
+export type {
+  CalculatorDoseFields,
+  ClassifiedMedName,
+  MedNameRecord,
+  MedNameState,
+  MedicationLoadPlan,
+  MedicationLoadResult,
+} from "./med-names";
 
 export {
   ENVELOPE_STORAGE_KEY,
