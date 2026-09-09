@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   theme: "peptide-calculator-v2-theme",
   reorderAlerts: "peptide-calculator-v2-reorder-alerts",
   activeView: "peptide-calculator-v2-active-view",
+  occurrences: "peptide-calculator-v2-occurrences",
 };
 const APP_CONFIG = window.APP_CONFIG || {};
 
@@ -70,6 +71,7 @@ const state = {
   userId: readStorage(STORAGE_KEYS.userId, null) || crypto.randomUUID(),
   latestOptions: [],
   pendingSaveOptionId: null,
+  occurrences: readStorage(STORAGE_KEYS.occurrences, []),
 };
 
 let reminderTimer = null;
@@ -351,6 +353,9 @@ function populatePeptideList() {
 function initWizard() {
   document.querySelectorAll(".wizard-next-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (window.FitGenP0UxBind) {
+        return;
+      }
       const target = Number(btn.dataset.next);
       if (target) goToWizardStep(target);
     });
@@ -381,6 +386,7 @@ async function exportData() {
     medications: state.medications,
     fills: state.fills,
     schedules: state.schedules,
+    occurrences: state.occurrences || [],
   };
   const json = JSON.stringify(backup, null, 2);
   const filename = `fitgen-backup-${new Date().toISOString().split("T")[0]}.json`;
@@ -782,7 +788,11 @@ function saveFillFromModal() {
   const startDate = elements.saveFillStartDate.value;
 
   if (!Number.isInteger(intervalDays) || intervalDays < 1 || !reminderTime || !startDate) {
-    window.alert("Please enter a valid schedule before saving the fill.");
+    const saveError = document.getElementById("save-fill-error");
+    if (saveError) {
+      saveError.textContent = "Enter a valid interval, time, and start date.";
+      saveError.classList.remove("is-hidden");
+    }
     return;
   }
 
@@ -969,7 +979,10 @@ function saveDosagePlan() {
 }
 
 function renderCurrentPeptides() {
-  if (!state.fills.length) {
+  const visibleFills = window.FitGenP0Ux?.activeFills
+    ? window.FitGenP0Ux.activeFills(state.fills)
+    : state.fills.filter((fill) => fill.lifecycle !== "archived");
+  if (!visibleFills.length) {
     elements.currentPeptides.innerHTML = `
       <div class="empty-state">
         No fills saved yet. Save an option in Fill to start your Peptide Cabinet.
@@ -979,7 +992,7 @@ function renderCurrentPeptides() {
   }
 
   const now = new Date();
-  const fills = [...state.fills].sort((left, right) => new Date(right.savedAt || 0) - new Date(left.savedAt || 0));
+  const fills = [...visibleFills].sort((left, right) => new Date(right.savedAt || 0) - new Date(left.savedAt || 0));
 
   elements.currentPeptides.innerHTML = fills
     .map((fill) => {
@@ -1172,7 +1185,10 @@ function attachCabinetEvents() {
 }
 
 function renderSchedules() {
-  if (!state.schedules.length) {
+  const visibleSchedules = window.FitGenP0Ux?.activeSchedules
+    ? window.FitGenP0Ux.activeSchedules(state.schedules)
+    : state.schedules.filter((schedule) => schedule.lifecycle !== "archived");
+  if (!visibleSchedules.length) {
     elements.reminderList.innerHTML = `
       <div class="empty-state">
         No dosage plans yet. Saving a fill can create the first schedule automatically.
@@ -1184,15 +1200,20 @@ function renderSchedules() {
   const now = new Date();
   const today = todayKey();
 
-  elements.reminderList.innerHTML = state.schedules
+  elements.reminderList.innerHTML = visibleSchedules
     .slice()
     .sort((left, right) => getNextOccurrence(left, now) - getNextOccurrence(right, now))
     .map((schedule) => {
       const fill = resolveScheduleFill(schedule);
       const nextDose = getNextOccurrence(schedule, now);
       const takenDates = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
-      const takenToday = takenDates.includes(today);
+      const takenToday = window.FitGenP0UxBind?.isTaken
+        ? window.FitGenP0UxBind.isTaken(schedule.id, today)
+        : takenDates.includes(today);
       const dueToday = isOccurrenceDueOnDate(schedule, today);
+      const canUndo = window.FitGenP0UxBind?.canUndo
+        ? window.FitGenP0UxBind.canUndo(schedule.id, today)
+        : false;
 
       let pillClass = "";
       let pillText = "Upcoming";
@@ -1200,7 +1221,10 @@ function renderSchedules() {
       else if (dueToday) { pillClass = "is-ready"; pillText = "Due today"; }
 
       const markTakenBtn = dueToday && !takenToday
-        ? `<button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${today}" style="flex:1">Mark as taken</button>`
+        ? `<button class="primary-button fitgen-target-44" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${today}" style="flex:1">Mark as taken</button>`
+        : "";
+      const undoBtn = takenToday && canUndo
+        ? `<button class="secondary-button fitgen-target-44" type="button" data-action="undo-taken" data-id="${schedule.id}" data-date="${today}" style="flex:1">Undo</button>`
         : "";
 
       return `
@@ -1224,6 +1248,7 @@ function renderSchedules() {
           </div>
           <div class="card-actions">
             ${markTakenBtn}
+            ${undoBtn}
             <button class="mini-button" type="button" data-action="test-reminder" data-id="${schedule.id}">Test Alert</button>
             <button class="mini-button" type="button" data-action="delete-reminder" data-id="${schedule.id}">Delete</button>
           </div>
@@ -1305,9 +1330,14 @@ function renderCalendar() {
 }
 
 function renderCalendarItem(entry) {
+  const canUndo = window.FitGenP0UxBind?.canUndo
+    ? window.FitGenP0UxBind.canUndo(entry.scheduleId, entry.dateKey)
+    : false;
   const actionBtn = !entry.isTaken
-    ? `<button class="mini-button mark-taken-btn" type="button" data-action="mark-taken" data-id="${entry.scheduleId}" data-date="${entry.dateKey}">Mark as taken</button>`
-    : "";
+    ? `<button class="mini-button mark-taken-btn fitgen-target-44" type="button" data-action="mark-taken" data-id="${entry.scheduleId}" data-date="${entry.dateKey}">Mark as taken</button>`
+    : canUndo
+      ? `<button class="mini-button fitgen-target-44" type="button" data-action="undo-taken" data-id="${entry.scheduleId}" data-date="${entry.dateKey}">Undo</button>`
+      : "";
 
   let rightContent;
   if (entry.isTaken) {
@@ -1339,9 +1369,10 @@ function buildCalendarEntries(schedules) {
 
   schedules.forEach((schedule) => {
     const fill = resolveScheduleFill(schedule);
-    if (!fill) return;
+    if (!fill || schedule.lifecycle === "archived") return;
 
     const takenDates = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
+    if (schedule.lifecycle === "archived") return;
     const [sy, sm, sd] = schedule.startDate.split("-").map(Number);
     let probe = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
     const intervalMs = schedule.intervalDays * DAY_MS;
@@ -1370,7 +1401,9 @@ function buildCalendarEntries(schedules) {
         dateKey: dk,
         isPast,
         isToday,
-        isTaken: takenDates.includes(dk),
+        isTaken: window.FitGenP0UxBind?.isTaken
+          ? window.FitGenP0UxBind.isTaken(schedule.id, dk)
+          : takenDates.includes(dk),
       });
 
       if (!isPast) upcomingCount++;
@@ -1503,10 +1536,27 @@ function renameFillRecord(fill) {
 }
 
 function deleteFillRecord(fill) {
-  state.fills = state.fills.filter((item) => item.savedId !== fill.savedId);
-  state.schedules = state.schedules.filter((schedule) => schedule.fillSavedId !== fill.savedId);
+  if (window.FitGenP0Ux && window.FitGenP0Ux.applyCabinetArchive) {
+    const applied = window.FitGenP0Ux.applyCabinetArchive({
+      fills: state.fills,
+      schedules: state.schedules,
+      occurrences: state.occurrences || [],
+      fillId: fill.savedId,
+      todayKey: todayKey(),
+    });
+    state.fills = applied.fills;
+    state.schedules = applied.schedules;
+    state.occurrences = applied.occurrences;
+    writeStorage(STORAGE_KEYS.occurrences, state.occurrences);
+  } else {
+    state.fills = state.fills.filter((item) => item.savedId !== fill.savedId);
+    state.schedules = state.schedules.filter((schedule) => schedule.fillSavedId !== fill.savedId);
+  }
   if (state.selectedFillId === fill.savedId) {
-    state.selectedFillId = state.fills[0]?.savedId || null;
+    const remaining = window.FitGenP0Ux?.activeFills
+      ? window.FitGenP0Ux.activeFills(state.fills)
+      : state.fills.filter((item) => item.lifecycle !== "archived");
+    state.selectedFillId = remaining[0]?.savedId || null;
   }
   if (state.expandedFillId === fill.savedId) {
     state.expandedFillId = null;
@@ -1644,6 +1694,9 @@ function normalizeFill(fill) {
     maxWaterMl: isPositiveNumber(fill?.maxWaterMl) ? Number(fill.maxWaterMl) : null,
     recommendedDoseAmount: Number(fill?.recommendedDoseAmount ?? fill?.doseAmount ?? fill?.doseMg ?? 0),
     savedAt: fill?.savedAt || new Date().toISOString(),
+    lifecycle: fill?.lifecycle === "archived" ? "archived" : "active",
+    depletionRemaining: Number.isFinite(Number(fill?.depletionRemaining)) ? Number(fill.depletionRemaining) : null,
+    depletionUnit: fill?.depletionUnit || unitLabel,
   };
 }
 
@@ -1665,6 +1718,7 @@ function normalizeSchedule(schedule) {
     lastTriggeredAt: schedule?.lastTriggeredAt || null,
     fillSnapshot,
     takenDates: Array.isArray(schedule?.takenDates) ? schedule.takenDates : [],
+    lifecycle: schedule?.lifecycle === "archived" ? "archived" : "active",
   };
 }
 
@@ -1720,6 +1774,16 @@ function isOccurrenceDueOnDate(schedule, dateKey) {
 }
 
 function markOccurrenceTaken(scheduleId, dateKey) {
+  if (window.FitGenP0UxBind?.adapter) {
+    const result = window.FitGenP0UxBind.adapter().markTaken(scheduleId, dateKey);
+    if (!result.ok) {
+      return result;
+    }
+    renderCurrentPeptides();
+    renderSchedules();
+    renderCalendar();
+    return result;
+  }
   state.schedules = state.schedules.map((s) => {
     if (s.id !== scheduleId) return s;
     const taken = Array.isArray(s.takenDates) ? s.takenDates : [];
@@ -1730,6 +1794,7 @@ function markOccurrenceTaken(scheduleId, dateKey) {
   renderCurrentPeptides();
   renderSchedules();
   renderCalendar();
+  return { ok: true, noop: false };
 }
 
 function getTakenOccurrences(schedule, fromDate) {

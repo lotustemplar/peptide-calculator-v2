@@ -76,8 +76,10 @@
                       <input id="vial-mg" name="vialMg" type="number" min="0.01" step="0.01" value="30">
                     </label>
                   </div>
+                  <p class="form-message warning wizard-field-error is-hidden" id="vial-mg-error" role="alert"></p>
                   <div class="wizard-nav">
-                    <button class="primary-button wizard-next-btn" type="button" data-next="2">Next →</button>
+                    <button class="secondary-button wizard-cancel-btn fitgen-target-44" type="button">Cancel</button>
+                    <button class="primary-button wizard-next-btn fitgen-target-44" type="button" data-next="2">Next →</button>
                   </div>
                 </div>
 
@@ -93,9 +95,11 @@
                   <div class="form-message" id="dose-plan-helper">
                     FitGen does not suggest therapeutic doses.
                   </div>
+                  <p class="form-message warning wizard-field-error is-hidden" id="dose-mg-error" role="alert"></p>
                   <div class="wizard-nav">
-                    <button class="secondary-button wizard-back-btn" type="button" data-back="1">← Back</button>
-                    <button class="primary-button wizard-next-btn" type="button" data-next="3">Next →</button>
+                    <button class="secondary-button wizard-cancel-btn fitgen-target-44" type="button">Cancel</button>
+                    <button class="secondary-button wizard-back-btn fitgen-target-44" type="button" data-back="1">← Back</button>
+                    <button class="primary-button wizard-next-btn fitgen-target-44" type="button" data-next="3">Next →</button>
                   </div>
                 </div>
 
@@ -115,10 +119,13 @@
                   <div class="form-message" id="water-warning">
                     Staying at or under 3 mL is a typical physical fit for many vials.
                   </div>
+                  <p class="form-message warning wizard-field-error is-hidden" id="syringe-max-error" role="alert"></p>
+                  <p class="form-message warning wizard-field-error is-hidden" id="max-water-ml-error" role="alert"></p>
                   <div class="wizard-nav">
-                    <button class="secondary-button wizard-back-btn" type="button" data-back="2">← Back</button>
-                    <button class="primary-button" type="submit">Generate</button>
-                    <button class="secondary-button" type="button" id="reset-form">Reset</button>
+                    <button class="secondary-button wizard-cancel-btn fitgen-target-44" type="button">Cancel</button>
+                    <button class="secondary-button wizard-back-btn fitgen-target-44" type="button" data-back="2">← Back</button>
+                    <button class="primary-button fitgen-target-44" type="submit">Generate</button>
+                    <button class="secondary-button fitgen-target-44" type="button" id="reset-form">Reset</button>
                   </div>
                 </div>
               </form>
@@ -335,17 +342,44 @@
             <input id="save-fill-start-date" name="saveFillStartDate" type="date">
           </label>
 
+          <p class="form-message warning is-hidden" id="save-fill-error" role="alert"></p>
           <div class="form-actions">
-            <button class="primary-button" type="submit">Save Peptide</button>
-            <button class="secondary-button" type="button" id="cancel-save-fill">Cancel</button>
+            <button class="primary-button fitgen-target-44" type="submit">Save Peptide</button>
+            <button class="secondary-button fitgen-target-44" type="button" id="cancel-save-fill">Cancel</button>
           </div>
         </form>
       </div>
     </div>
 
+    <div class="modal-shell is-hidden" id="fitgen-confirm-dialog" aria-hidden="true">
+      <div class="modal-backdrop" id="fitgen-confirm-backdrop"></div>
+      <div
+        class="modal-card fitgen-dialog-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fitgen-confirm-title"
+        id="fitgen-confirm-card"
+      >
+        <h2 id="fitgen-confirm-title" class="fitgen-dialog-title" tabindex="-1"></h2>
+        <div id="fitgen-confirm-body" class="fitgen-dialog-body"></div>
+        <p class="form-message warning is-hidden" id="fitgen-confirm-error" role="alert"></p>
+        <div class="form-actions fitgen-dialog-actions">
+          <button class="secondary-button fitgen-target-44" type="button" id="fitgen-confirm-secondary"></button>
+          <button class="primary-button fitgen-target-44" type="button" id="fitgen-confirm-primary"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fitgen-snackbar is-hidden" id="fitgen-undo-snackbar" role="status" aria-live="polite">
+      <span id="fitgen-undo-snackbar-text">Marked taken</span>
+      <button class="secondary-button fitgen-target-44" type="button" id="fitgen-undo-snackbar-btn">Undo</button>
+    </div>
+
     <script src="./config.example.js"></script>
     <script src="./config.js"></script>
     <script src="./peptide-list.js"></script>
+    <script src="./src/ux/p0-ux.browser.js"></script>
+    <script src="./p0-ux-bind.js"></script>
     <script src="./app.js"></script>
     <script src="./runtime-fixes.js"></script>
     <script src="./export-fix.js"></script>

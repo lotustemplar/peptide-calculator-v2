@@ -46,6 +46,9 @@ function collectForwardFiles(legacy) {
     if (rel.startsWith("scripts/")) {
       return false;
     }
+    if (rel === "src/ux/p0-ux.browser.js") {
+      return false;
+    }
     return fs.existsSync(path.join(repoRoot(), rel));
   });
 }

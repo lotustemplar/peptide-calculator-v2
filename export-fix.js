@@ -4,6 +4,7 @@
     schedules: "peptide-calculator-v2-schedules",
     medications: "peptide-calculator-v2-medications",
     userId: "peptide-calculator-v2-user-id",
+    occurrences: "peptide-calculator-v2-occurrences",
   };
 
   const exportButton = document.getElementById("export-data");
@@ -50,6 +51,7 @@
       medications: getArrayStateOrStorage(STORAGE_KEYS.medications, "medications"),
       fills: getArrayStateOrStorage(STORAGE_KEYS.fills, "fills"),
       schedules: getArrayStateOrStorage(STORAGE_KEYS.schedules, "schedules"),
+      occurrences: getArrayStateOrStorage(STORAGE_KEYS.occurrences, "occurrences"),
     };
   }
 

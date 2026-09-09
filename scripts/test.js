@@ -25,6 +25,10 @@ const jobs = [
     name: "P0.OCC FR-SCH-000 occurrence identity + atomic writer",
     file: path.join(__dirname, "occ", "occurrence-test.js"),
   },
+  {
+    name: "P0.UX wizard/cabinet confirms + Taken/Undo adapter",
+    file: path.join(__dirname, "ux", "ux-test.js"),
+  },
 ];
 
 let failed = false;
