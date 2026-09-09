@@ -27,6 +27,7 @@ Gate document for this table: this file + [STAGE2.md](./STAGE2.md). Hashing prov
 | Manrope / Space Grotesk font files or new Google Fonts URLs | **Deferred** — would add a new remote request; keep IBM Plex / Sora this PR |
 | `--green-on-light` `#1f6b12` | **Allowlisted exception** — neon `#8ff11d` fails contrast on light `--bg`; not a baseline hex |
 | Chrome-only before/after screenshots under `docs/evidence/stage-2-chrome/` | **Allowlisted** — header/tabbar crops; product chrome only; PNG metadata none |
+| Chrome-only before/after screenshots under `docs/evidence/stage-4-shell/` | **Allowlisted** — shell/nav, dirty Cancel, Taken/Undo; synthetic "Demo Vial A" only; no real PHI |
 | Baseline RAR `icon.png` / `icon-192.png` / `icon-512.png` / baseline `icon.svg` | **Not committed** — extract not in this workspace; bytes not guessed |
 | Wizard SVGs, `assets/{vial,syringe,dose}-step.png`, `assets/ui-reference.png` | **Not committed** — extract absent; existing GitHub `assets/Wizard-Step-*.png` left unwired-as-new |
 | `peptide-app-phone-qr.png` | **Still denied** |

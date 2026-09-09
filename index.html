@@ -24,28 +24,26 @@
   </head>
   <body data-theme="dark">
     <div class="app-shell">
-      <header class="app-header">
-        <div class="brand-lockup compact">
+      <header class="app-header app-hero">
+        <div class="brand-lockup">
           <div class="brand-mark">
             <img src="./icon.svg" alt="FitGen logo">
           </div>
-          <div class="brand-copy compact">
+          <div class="brand-copy">
             <span class="eyebrow">FitGen</span>
-            <h1>FitGen Peptide Calculator</h1>
+            <h1>Peptide Calculator</h1>
+            <p class="hero-lead">Measurement planner for fills, schedules, and cabinet inventory.</p>
           </div>
         </div>
         <button class="ghost-button compact-toggle" type="button" id="theme-toggle" hidden aria-hidden="true" tabindex="-1">Light Mode</button>
       </header>
 
-      <nav class="tabbar" aria-label="App sections">
-        <button class="tab-button is-active" type="button" data-view-target="calculator-view">Add Peptide</button>
-        <button class="tab-button" type="button" data-view-target="cabinet-view">Cabinet</button>
-        <button class="tab-button" type="button" data-view-target="schedule-view">Schedule</button>
-        <button class="tab-button" type="button" data-view-target="calendar-view">Calendar</button>
-      </nav>
-
       <main class="app-main">
         <section class="app-view is-active" id="calculator-view" data-view="calculator-view">
+          <header class="view-chrome">
+            <span class="section-kicker">Add</span>
+            <p class="view-chrome-title">Build a fill from a vial you already have</p>
+          </header>
           <div class="view-grid view-grid-fill">
             <section class="card calculator-card" id="calculator-card">
               <div class="section-heading compact">
@@ -150,6 +148,10 @@
         </section>
 
         <section class="app-view" id="cabinet-view" data-view="cabinet-view">
+          <header class="view-chrome">
+            <span class="section-kicker">Cabinet</span>
+            <p class="view-chrome-title">Saved fills, plans, and backup</p>
+          </header>
           <section class="card backup-card" id="backup-card">
             <div class="backup-header">
               <div>
@@ -217,6 +219,10 @@
         </section>
 
         <section class="app-view" id="schedule-view" data-view="schedule-view">
+          <header class="view-chrome">
+            <span class="section-kicker">Schedule</span>
+            <p class="view-chrome-title">Today's plans and taken status</p>
+          </header>
           <section class="card notif-setup-card" id="notif-setup-card">
             <span class="section-kicker">Native Reminders</span>
             <h2 class="notif-setup-title">Save reminders directly on this phone</h2>
@@ -298,6 +304,10 @@
         </section>
 
         <section class="app-view" id="calendar-view" data-view="calendar-view">
+          <header class="view-chrome">
+            <span class="section-kicker">Calendar</span>
+            <p class="view-chrome-title">Upcoming dose timeline</p>
+          </header>
           <section class="card full-height-card" id="calendar-card">
             <div class="section-heading compact">
               <span class="section-kicker">Calendar</span>
@@ -308,6 +318,33 @@
           </section>
         </section>
       </main>
+
+      <nav class="tabbar" aria-label="App sections">
+        <button class="tab-button is-active" type="button" data-view-target="calculator-view" aria-current="page">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          </span>
+          <span class="tab-label">Add</span>
+        </button>
+        <button class="tab-button" type="button" data-view-target="schedule-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
+          </span>
+          <span class="tab-label">Schedule</span>
+        </button>
+        <button class="tab-button" type="button" data-view-target="calendar-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+          </span>
+          <span class="tab-label">Calendar</span>
+        </button>
+        <button class="tab-button" type="button" data-view-target="cabinet-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M4 10h16M10 10v10"></path></svg>
+          </span>
+          <span class="tab-label">Cabinet</span>
+        </button>
+      </nav>
     </div>
 
     <div class="modal-shell is-hidden" id="save-fill-modal" aria-hidden="true">
