@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "exportedAt": "2026-03-01T12:00:00.000Z",
+  "fills": [
+    {
+      "savedId": "syn-fill-github-2",
+      "name": "Synthetic Gamma Peptide",
+      "vialAmount": 20,
+      "waterMl": 2,
+      "unitLabel": "mg",
+      "recommendedDoseAmount": 2,
+      "concentrationPerMl": 10,
+      "lifecycle": "active",
+      "depletionRemaining": 20,
+      "depletionUnit": "mg",
+      "savedAt": "2026-03-01T12:00:00.000Z"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "syn-sched-github-2",
+      "fillSavedId": "syn-fill-github-2",
+      "doseAmount": 2,
+      "doseMl": 0.2,
+      "unitLabel": "mg",
+      "intervalDays": 3,
+      "reminderTime": "08:00",
+      "startDate": "2026-03-02",
+      "takenDates": [],
+      "lifecycle": "active"
+    }
+  ],
+  "occurrences": [],
+  "medications": []
+}

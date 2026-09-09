@@ -16,7 +16,14 @@ export const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
-export type ConfirmKind = "discard-dirty" | "save-confirm" | "cabinet-delete";
+export type ConfirmKind =
+  | "discard-dirty"
+  | "save-confirm"
+  | "cabinet-delete"
+  | "export-warning"
+  | "import-preview"
+  | "import-replace"
+  | "import-restore";
 
 export interface ConfirmDialogModel {
   kind: ConfirmKind;

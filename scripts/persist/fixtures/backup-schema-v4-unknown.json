@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 4,
+  "exportedAt": "2026-07-01T12:00:00.000Z",
+  "entities": {
+    "fills": [
+      {
+        "id": "syn-fill-v4-1",
+        "displayName": "Synthetic Future Peptide",
+        "vialAmount": 9,
+        "desiredDose": 0.9,
+        "unit": "mg",
+        "waterMl": 2
+      }
+    ],
+    "schedules": [],
+    "occurrences": [],
+    "medications": [],
+    "settings": {
+      "timeZone": "UTC",
+      "theme": null,
+      "updatedAt": "2026-07-01T12:00:00.000Z"
+    }
+  }
+}

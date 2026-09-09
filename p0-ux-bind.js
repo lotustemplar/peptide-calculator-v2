@@ -558,6 +558,42 @@
       handleDeleteFill(event);
       handleTaken(event);
       handleUndo(event);
+      if (event.target.closest("#export-data")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        confirmExportWarning();
+        return;
+      }
+      if (event.target.closest("#restore-backup-btn")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        confirmRestore();
+        return;
+      }
+      if (event.target.closest("#fitgen-import-replace")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (confirmState && confirmState.preview) {
+          confirmReplaceAll(confirmState.preview);
+        }
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
+    "change",
+    (event) => {
+      if (!(event.target instanceof Element) || event.target.id !== "import-data-input") {
+        return;
+      }
+      event.stopImmediatePropagation();
+      const input = event.target;
+      const file = input.files && input.files[0];
+      input.value = "";
+      if (file) {
+        handleImportFile(file);
+      }
     },
     true
   );
@@ -595,6 +631,219 @@
     }
   });
 
+  function persistState() {
+    return ux.readGithubState(window.localStorage);
+  }
+
+  function setBackupStatus(message) {
+    const node = document.getElementById("backup-status");
+    if (node) {
+      node.textContent = message || "";
+    }
+  }
+
+  function refreshRestoreControl() {
+    const button = document.getElementById("restore-backup-btn");
+    if (!button || typeof ux.restoreAvailable !== "function") {
+      return;
+    }
+    const available = ux.restoreAvailable(window.localStorage, Date.now());
+    if (available) {
+      button.removeAttribute("hidden");
+      button.disabled = false;
+    } else {
+      button.setAttribute("hidden", "");
+      button.disabled = true;
+    }
+  }
+
+  function syncImportedState(next) {
+    if (typeof state !== "undefined") {
+      state.fills = next.fills;
+      state.schedules = next.schedules;
+      state.occurrences = next.occurrences;
+      state.medications = next.medications;
+    }
+    rerender();
+    refreshRestoreControl();
+  }
+
+  function filenameForExport() {
+    return `fitgen-backup-${new Date().toISOString().split("T")[0]}.json`;
+  }
+
+  function downloadJsonFile(json, filename) {
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function writeLocalExport(json, filename) {
+    if (window.FitGenNativeBackup && typeof window.FitGenNativeBackup.exportBackup === "function") {
+      try {
+        const raw = window.FitGenNativeBackup.exportBackup(json, filename);
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (parsed && parsed.ok !== false) {
+          return "native";
+        }
+      } catch {
+        // fall through to file save
+      }
+    }
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([json], filename, { type: "application/json" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "FitGen Backup" });
+          return "share";
+        }
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          return "cancelled";
+        }
+      }
+    }
+    downloadJsonFile(json, filename);
+    return "download";
+  }
+
+  function confirmExportWarning() {
+    openDialog({
+      kind: "export-warning",
+      title: ux.EXPORT_CONFIRM_TITLE,
+      bodyHtml: `<p>${ux.EXPORT_PLAINTEXT_WARNING}</p>`,
+      primaryLabel: ux.EXPORT_CONFIRM_PRIMARY,
+      secondaryLabel: ux.EXPORT_CONFIRM_CANCEL,
+      allowEscape: true,
+      onPrimary() {
+        const json = ux.exportDocumentJson(persistState(), new Date().toISOString());
+        writeLocalExport(json, filenameForExport())
+          .then((mode) => {
+            if (mode !== "cancelled") {
+              setBackupStatus("Plaintext JSON backup saved on this device.");
+            }
+            closeDialog(true);
+          })
+          .catch(() => {
+            setDialogError(ux.IMPORT_APPLY_ERROR);
+          });
+      },
+    });
+  }
+
+  function applyPreview(preview, policy, confirmed) {
+    try {
+      const result = ux.applyImport(window.localStorage, preview, policy, Date.now(), confirmed);
+      if (!result.ok) {
+        setDialogError(result.message || ux.IMPORT_APPLY_ERROR);
+        return false;
+      }
+      syncImportedState(persistState());
+      setBackupStatus(
+        result.noop ? "Nothing new to import." : policy === "replace-all" ? "Backup replaced." : "Backup imported (existing kept)."
+      );
+      closeDialog(true);
+      return true;
+    } catch {
+      setDialogError(ux.IMPORT_APPLY_ERROR);
+      return false;
+    }
+  }
+
+  function openImportPreview(preview) {
+    if (preview.applyBlocked) {
+      openDialog({
+        kind: "import-preview",
+        title: ux.IMPORT_PREVIEW_TITLE,
+        bodyHtml: ux.previewBodyHtml(preview),
+        primaryLabel: ux.IMPORT_CLOSE,
+        secondaryLabel: ux.IMPORT_CANCEL,
+        allowEscape: true,
+        onPrimary() {
+          closeDialog(true);
+        },
+      });
+      return;
+    }
+    openDialog({
+      kind: "import-preview",
+      title: ux.IMPORT_PREVIEW_TITLE,
+      bodyHtml: ux.previewBodyHtml(preview),
+      primaryLabel: ux.IMPORT_SKIP_PRIMARY,
+      secondaryLabel: ux.IMPORT_CANCEL,
+      allowEscape: true,
+      preview,
+      onPrimary() {
+        applyPreview(preview, "skip-existing", false);
+      },
+    });
+  }
+
+  function confirmReplaceAll(preview) {
+    const counts = preview.replaceAllWouldRemove;
+    openDialog({
+      kind: "import-replace",
+      title: ux.IMPORT_REPLACE_TITLE,
+      bodyHtml: `<p>This replaces ${counts.fills} fills, ${counts.schedules} schedules, ${counts.occurrences} occurrence records, and ${counts.medications} medications on this device. A recovery snapshot is saved first (168 hours). The rebuild envelope is not changed.</p>`,
+      primaryLabel: ux.IMPORT_REPLACE_PRIMARY,
+      secondaryLabel: ux.IMPORT_REPLACE_BACK,
+      allowEscape: true,
+      preview,
+      onPrimary() {
+        applyPreview(preview, "replace-all", true);
+      },
+    });
+  }
+
+  function handleImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      const preview = ux.previewImportFromStorage(window.localStorage, text, ux.resolveTimeZone());
+      openImportPreview(preview);
+    };
+    reader.onerror = () => {
+      setBackupStatus(ux.IMPORT_BLOCKED_CORRUPT);
+    };
+    reader.readAsText(file);
+  }
+
+  function confirmRestore() {
+    const inspect = ux.inspectRestore(window.localStorage, Date.now());
+    if (!inspect || inspect.ok !== true || !inspect.snapshot) {
+      setBackupStatus(inspect && inspect.message ? inspect.message : ux.RESTORE_UNAVAILABLE);
+      refreshRestoreControl();
+      return;
+    }
+    openDialog({
+      kind: "import-restore",
+      title: ux.RESTORE_TITLE,
+      bodyHtml: `<p>Restore the snapshot from ${inspect.snapshot.createdAt}. It expires at ${inspect.snapshot.expiresAt}. This does not change the rebuild envelope.</p>`,
+      primaryLabel: ux.RESTORE_PRIMARY,
+      secondaryLabel: ux.RESTORE_CANCEL,
+      allowEscape: true,
+      onPrimary() {
+        const result = ux.restoreFromSlot(window.localStorage, Date.now());
+        if (!result.ok) {
+          setDialogError(result.message || ux.RESTORE_CORRUPT);
+          return;
+        }
+        syncImportedState(persistState());
+        setBackupStatus("Previous backup restored.");
+        closeDialog(true);
+      },
+    });
+  }
+
+  refreshRestoreControl();
+
   window.FitGenP0UxBind = {
     adapter,
     isTaken(scheduleId, dateKey) {
@@ -606,5 +855,6 @@
     todayKey,
     activeFills: ux.activeFills,
     activeSchedules: ux.activeSchedules,
+    refreshRestoreControl,
   };
 })();
