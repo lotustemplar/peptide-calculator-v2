@@ -1409,6 +1409,14 @@ body[data-theme="light"] .empty-state {
   font-style: italic;
 }
 
+.med-load-unavailable {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .med-form input,
 .med-form select {
   flex: 1 1 120px;

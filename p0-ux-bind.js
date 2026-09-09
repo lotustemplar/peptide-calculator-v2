@@ -1065,7 +1065,11 @@
           <span class="med-meta">${escapeHtml(meta)}</span>
         </div>
         <div class="med-actions">
-          <button class="mini-button fitgen-target-44" type="button" data-action="load-med" data-id="${escapeHtml(med.id)}">${ux.MED_LOAD_LABEL}</button>
+          ${
+            ux.canLoadMedication(med)
+              ? `<button class="mini-button fitgen-target-44" type="button" data-action="load-med" data-id="${escapeHtml(med.id)}">${ux.MED_LOAD_LABEL}</button>`
+              : `<span class="med-load-unavailable" role="status">${escapeHtml(ux.MED_LOAD_UNAVAILABLE)}</span>`
+          }
           <button class="mini-button fitgen-target-44" type="button" data-action="edit-med" data-id="${escapeHtml(med.id)}">${ux.MED_EDIT_LABEL}</button>
           <button class="mini-button fitgen-target-44" type="button" data-action="delete-med" data-id="${escapeHtml(med.id)}">${ux.MED_REMOVE_LABEL}</button>
         </div>
@@ -1125,15 +1129,20 @@
   }
 
   function loadMedication(med) {
-    const unit = ux.optionalUnitLabel(med.unit);
-    const dose = ux.optionalPositiveNumber(med.dose);
     const unitEl = document.getElementById("dose-unit");
     const doseEl = document.getElementById("dose-mg");
-    if (unit && unitEl) {
-      unitEl.value = unit;
+    const result = ux.loadMedicationIntoCalculator(med, {
+      doseUnit: unitEl ? String(unitEl.value || "") : "",
+      doseAmount: doseEl ? String(doseEl.value || "") : "",
+    });
+    if (!result.applied) {
+      return;
     }
-    if (dose !== null && doseEl) {
-      doseEl.value = String(dose);
+    if (unitEl) {
+      unitEl.value = result.next.doseUnit;
+    }
+    if (doseEl) {
+      doseEl.value = result.next.doseAmount;
     }
     if (typeof window.updateUnitLabels === "function") {
       window.updateUnitLabels();
@@ -1247,5 +1256,7 @@
     syncTabAria,
     renderStage5Medications,
     refreshNameChipHosts,
+    loadMedication,
+    canLoadMedication: (med) => ux.canLoadMedication(med),
   };
 })();

@@ -2898,7 +2898,7 @@ function forbiddenChipFraming(copy) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_HELPER = exports.MED_EMPTY_LIST = exports.MED_LOAD_LABEL = exports.MED_REMOVE_LABEL = exports.MED_EDIT_LABEL = exports.MED_SAVE_NAME = exports.MED_NAME_LABEL = exports.CABINET_DELETE_CANCEL = exports.CABINET_DELETE_PRIMARY = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.FIELD_NUMBER_ERROR = exports.SAVE_CONFIRM_CANCEL = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_TITLE = exports.SAVE_DISCLAIMER = exports.DISCARD_CONFIRM = exports.DISCARD_KEEP = exports.DISCARD_TITLE = void 0;
+exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_HELPER = exports.MED_EMPTY_LIST = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_REMOVE_LABEL = exports.MED_EDIT_LABEL = exports.MED_SAVE_NAME = exports.MED_NAME_LABEL = exports.CABINET_DELETE_CANCEL = exports.CABINET_DELETE_PRIMARY = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.FIELD_NUMBER_ERROR = exports.SAVE_CONFIRM_CANCEL = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_TITLE = exports.SAVE_DISCLAIMER = exports.DISCARD_CONFIRM = exports.DISCARD_KEEP = exports.DISCARD_TITLE = void 0;
 exports.cabinetDeleteTitle = cabinetDeleteTitle;
 exports.cabinetDeleteBody = cabinetDeleteBody;
 exports.writerErrorMessage = writerErrorMessage;
@@ -2934,6 +2934,7 @@ exports.MED_SAVE_NAME = "Save name";
 exports.MED_EDIT_LABEL = "Edit name";
 exports.MED_REMOVE_LABEL = "Remove";
 exports.MED_LOAD_LABEL = "Load";
+exports.MED_LOAD_UNAVAILABLE = "No saved dose";
 exports.MED_EMPTY_LIST = "No peptide names saved yet.";
 exports.MED_NAME_HELPER = "Add or edit names. Unknown stays unknown until you enter one. FitGen does not suggest therapeutic names or doses.";
 exports.MED_NAME_CHIPS_LABEL = "Name choices";
@@ -3033,10 +3034,10 @@ function dialogAria(titleId) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = exports.formatStoredDose = exports.formatMedicationMeta = exports.collapseNameWhitespace = exports.classifyMedName = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = void 0;
-exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = void 0;
+exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = void 0;
+exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -3050,6 +3051,7 @@ Object.defineProperty(exports, "MARK_TAKEN_LABEL", { enumerable: true, get: func
 Object.defineProperty(exports, "MED_EDIT_LABEL", { enumerable: true, get: function () { return copy_1.MED_EDIT_LABEL; } });
 Object.defineProperty(exports, "MED_EMPTY_LIST", { enumerable: true, get: function () { return copy_1.MED_EMPTY_LIST; } });
 Object.defineProperty(exports, "MED_LOAD_LABEL", { enumerable: true, get: function () { return copy_1.MED_LOAD_LABEL; } });
+Object.defineProperty(exports, "MED_LOAD_UNAVAILABLE", { enumerable: true, get: function () { return copy_1.MED_LOAD_UNAVAILABLE; } });
 Object.defineProperty(exports, "MED_NAME_AUTOCOMPLETE_LABEL", { enumerable: true, get: function () { return copy_1.MED_NAME_AUTOCOMPLETE_LABEL; } });
 Object.defineProperty(exports, "MED_NAME_CHIPS_LABEL", { enumerable: true, get: function () { return copy_1.MED_NAME_CHIPS_LABEL; } });
 Object.defineProperty(exports, "MED_NAME_HELPER", { enumerable: true, get: function () { return copy_1.MED_NAME_HELPER; } });
@@ -3118,8 +3120,10 @@ Object.defineProperty(exports, "RECENT_NAME_LIMIT", { enumerable: true, get: fun
 Object.defineProperty(exports, "UNKNOWN_NAME_DISPLAY", { enumerable: true, get: function () { return med_names_1.UNKNOWN_NAME_DISPLAY; } });
 Object.defineProperty(exports, "UNKNOWN_NAME_STATE", { enumerable: true, get: function () { return med_names_1.UNKNOWN_NAME_STATE; } });
 Object.defineProperty(exports, "buildMedicationRecord", { enumerable: true, get: function () { return med_names_1.buildMedicationRecord; } });
+Object.defineProperty(exports, "canLoadMedication", { enumerable: true, get: function () { return med_names_1.canLoadMedication; } });
 Object.defineProperty(exports, "classifyMedName", { enumerable: true, get: function () { return med_names_1.classifyMedName; } });
 Object.defineProperty(exports, "collapseNameWhitespace", { enumerable: true, get: function () { return med_names_1.collapseNameWhitespace; } });
+Object.defineProperty(exports, "loadMedicationIntoCalculator", { enumerable: true, get: function () { return med_names_1.loadMedicationIntoCalculator; } });
 Object.defineProperty(exports, "formatMedicationMeta", { enumerable: true, get: function () { return med_names_1.formatMedicationMeta; } });
 Object.defineProperty(exports, "formatStoredDose", { enumerable: true, get: function () { return med_names_1.formatStoredDose; } });
 Object.defineProperty(exports, "formatStoredInterval", { enumerable: true, get: function () { return med_names_1.formatStoredInterval; } });
@@ -3129,6 +3133,7 @@ Object.defineProperty(exports, "medicationFromUnknown", { enumerable: true, get:
 Object.defineProperty(exports, "nameMatchKey", { enumerable: true, get: function () { return med_names_1.nameMatchKey; } });
 Object.defineProperty(exports, "optionalPositiveNumber", { enumerable: true, get: function () { return med_names_1.optionalPositiveNumber; } });
 Object.defineProperty(exports, "optionalUnitLabel", { enumerable: true, get: function () { return med_names_1.optionalUnitLabel; } });
+Object.defineProperty(exports, "planMedicationLoad", { enumerable: true, get: function () { return med_names_1.planMedicationLoad; } });
 Object.defineProperty(exports, "readMedNameState", { enumerable: true, get: function () { return med_names_1.readMedNameState; } });
 Object.defineProperty(exports, "recentUserNames", { enumerable: true, get: function () { return med_names_1.recentUserNames; } });
 Object.defineProperty(exports, "removeMedication", { enumerable: true, get: function () { return med_names_1.removeMedication; } });
@@ -3241,6 +3246,9 @@ exports.recentUserNames = recentUserNames;
 exports.matchNameSuggestions = matchNameSuggestions;
 exports.optionalPositiveNumber = optionalPositiveNumber;
 exports.optionalUnitLabel = optionalUnitLabel;
+exports.planMedicationLoad = planMedicationLoad;
+exports.canLoadMedication = canLoadMedication;
+exports.loadMedicationIntoCalculator = loadMedicationIntoCalculator;
 exports.formatStoredDose = formatStoredDose;
 exports.formatStoredInterval = formatStoredInterval;
 exports.formatMedicationMeta = formatMedicationMeta;
@@ -3377,6 +3385,35 @@ function optionalUnitLabel(value) {
     }
     const unit = value.trim();
     return unit || undefined;
+}
+function planMedicationLoad(row) {
+    const dose = optionalPositiveNumber(row?.dose);
+    const unit = optionalUnitLabel(row?.unit);
+    return {
+        canLoad: dose !== null && unit !== undefined,
+        dose,
+        unit,
+    };
+}
+function canLoadMedication(row) {
+    return planMedicationLoad(row).canLoad;
+}
+function loadMedicationIntoCalculator(row, current) {
+    const plan = planMedicationLoad(row);
+    const unchanged = {
+        doseUnit: current.doseUnit,
+        doseAmount: current.doseAmount,
+    };
+    if (!plan.canLoad || plan.dose === null || !plan.unit) {
+        return { applied: false, next: unchanged };
+    }
+    return {
+        applied: true,
+        next: {
+            doseUnit: plan.unit,
+            doseAmount: String(plan.dose),
+        },
+    };
 }
 function formatStoredDose(dose, unit) {
     const amount = optionalPositiveNumber(dose);

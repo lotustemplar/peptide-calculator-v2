@@ -54,6 +54,10 @@ const jobs = [
     file: path.join(__dirname, "ux", "stage5-meds-test.js"),
   },
   {
+    name: "Stage 5 Load gate — no stale calculator dose",
+    file: path.join(__dirname, "ux", "stage5-load-test.js"),
+  },
+  {
     name: "Stage 5 chip inventory + MED-FLAG freeze",
     file: path.join(__dirname, "ci", "stage5-chips-test.js"),
   },

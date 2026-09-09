@@ -11,6 +11,7 @@ export {
   MED_EDIT_LABEL,
   MED_EMPTY_LIST,
   MED_LOAD_LABEL,
+  MED_LOAD_UNAVAILABLE,
   MED_NAME_AUTOCOMPLETE_LABEL,
   MED_NAME_CHIPS_LABEL,
   MED_NAME_HELPER,
@@ -95,8 +96,10 @@ export {
   UNKNOWN_NAME_DISPLAY,
   UNKNOWN_NAME_STATE,
   buildMedicationRecord,
+  canLoadMedication,
   classifyMedName,
   collapseNameWhitespace,
+  loadMedicationIntoCalculator,
   formatMedicationMeta,
   formatStoredDose,
   formatStoredInterval,
@@ -106,12 +109,20 @@ export {
   nameMatchKey,
   optionalPositiveNumber,
   optionalUnitLabel,
+  planMedicationLoad,
   readMedNameState,
   recentUserNames,
   removeMedication,
   upsertMedication,
 } from "./med-names";
-export type { ClassifiedMedName, MedNameRecord, MedNameState } from "./med-names";
+export type {
+  CalculatorDoseFields,
+  ClassifiedMedName,
+  MedNameRecord,
+  MedNameState,
+  MedicationLoadPlan,
+  MedicationLoadResult,
+} from "./med-names";
 
 export {
   ENVELOPE_STORAGE_KEY,

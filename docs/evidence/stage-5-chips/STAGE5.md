@@ -60,6 +60,6 @@ Rollback = revert this PR. Both storage generations remain loadable (Stage 3 env
 1. Vial / BAC water / syringe / unit / dose / frequency chip families are **escalate-Serious** and were not implemented. A later stage must re-inventory before any of those ship.
 2. Characterized wizard starting values (`30` / `3` / `1` / `3` / `mg`) are unchanged and are not chips (Stage 7 / DEC-DEFAULTS).
 3. `peptide-list.js` and unloaded `fill-name-suggestions-fix.js` still exist. Stage 5 does not surface them.
-4. Optional stored dose/interval on older medication rows still display as user-entered values. Load applies a known stored dose only; unknown dose is not invented.
+4. Optional stored dose/interval on older medication rows still display as user-entered values. Load is omitted unless the row already stores a complete user-entered dose+unit. Name-only / Unknown rows show `No saved dose` and cannot navigate or reuse a stale calculator value.
 5. Save-fill interval / reminder time defaults (`7`, `09:00`) are pre-existing and out of Stage 5.
 6. `ui-polish-fix.js` still sets `medications-card` to `display: none`. Stage 5 overrides that with CSS `!important` plus a bind reveal so name CRUD is visible. The patch file is not retired.

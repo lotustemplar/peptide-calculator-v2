@@ -170,6 +170,61 @@ export function optionalUnitLabel(value: unknown): string | undefined {
   return unit || undefined;
 }
 
+export interface MedicationLoadPlan {
+  canLoad: boolean;
+  dose: number | null;
+  unit: string | undefined;
+}
+
+export interface CalculatorDoseFields {
+  doseUnit: string;
+  doseAmount: string;
+}
+
+export interface MedicationLoadResult {
+  applied: boolean;
+  next: CalculatorDoseFields;
+}
+
+/**
+ * Load is allowed only when the row already stores a complete user-entered
+ * calculator payload (positive dose + unit). Name-only / Unknown rows do not.
+ */
+export function planMedicationLoad(row: { dose?: unknown; unit?: unknown } | null | undefined): MedicationLoadPlan {
+  const dose = optionalPositiveNumber(row?.dose);
+  const unit = optionalUnitLabel(row?.unit);
+  return {
+    canLoad: dose !== null && unit !== undefined,
+    dose,
+    unit,
+  };
+}
+
+export function canLoadMedication(row: { dose?: unknown; unit?: unknown } | null | undefined): boolean {
+  return planMedicationLoad(row).canLoad;
+}
+
+export function loadMedicationIntoCalculator(
+  row: { dose?: unknown; unit?: unknown } | null | undefined,
+  current: CalculatorDoseFields
+): MedicationLoadResult {
+  const plan = planMedicationLoad(row);
+  const unchanged: CalculatorDoseFields = {
+    doseUnit: current.doseUnit,
+    doseAmount: current.doseAmount,
+  };
+  if (!plan.canLoad || plan.dose === null || !plan.unit) {
+    return { applied: false, next: unchanged };
+  }
+  return {
+    applied: true,
+    next: {
+      doseUnit: plan.unit,
+      doseAmount: String(plan.dose),
+    },
+  };
+}
+
 export function formatStoredDose(dose: unknown, unit?: unknown): string {
   const amount = optionalPositiveNumber(dose);
   if (amount === null) {

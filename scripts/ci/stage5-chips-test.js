@@ -133,6 +133,7 @@ function main() {
   assert(/selected: false/.test(chipsTs), "chip model hard-codes selected false");
   assert(/UNKNOWN_NAME_STATE/.test(medNames), "unknown-state lives in src/ux/med-names.ts");
   assert(/writeMedicationsFromUi/.test(bind), "bind uses Stage 3 writeMedicationsFromUi");
+  assert(/canLoadMedication/.test(bind), "bind gates Load on canLoadMedication");
   assert(!/PEPTIDE_LIST/.test(bind), "bind does not surface PEPTIDE_LIST chips");
   assert(!/recommended|best\b/i.test(html.match(/id="med-name-chips"[\s\S]{0,400}/)?.[0] || ""), "med chip host has no recommended/best copy");
   assert(!/stage5-.*-fix\.js/.test(html), "Stage 5 did not add a runtime *-fix.js");

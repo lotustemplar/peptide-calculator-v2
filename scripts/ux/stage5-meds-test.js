@@ -165,6 +165,8 @@ assert(/writeMedicationsFromUi/.test(bind), "bind writes medications through wri
 assert(/handleMedFormSubmit/.test(bind), "bind intercepts the medications form");
 assert(/revealMedicationsCard/.test(bind), "bind reveals the medications card hidden by ui-polish-fix");
 assert(/data-action="edit-med"/.test(bind), "bind renders edit-name control");
+assert(/canLoadMedication/.test(bind), "bind gates Load on a complete stored dose+unit");
+assert(/MED_LOAD_UNAVAILABLE/.test(bind), "bind omits Load when no saved dose exists");
 assert(/aria-pressed", "false"/.test(bind) || /aria-pressed", "false"/.test(bind), "bind never presses a chip");
 assert(/autocompleteIndex = -1/.test(bind), "autocomplete starts with no highlighted option");
 assert(!/PEPTIDE_LIST/.test(bind), "bind does not read the static PEPTIDE_LIST catalog");
