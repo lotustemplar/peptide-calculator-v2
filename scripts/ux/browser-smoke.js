@@ -200,7 +200,7 @@ async function main() {
     hidden: document.getElementById('vial-mg-error').classList.contains('is-hidden'),
     active: document.activeElement && document.activeElement.id
   })`);
-  if (!invalid.step1 || invalid.hidden || !/greater than 0/i.test(invalid.error)) {
+  if (!invalid.step1 || invalid.hidden || !/greater than 0/i.test(invalid.error) || invalid.active !== "vial-mg") {
     throw new Error(`invalid Next failed: ${JSON.stringify(invalid)}`);
   }
   await cdp.evaluate(`document.getElementById('vial-mg-error').scrollIntoView({ block: 'center' })`);
@@ -415,9 +415,23 @@ async function main() {
   `);
   await waitFor(cdp, "!document.getElementById('fitgen-confirm-dialog').classList.contains('is-hidden')");
   const focusStart = await cdp.evaluate(`document.activeElement && document.activeElement.id`);
+  const aria = await cdp.evaluate(`({
+    modal: document.getElementById('fitgen-confirm-dialog').getAttribute('aria-modal'),
+    role: document.getElementById('fitgen-confirm-dialog').getAttribute('role')
+  })`);
+  if (aria.modal !== "true" || aria.role !== "dialog") {
+    throw new Error(`dialog aria missing: ${JSON.stringify(aria)}`);
+  }
+  notes.push(`focus trap start=${focusStart} aria-modal=${aria.modal}`);
+  await shot("14-mobile-focus-trap");
   await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
   await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
   const focusAfterTab = await cdp.evaluate(`document.activeElement && document.activeElement.id`);
+  if (!focusAfterTab || focusAfterTab === focusStart) {
+    throw new Error(`Tab did not move dialog focus: start=${focusStart} tab=${focusAfterTab}`);
+  }
+  notes.push(`focus trap tab ${focusStart} → ${focusAfterTab}`);
+  await shot("14b-mobile-focus-tab");
   await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
   await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
   await wait(150);
@@ -428,8 +442,8 @@ async function main() {
   if (!afterEsc.hidden || afterEsc.vial !== "40") {
     throw new Error(`Escape/restore failed: ${JSON.stringify(afterEsc)}`);
   }
-  notes.push(`focus trap/Escape/restore (start=${focusStart} tab=${focusAfterTab})`);
-  await shot("14-mobile-escape-restore");
+  notes.push(`Escape/restore (vial stays 40)`);
+  await shot("14c-mobile-escape-restore");
 
   const report = { ok: true, notes, shots };
   fs.writeFileSync(path.join(OUT_DIR, "smoke-report.json"), JSON.stringify(report, null, 2));
