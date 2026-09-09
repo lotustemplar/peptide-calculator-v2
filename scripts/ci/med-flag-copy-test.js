@@ -100,7 +100,7 @@ function main() {
   );
   assertIncludes(
     runtime,
-    "Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.",
+    "Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)} from the constituted vial.",
     "runtime-fixes.js reminder body uses planned-dose framing"
   );
   assert(

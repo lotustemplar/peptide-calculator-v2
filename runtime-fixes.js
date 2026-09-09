@@ -599,7 +599,7 @@ async function syncRemindersToBackend() {
       } else if (nextReminder.fill) {
         fireBrowserNotification(
           `${nextReminder.fill.name} dose due`,
-          `Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)}.`
+          `Planned dose: ${formatDose(nextReminder.schedule.doseAmount, nextReminder.schedule.unitLabel)}. Measure ${formatDrawMl(nextReminder.schedule.doseMl)} from the constituted vial.`
         );
       }
       renderScheduleIndicator();
