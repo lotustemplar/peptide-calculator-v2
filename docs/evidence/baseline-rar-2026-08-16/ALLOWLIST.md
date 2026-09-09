@@ -15,7 +15,22 @@ Codex correction #4 (plan v1.1 §C4): hashing proves identity; it does **not** p
 | Screenshots of real user data | **Not committed** (none available in this workspace) |
 | Synthetic storage fixtures | **Not committed** in Stage 0 (optional later; no real PHI) |
 
+## Stage 2 (Issue #26) — committed after a fresh scan of the exact bytes
+
+Gate document for this table: this file + [STAGE2.md](./STAGE2.md). Hashing proves identity of the bytes scanned; it does **not** prove the missing Aug-16 extract rasters.
+
+| Item | Status |
+|------|--------|
+| In-repo FitGen `icon.svg` (already on `main`; re-scanned) | **Allowlisted** — no script/foreignObject; xmlns only |
+| `icon.png`, `icon-192.png`, `icon-512.png` rasterized from that SVG onto `--fitgen-canvas` `#f4efe6` | **Allowlisted** after PNG chunk/strings scan (no eXIf/tEXt/iTXt, no secrets/PHI/email) |
+| Behavior-neutral `:root` token slice in GitHub `styles.css` (type, FitGen install colors already in `manifest.webmanifest`, safe-area spacing) applied to header/tabbar/shell only | **Allowlisted** — not a port of baseline `styles.css` bytes (extract absent) |
+| Chrome-only before/after screenshots under `docs/evidence/stage-2-chrome/` | **Allowlisted** — header/tabbar crops; product chrome only; PNG metadata none |
+| Baseline RAR `icon.png` / `icon-192.png` / `icon-512.png` / baseline `icon.svg` | **Not committed** — extract not in this workspace; bytes not guessed |
+| Wizard SVGs, `assets/{vial,syringe,dose}-step.png`, `assets/ui-reference.png` | **Not committed** — extract absent; existing GitHub `assets/Wizard-Step-*.png` left unwired-as-new |
+| `peptide-app-phone-qr.png` | **Still denied** |
+
 ## May be proposed later (after a new scan of the exact bytes)
+
 
 These are candidates only. Listing them here is **not** authorization to add them.
 

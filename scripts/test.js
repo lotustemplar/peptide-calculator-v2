@@ -7,6 +7,7 @@
  * P0.1: dual-path calculator legacy-evidence goldens + FR-CALC-010 domain fixtures.
  * P0.6: MED-FLAG measurement/planner copy replacements on loaded surfaces.
  * P0.OCC: FR-SCH-000 occurrence identity + atomic Taken/Undo writer.
+ * Stage 2: chrome/assets allowlist checks (Issue #26).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -28,6 +29,10 @@ const jobs = [
   {
     name: "P0.UX wizard/cabinet confirms + Taken/Undo adapter",
     file: path.join(__dirname, "ux", "ux-test.js"),
+  },
+  {
+    name: "Stage 2 chrome/assets allowlist checks",
+    file: path.join(__dirname, "ci", "stage2-chrome-test.js"),
   },
 ];
 
