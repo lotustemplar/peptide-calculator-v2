@@ -509,6 +509,14 @@ async function main() {
       "Boolean(window.FitGenP0Ux && window.FitGenP0UxBind && document.getElementById('export-data'))",
       15000
     );
+    await cdp.evaluate(`
+      window.__shareCalls = 0;
+      navigator.share = function () {
+        window.__shareCalls += 1;
+        return Promise.reject(new Error("navigator.share must not be invoked"));
+      };
+      navigator.canShare = function () { return true; };
+    `);
     await cdp.evaluate(`(() => {
       const persisted = ${persisted};
       const keys = {
