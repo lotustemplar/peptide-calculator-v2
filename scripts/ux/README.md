@@ -10,4 +10,8 @@ Production logic lives in `src/ux/`. The browser IIFE is generated as
 npm test
 npm run ci
 node scripts/ux/emit-browser.js
+node scripts/ux/browser-smoke.js
 ```
+
+`browser-smoke.js` is optional real-Chrome CDP coverage (not part of `npm test`).
+It requires a running static server on port 4173 and system Google Chrome.
