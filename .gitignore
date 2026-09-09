@@ -3,3 +3,8 @@ dist/
 build/
 .DS_Store
 Thumbs.db
+
+# Recovery Stage 0 — unvetted baseline archives stay outside git
+*.rar
+/peptide-calculator-v2*.zip
+/baseline-compare/
