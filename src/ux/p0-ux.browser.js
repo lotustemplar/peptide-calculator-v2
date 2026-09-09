@@ -58,6 +58,7 @@
   modules["ux/index"] = { exports: {}, dirname: "ux" };
   modules["ux/persist"] = { exports: {}, dirname: "ux" };
   modules["ux/save-summary"] = { exports: {}, dirname: "ux" };
+  modules["ux/tab-aria"] = { exports: {}, dirname: "ux" };
   modules["ux/wizard"] = { exports: {}, dirname: "ux" };
 
   (function (exports, require, module, __dirname) {
@@ -2966,9 +2967,9 @@ function dialogAria(titleId) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = void 0;
+exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -3021,6 +3022,10 @@ Object.defineProperty(exports, "dialogAria", { enumerable: true, get: function (
 Object.defineProperty(exports, "nextFocusIndex", { enumerable: true, get: function () { return dialog_1.nextFocusIndex; } });
 Object.defineProperty(exports, "shouldCloseOnKey", { enumerable: true, get: function () { return dialog_1.shouldCloseOnKey; } });
 Object.defineProperty(exports, "trapTabKey", { enumerable: true, get: function () { return dialog_1.trapTabKey; } });
+var tab_aria_1 = require("./tab-aria");
+Object.defineProperty(exports, "currentActiveViewId", { enumerable: true, get: function () { return tab_aria_1.currentActiveViewId; } });
+Object.defineProperty(exports, "installTabAriaSync", { enumerable: true, get: function () { return tab_aria_1.installTabAriaSync; } });
+Object.defineProperty(exports, "syncTabAria", { enumerable: true, get: function () { return tab_aria_1.syncTabAria; } });
 var persist_1 = require("./persist");
 Object.defineProperty(exports, "ENVELOPE_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.ENVELOPE_STORAGE_KEY; } });
 Object.defineProperty(exports, "FILLS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.FILLS_STORAGE_KEY; } });
@@ -3395,6 +3400,81 @@ function summaryContainsForbiddenFraming(summary) {
     modules["ux/save-summary"].exports,
     createRequire(modules["ux/save-summary"].dirname),
     modules["ux/save-summary"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.currentActiveViewId = currentActiveViewId;
+exports.syncTabAria = syncTabAria;
+exports.installTabAriaSync = installTabAriaSync;
+function currentActiveViewId(root) {
+    const active = root.querySelector(".app-view.is-active");
+    return active && active.id ? String(active.id) : "";
+}
+function syncTabAria(root) {
+    const viewId = currentActiveViewId(root);
+    const tabs = root.querySelectorAll("[data-view-target]");
+    for (let index = 0; index < tabs.length; index += 1) {
+        const tab = tabs[index];
+        if (tab.getAttribute("data-view-target") === viewId) {
+            tab.setAttribute("aria-current", "page");
+        }
+        else {
+            tab.removeAttribute("aria-current");
+        }
+    }
+}
+function closestTab(node) {
+    if (!node) {
+        return null;
+    }
+    if (node.getAttribute("data-view-target")) {
+        return node;
+    }
+    if (typeof node.closest === "function") {
+        return node.closest("[data-view-target]");
+    }
+    return null;
+}
+function installTabAriaSync(root) {
+    syncTabAria(root);
+    const Observer = typeof MutationObserver === "function" ? MutationObserver : null;
+    const observer = Observer
+        ? new Observer(() => {
+            syncTabAria(root);
+        })
+        : null;
+    const views = root.querySelectorAll(".app-view");
+    if (observer) {
+        for (let index = 0; index < views.length; index += 1) {
+            observer.observe(views[index], { attributes: true, attributeFilter: ["class"] });
+        }
+    }
+    const onClick = (event) => {
+        if (!closestTab(event.target)) {
+            return;
+        }
+        const raf = typeof requestAnimationFrame === "function"
+            ? requestAnimationFrame
+            : (callback) => setTimeout(() => callback(0), 0);
+        raf(() => {
+            syncTabAria(root);
+        });
+    };
+    root.addEventListener("click", onClick, true);
+    return () => {
+        observer?.disconnect();
+        root.removeEventListener?.("click", onClick, true);
+    };
+}
+
+  })(
+    modules["ux/tab-aria"].exports,
+    createRequire(modules["ux/tab-aria"].dirname),
+    modules["ux/tab-aria"],
     "ux"
   );
 

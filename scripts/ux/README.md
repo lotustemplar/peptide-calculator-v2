@@ -23,3 +23,16 @@ node scripts/ux/stage2-chrome-capture.js --icons
 node scripts/ux/stage2-chrome-capture.js --shots before
 node scripts/ux/stage2-chrome-capture.js --shots after
 ```
+
+Issue #30 Stage 4 tab `aria-current` regression (part of `npm test`):
+
+```bash
+node scripts/ux/stage4-tab-aria-test.js
+```
+
+Issue #30 Stage 4 shell/nav evidence (also not part of `npm test`):
+
+```bash
+node scripts/ux/stage4-shell-capture.js --shots before
+node scripts/ux/stage4-shell-capture.js --shots after
+```

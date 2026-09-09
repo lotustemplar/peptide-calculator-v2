@@ -830,7 +830,13 @@ async function syncRemindersToBackend() {
       return;
     }
     const todayCount = getTodayDueSchedules().length;
-    scheduleButton.textContent = todayCount > 0 ? `Schedule (${todayCount})` : "Schedule";
+    const label = todayCount > 0 ? `Schedule (${todayCount})` : "Schedule";
+    const labelNode = scheduleButton.querySelector(".tab-label");
+    if (labelNode) {
+      labelNode.textContent = label;
+    } else {
+      scheduleButton.textContent = label;
+    }
     scheduleButton.classList.toggle("has-alert", todayCount > 0);
     maybeShowDailyBrowserPrompt(todayCount);
   }

@@ -309,6 +309,36 @@
     });
   }
 
+  function handleWizardBack(event) {
+    const button = event.target.closest(".wizard-back-btn");
+    if (!button) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const target = Number(button.dataset.back);
+    if (target) {
+      clearWizardErrors();
+      goToWizardStep(target);
+    }
+  }
+
+  function syncTabAria() {
+    if (typeof ux.syncTabAria === "function") {
+      ux.syncTabAria(document);
+      return;
+    }
+    const active = document.querySelector(".app-view.is-active");
+    const viewId = active ? active.id : "";
+    document.querySelectorAll("[data-view-target]").forEach((tab) => {
+      if (tab.getAttribute("data-view-target") === viewId) {
+        tab.setAttribute("aria-current", "page");
+      } else {
+        tab.removeAttribute("aria-current");
+      }
+    });
+  }
+
   function pendingSaveOption() {
     if (window.FitGenRuntimeBridge && window.FitGenRuntimeBridge.getPendingOption) {
       return window.FitGenRuntimeBridge.getPendingOption();
@@ -557,6 +587,7 @@
         return;
       }
       handleWizardNext(event);
+      handleWizardBack(event);
       handleWizardCancel(event);
       handleDeleteFill(event);
       handleTaken(event);
@@ -829,6 +860,11 @@
   }
 
   refreshRestoreControl();
+  if (typeof ux.installTabAriaSync === "function") {
+    ux.installTabAriaSync(document);
+  } else {
+    syncTabAria();
+  }
 
   window.FitGenP0UxBind = {
     adapter,
@@ -842,5 +878,6 @@
     activeFills: ux.activeFills,
     activeSchedules: ux.activeSchedules,
     refreshRestoreControl,
+    syncTabAria,
   };
 })();

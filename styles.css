@@ -100,22 +100,28 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   width: min(1120px, calc(100vw - 24px));
   margin: 0 auto;
-  padding: calc(14px + var(--space-safe-top)) var(--space-safe-right) calc(18px + var(--space-safe-bottom)) var(--space-safe-left);
+  padding:
+    calc(14px + var(--space-safe-top))
+    var(--space-safe-right)
+    calc(18px + var(--tabbar-height) + var(--tabbar-offset) + var(--space-safe-bottom))
+    var(--space-safe-left);
 }
 
-.app-header {
+.app-header,
+.app-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 18px 20px;
   border-radius: var(--radius-xl);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    linear-gradient(135deg, rgba(var(--green-rgb), 0.14), rgba(5, 8, 5, 0.4));
-  border: 1px solid rgba(var(--green-rgb), 0.14);
+    linear-gradient(135deg, rgba(var(--green-rgb), 0.18), rgba(5, 8, 5, 0.45));
+  border: 1px solid rgba(var(--green-rgb), 0.16);
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px);
 }
@@ -148,13 +154,18 @@ button {
 }
 
 .brand-copy h1 {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-family: var(--font-display);
-  font-size: clamp(1.1rem, 1.8vw, 1.55rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  line-height: 1.05;
 }
 
-.brand-copy.compact h1 {
-  line-height: 1.1;
+.hero-lead {
+  margin: 8px 0 0;
+  max-width: 36rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .eyebrow,
@@ -196,18 +207,23 @@ body[data-theme="light"] .eyebrow {
 }
 
 .tabbar {
-  position: relative;
+  position: fixed;
+  left: 50%;
+  bottom: var(--tabbar-offset);
+  z-index: 20;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  width: min(1120px, calc(100vw - 24px));
   min-height: var(--tabbar-height);
-  margin-top: 14px;
-  padding: 10px 12px;
+  margin: 0;
+  padding: 10px 12px calc(10px + var(--space-safe-bottom));
   border-radius: var(--radius-lg);
   background: var(--tabbar-glass);
   border: 1px solid rgba(var(--green-rgb), 0.14);
   box-shadow: var(--tabbar-glow);
   backdrop-filter: blur(16px);
+  transform: translateX(-50%);
 }
 
 .tabbar::before {
@@ -250,15 +266,39 @@ body[data-theme="light"] .eyebrow {
 }
 
 .tab-button {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 6px;
   background: transparent;
   color: var(--muted);
   font-weight: 600;
+}
+
+.tab-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.tab-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
 }
 
 .tab-button.is-active {
   background: linear-gradient(135deg, rgba(var(--green-rgb), 0.28), rgba(103, 212, 20, 0.14));
   color: var(--ink);
   box-shadow: inset 0 0 0 1px rgba(var(--green-rgb), 0.35);
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+body[data-theme="light"] .tab-button:focus-visible {
+  outline-color: var(--green-on-light);
 }
 
 body[data-theme="light"] .app-header {
@@ -290,6 +330,32 @@ body[data-theme="light"] .tab-button.is-active {
 
 .app-view.is-active {
   display: block;
+}
+
+.view-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 14px;
+  margin: 0 0 14px;
+}
+
+.view-chrome .section-kicker {
+  background: rgba(var(--green-rgb), 0.14);
+  color: var(--green);
+}
+
+.view-chrome-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+body[data-theme="light"] .view-chrome .section-kicker {
+  background: rgba(31, 107, 18, 0.12);
+  color: var(--green-on-light);
 }
 
 .view-grid {
@@ -1318,43 +1384,37 @@ body[data-theme="light"] .empty-state {
   .app-shell {
     width: min(100vw - 16px, 1120px);
     padding-top: 10px;
-    padding-bottom: calc(18px + var(--tabbar-offset) + var(--space-safe-bottom));
+    padding-bottom: calc(18px + var(--tabbar-height) + var(--tabbar-offset) + var(--space-safe-bottom));
   }
 
   .app-header,
+  .app-hero,
   .card,
   .modal-card {
     padding: 16px;
     border-radius: 22px;
   }
 
-  .app-header {
+  .app-header,
+  .app-hero {
     align-items: flex-start;
   }
 
   .tabbar {
-    position: sticky;
-    bottom: var(--tabbar-offset);
-    z-index: 10;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: auto;
-    order: 3;
-    backdrop-filter: blur(16px);
-    padding-bottom: calc(10px + var(--space-safe-bottom));
-  }
-
-  .app-main {
-    order: 2;
+    width: min(100vw - 16px, 1120px);
   }
 
   .brand-copy h1 {
-    font-size: 1.15rem;
+    font-size: 1.28rem;
+  }
+
+  .hero-lead {
+    font-size: 0.86rem;
   }
 
   .tab-button {
     min-height: 44px;
-    font-size: 0.88rem;
-    padding: 0 8px;
+    padding: 6px 4px;
   }
 
   .full-height-card {
@@ -1376,6 +1436,7 @@ body[data-theme="light"] .empty-state {
 
 .fitgen-dialog-card {
   width: min(520px, calc(100vw - 28px));
+  border: 1px solid rgba(var(--green-rgb), 0.2);
 }
 
 .fitgen-dialog-title {
@@ -1423,7 +1484,7 @@ body[data-theme="light"] .empty-state {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 84px;
+  bottom: calc(var(--tabbar-height) + var(--tabbar-offset) + 12px);
   z-index: 60;
   display: flex;
   align-items: center;
@@ -1432,8 +1493,8 @@ body[data-theme="light"] .empty-state {
   padding: 12px 14px;
   border-radius: 18px;
   background: var(--surface-strong);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--shadow);
+  border: 1px solid rgba(var(--green-rgb), 0.22);
+  box-shadow: var(--tabbar-glow), var(--shadow);
 }
 
 .wizard-nav {

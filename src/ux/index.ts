@@ -64,6 +64,9 @@ export {
 } from "./dialog";
 export type { ConfirmDialogModel, ConfirmKind } from "./dialog";
 
+export { currentActiveViewId, installTabAriaSync, syncTabAria } from "./tab-aria";
+export type { TabAriaClickEvent, TabAriaNode, TabAriaRoot } from "./tab-aria";
+
 export {
   ENVELOPE_STORAGE_KEY,
   FILLS_STORAGE_KEY,

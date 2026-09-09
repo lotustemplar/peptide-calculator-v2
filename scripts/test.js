@@ -9,6 +9,7 @@
  * P0.OCC: FR-SCH-000 occurrence identity + atomic Taken/Undo writer.
  * Stage 2: chrome/assets allowlist checks (Issue #26).
  * Stage 3: persist import safety for both data generations (Issue #28).
+ * Stage 4: shell/IA + existing P0 Back/Cancel/Taken/Undo chrome (Issue #30).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -38,6 +39,14 @@ const jobs = [
   {
     name: "Stage 3 persist import safety (both generations)",
     file: path.join(__dirname, "persist", "persist-test.js"),
+  },
+  {
+    name: "Stage 4 shell/IA + P0 chrome wiring",
+    file: path.join(__dirname, "ci", "stage4-shell-test.js"),
+  },
+  {
+    name: "Stage 4 tab aria-current restore/click/programmatic",
+    file: path.join(__dirname, "ux", "stage4-tab-aria-test.js"),
   },
 ];
 
