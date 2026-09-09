@@ -125,7 +125,7 @@ assertEqual(
 );
 assert(
   chips.every((chip) => !ux.forbiddenChipFraming(chip.copy)),
-  "shipped chip copy has no recommended/best/therapeutic framing"
+  "shipped chip copy has no forbidden MED-FLAG framing"
 );
 
 const storage = memoryStorage({});
