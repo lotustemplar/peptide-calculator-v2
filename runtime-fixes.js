@@ -312,8 +312,23 @@ async function syncRemindersToBackend() {
   }
 
   function persistState(fills, schedules) {
-    writeFills(fills);
-    writeSchedules(schedules);
+    if (window.FitGenP0Ux && typeof window.FitGenP0Ux.commitAppState === "function") {
+      const occurrences =
+        (typeof state !== "undefined" && Array.isArray(state.occurrences) && state.occurrences) ||
+        window.FitGenP0Ux.readAppState(window.localStorage).occurrences;
+      window.FitGenP0Ux.commitAppState(window.localStorage, {
+        fills,
+        schedules,
+        occurrences,
+      });
+      if (typeof state !== "undefined") {
+        state.fills = fills;
+        state.schedules = schedules;
+      }
+    } else {
+      writeFills(fills);
+      writeSchedules(schedules);
+    }
     renderAllFallback();
     syncRemindersToBackend();
   }
@@ -723,15 +738,27 @@ async function syncRemindersToBackend() {
     return null;
   }
 
+  function isTakenToday(schedule) {
+    if (window.FitGenP0UxBind?.isTaken) {
+      return window.FitGenP0UxBind.isTaken(schedule.id, todayKey());
+    }
+    return normalizeSchedule(schedule).takenDates.includes(todayKey());
+  }
+
+  function isActiveRecord(item) {
+    return item?.lifecycle !== "archived";
+  }
+
   function getTodayDueSchedules() {
-    const fills = readFills();
+    const fills = readFills().filter(isActiveRecord);
     return readSchedules()
       .map(normalizeSchedule)
+      .filter(isActiveRecord)
       .map((schedule) => {
         const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
         return { schedule, fill };
       })
-      .filter(({ schedule, fill }) => fill && isScheduleDueOnDate(schedule, todayKey()) && !schedule.takenDates.includes(todayKey()));
+      .filter(({ schedule, fill }) => fill && isActiveRecord(fill) && isScheduleDueOnDate(schedule, todayKey()) && !isTakenToday(schedule));
   }
 
   function maybeShowDailyBrowserPrompt(count) {
@@ -809,8 +836,8 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackCabinet() {
-    const fills = readFills();
-    const schedules = readSchedules().map(normalizeSchedule);
+    const fills = readFills().filter(isActiveRecord);
+    const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
 
     if (!fills.length) {
       currentPeptides.innerHTML = '<div class="empty-state">No fills saved yet.</div>';
@@ -864,8 +891,8 @@ async function syncRemindersToBackend() {
             </div>
           ` : '<div class="empty-state">No schedule saved for this fill yet.</div>'}
           <div class="cabinet-actions-fallback">
-            <button class="mini-button" type="button" data-action="edit-fill" data-id="${fill.savedId}">Edit</button>
-            <button class="mini-button" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
+            <button class="mini-button fitgen-target-44" type="button" data-action="edit-fill" data-id="${fill.savedId}">Edit</button>
+            <button class="mini-button fitgen-target-44" type="button" data-action="delete-fill" data-id="${fill.savedId}">Delete</button>
           </div>
         </article>
       `;
@@ -880,8 +907,8 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackSchedules() {
-    const fills = readFills();
-    const schedules = readSchedules().map(normalizeSchedule);
+    const fills = readFills().filter(isActiveRecord);
+    const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
     const todayDue = getTodayDueSchedules();
 
     const bannerHtml = todayDue.length
@@ -894,7 +921,7 @@ async function syncRemindersToBackend() {
               <h4>${escapeHtml(fill.name)}</h4>
               <p>${formatDose(schedule.doseAmount, schedule.unitLabel)} at ${escapeHtml(schedule.reminderTime)}. Draw ${formatDrawMl(schedule.doseMl)}.</p>
               <div class="today-schedule-actions">
-                <button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}">Mark as taken</button>
+                <button class="primary-button fitgen-target-44" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${todayKey()}">Mark as taken</button>
               </div>
             </div>
           `).join("")}
@@ -906,8 +933,11 @@ async function syncRemindersToBackend() {
       ? schedules.map((schedule) => {
           const fill = fills.find((item) => item.savedId === schedule.fillSavedId) || schedule.fillSnapshot;
           const nextDueKey = getNextDue(schedule);
-          const takenToday = schedule.takenDates.includes(todayKey());
+          const takenToday = isTakenToday(schedule);
           const dueToday = isScheduleDueOnDate(schedule, todayKey());
+          const canUndo = window.FitGenP0UxBind?.canUndo
+            ? window.FitGenP0UxBind.canUndo(schedule.id, todayKey())
+            : false;
           return `
             <article class="list-card">
               <div class="list-topline">
@@ -929,7 +959,12 @@ async function syncRemindersToBackend() {
               </div>
               ${dueToday && !takenToday ? `
                 <div class="today-schedule-actions">
-                  <button class="primary-button" type="button" data-action="mark-taken" data-id="${schedule.id}">Mark as taken</button>
+                  <button class="primary-button fitgen-target-44" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${todayKey()}">Mark as taken</button>
+                </div>
+              ` : ""}
+              ${takenToday && canUndo ? `
+                <div class="today-schedule-actions">
+                  <button class="secondary-button fitgen-target-44" type="button" data-action="undo-taken" data-id="${schedule.id}" data-date="${todayKey()}">Undo</button>
                 </div>
               ` : ""}
             </article>
@@ -945,8 +980,8 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackCalendar() {
-    const fills = readFills();
-    const schedules = readSchedules().map(normalizeSchedule);
+    const fills = readFills().filter(isActiveRecord);
+    const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
     if (!schedules.length) {
       calendarList.innerHTML = '<div class="empty-state">No calendar items yet.</div>';
       return;
@@ -988,6 +1023,11 @@ async function syncRemindersToBackend() {
   }
 
   function markScheduleTaken(scheduleId) {
+    if (window.FitGenP0UxBind?.adapter) {
+      window.FitGenP0UxBind.adapter().markTaken(scheduleId, todayKey());
+      renderAllFallback();
+      return;
+    }
     const schedules = readSchedules().map(normalizeSchedule);
     const index = schedules.findIndex((schedule) => schedule.id === scheduleId);
     if (index === -1) {
@@ -1083,7 +1123,7 @@ async function syncRemindersToBackend() {
     if (!fill) {
       return;
     }
-    if (!window.confirm(`Delete ${fill.name} and its linked schedule?`)) {
+    if (window.FitGenP0UxBind) {
       return;
     }
     const fills = readFills().filter((item) => item.savedId !== fillId);
@@ -1202,7 +1242,11 @@ async function syncRemindersToBackend() {
     const startDate = saveFillStartDate.value;
 
     if (!Number.isInteger(intervalDays) || intervalDays < 1 || !reminderTime || !startDate) {
-      window.alert("Please enter a valid schedule before saving the fill.");
+      const saveError = document.getElementById("save-fill-error");
+      if (saveError) {
+        saveError.textContent = "Enter a valid interval, time, and start date.";
+        saveError.classList.remove("is-hidden");
+      }
       return;
     }
 
@@ -1283,4 +1327,22 @@ async function syncRemindersToBackend() {
   const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
   setActiveViewFallback(savedView);
   window.setTimeout(() => renderFallbackOptions(false), 50);
+
+  window.FitGenRuntimeBridge = {
+    persistAndRender(fills, schedules) {
+      persistState(fills, schedules);
+    },
+    renderAll() {
+      renderAllFallback();
+    },
+    setView(viewId) {
+      setActiveViewFallback(viewId);
+    },
+    closeSaveModal() {
+      closeFallbackSaveFillModal();
+    },
+    getPendingOption() {
+      return pendingOption;
+    },
+  };
 })();

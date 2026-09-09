@@ -316,6 +316,11 @@ select:focus {
   box-shadow: 0 0 0 4px rgba(63, 214, 197, 0.12);
 }
 
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
 .primary-button {
   padding: 0 18px;
   color: #041015;
@@ -351,13 +356,14 @@ body[data-theme="light"] .compact-toggle {
 }
 
 .mini-button {
-  min-height: 38px;
+  min-height: 44px;
+  min-width: 44px;
   font-size: 0.92rem;
 }
 
 .icon-button {
-  min-width: 42px;
-  min-height: 42px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   font-size: 1.25rem;
 }
@@ -1272,7 +1278,7 @@ body[data-theme="light"] .empty-state {
   }
 
   .tab-button {
-    min-height: 42px;
+    min-height: 44px;
     font-size: 0.88rem;
     padding: 0 8px;
   }
@@ -1280,4 +1286,82 @@ body[data-theme="light"] .empty-state {
   .full-height-card {
     min-height: auto;
   }
+}
+
+/* ── P0.UX confirms, snackbar, 44px targets ──────────────── */
+.fitgen-target-44 {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.wizard-field-error.is-hidden,
+.form-message.is-hidden,
+.fitgen-snackbar.is-hidden {
+  display: none;
+}
+
+.fitgen-dialog-card {
+  width: min(520px, calc(100vw - 28px));
+}
+
+.fitgen-dialog-title {
+  margin: 0 0 12px;
+  font-family: "Sora", sans-serif;
+  font-size: 1.15rem;
+}
+
+.fitgen-dialog-body {
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+
+.fitgen-dialog-body dl {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.fitgen-dialog-body dt {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fitgen-dialog-body dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.fitgen-dialog-disclaimer {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.fitgen-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.fitgen-snackbar {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 84px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--surface-strong);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow);
+}
+
+.wizard-nav {
+  flex-wrap: wrap;
 }

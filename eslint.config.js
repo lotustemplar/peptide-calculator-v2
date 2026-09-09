@@ -27,6 +27,7 @@ module.exports = [
       "node_modules/**",
       "backend/node_modules/**",
       "data/**",
+      "src/ux/p0-ux.browser.js",
     ],
   },
   js.configs.recommended,

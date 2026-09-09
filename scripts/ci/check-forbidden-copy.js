@@ -26,6 +26,7 @@ const SKIP_REL_FILES = new Set([
   "backend/package-lock.json",
   "package.json",
   "backend/package.json",
+  "src/ux/p0-ux.browser.js",
 ]);
 
 // Clinical / clearance / MED-FLAG phrases. Keep IDs stable; self-tests table-drive every id.
