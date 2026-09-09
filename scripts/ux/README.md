@@ -15,3 +15,11 @@ node scripts/ux/browser-smoke.js
 
 `browser-smoke.js` is optional real-Chrome CDP coverage (not part of `npm test`).
 It requires a running static server on port 4173 and system Google Chrome.
+
+Issue #26 chrome capture / PNG raster (also not part of `npm test`):
+
+```bash
+node scripts/ux/stage2-chrome-capture.js --icons
+node scripts/ux/stage2-chrome-capture.js --shots before
+node scripts/ux/stage2-chrome-capture.js --shots after
+```

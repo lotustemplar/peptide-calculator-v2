@@ -15,7 +15,24 @@ Codex correction #4 (plan v1.1 §C4): hashing proves identity; it does **not** p
 | Screenshots of real user data | **Not committed** (none available in this workspace) |
 | Synthetic storage fixtures | **Not committed** in Stage 0 (optional later; no real PHI) |
 
+## Stage 2 (Issue #26) — committed after a fresh scan of the exact bytes
+
+Gate document for this table: this file + [STAGE2.md](./STAGE2.md). Hashing proves identity of the bytes scanned; it does **not** prove the missing Aug-16 extract rasters.
+
+| Item | Status |
+|------|--------|
+| In-repo FitGen `icon.svg` (already on `main`; re-scanned) | **Allowlisted** — no script/foreignObject; xmlns only |
+| `icon.png`, `icon-192.png`, `icon-512.png` rasterized from that SVG onto baseline `--bg` `#030504` | **Allowlisted** after PNG chunk/strings scan. **Not** Aug-16 extract bytes |
+| Behavior-neutral `:root` chrome tokens copied from Codex-verified baseline `styles.css` (`62ca986b…`): `--bg` `#030504`, `--bg-deep` `#050805`, `--green` `#8ff11d`, `--green-strong` `#67d414`, radii 34/26/18/14, tabbar 94px / 24px offset / glass / neon line+glow | **Allowlisted as a token slice** — full baseline `styles.css` still **not** committed |
+| Manrope / Space Grotesk font files or new Google Fonts URLs | **Deferred** — would add a new remote request; keep IBM Plex / Sora this PR |
+| `--green-on-light` `#1f6b12` | **Allowlisted exception** — neon `#8ff11d` fails contrast on light `--bg`; not a baseline hex |
+| Chrome-only before/after screenshots under `docs/evidence/stage-2-chrome/` | **Allowlisted** — header/tabbar crops; product chrome only; PNG metadata none |
+| Baseline RAR `icon.png` / `icon-192.png` / `icon-512.png` / baseline `icon.svg` | **Not committed** — extract not in this workspace; bytes not guessed |
+| Wizard SVGs, `assets/{vial,syringe,dose}-step.png`, `assets/ui-reference.png` | **Not committed** — extract absent; existing GitHub `assets/Wizard-Step-*.png` left unwired-as-new |
+| `peptide-app-phone-qr.png` | **Still denied** |
+
 ## May be proposed later (after a new scan of the exact bytes)
+
 
 These are candidates only. Listing them here is **not** authorization to add them.
 

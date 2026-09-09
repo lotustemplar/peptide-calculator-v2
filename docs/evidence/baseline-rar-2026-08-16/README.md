@@ -37,6 +37,8 @@ Filipe’s Stage-1 direction (2026-09-08) treats that rebuild’s recognizable U
 
 **Default:** no baseline `app.js`, `index.html`, `styles.css`, stub patches, archive temps, binaries, or source-archive / ZIP-derivative bytes.
 
+Issue #26 later added [STAGE2.md](./STAGE2.md) (scan notes + chrome screenshot index) without placing extract bytes in git.
+
 ## GitHub `main` tip frozen here
 
 `270e0eb8730fb95b650e911463affddae223d655` — merge of PR #21 (P0.UX Taken/Undo). Do not re-merge PR #21. Draft PR #23 (Capacitor / Issue #18) remains a separate paused packaging track.
