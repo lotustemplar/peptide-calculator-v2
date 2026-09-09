@@ -624,6 +624,7 @@ async function main() {
       throw new Error("navigator.share invoked during live medication add");
     }
     notes.push("existing envelope: add medication remains in envelope and export");
+    await cdp.evaluate(`document.getElementById("medications-card").scrollIntoView({ block: "start" })`);
     await shot("12-after-live-med-add");
 
     await cdp.evaluate(`document.getElementById("export-data").click()`);
@@ -684,6 +685,7 @@ async function main() {
       throw new Error("Taken-style commit after delete replaced fills");
     }
     notes.push("delete then Taken/save commit kept the medication deleted");
+    await cdp.evaluate(`document.getElementById("medications-card").scrollIntoView({ block: "start" })`);
     await shot("13-after-live-med-delete-taken");
 
     const report = { ok: true, notes, shots, shareInvoked: 0 };
