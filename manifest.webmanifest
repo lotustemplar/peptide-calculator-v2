@@ -4,8 +4,8 @@
   "description": "FitGen peptide fill planning, saved presets, and recurring dose reminders.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4efe6",
-  "theme_color": "#0f766e",
+  "background_color": "#030504",
+  "theme_color": "#030504",
   "icons": [
     {
       "src": "./icon.svg",

@@ -110,8 +110,8 @@ function wait(ms) {
 function iconTileHtml(size) {
   return `<!doctype html>
 <html><head><meta charset="utf-8"></head>
-<body style="margin:0;background:#f4efe6">
-  <div id="tile" style="width:${size}px;height:${size}px;display:grid;place-items:center;background:#f4efe6">
+<body style="margin:0;background:#030504">
+  <div id="tile" style="width:${size}px;height:${size}px;display:grid;place-items:center;background:#030504">
     <img src="/icon.svg" width="${Math.round(size * 0.86)}" height="${Math.round(size * 0.86)}" alt="">
   </div>
 </body></html>`;

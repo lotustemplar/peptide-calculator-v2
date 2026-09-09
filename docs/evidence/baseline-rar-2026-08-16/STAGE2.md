@@ -8,58 +8,80 @@
 
 This is **chrome/assets only**. Calculator form/results, formulas, persistence, reminders, Mark missed, packaging, and Stage 3+ are untouched.
 
-## What this workspace could scan
+Codex `[REVIEW]` on `1967d08` required chrome tokens from the independently verified baseline `styles.css` (SHA-256 `62ca986be8884628025f0e020edb1ab6810e3def4c7f89e63d2a2af4baedee3a`), **not** from `manifest.webmanifest`.
 
-The Aug-16 baseline extract remains **outside git** (Stage 0). This environment has no RAR/ZIP/extract, so baseline `icon.png` / wizard SVGs / `ui-reference.png` / baseline `styles.css` `:root` bytes were **not** available to copy.
+## Exact baseline-derived tokens (this PR)
 
-Stage 2 therefore scanned **exact bytes proposed for this PR**, not the missing archive members.
+Source: Codex-verified slice of baseline `styles.css` (file itself **not** committed). Applied as a GitHub `:root` chrome slice.
 
-## Proposed product files (fresh scan 2026-09-09)
+| Token | Value | Used on |
+|-------|-------|---------|
+| `--bg` | `#030504` | page chrome, theme-color, PWA background/theme |
+| `--bg-deep` | `#050805` | page gradient end |
+| `--green` | `#8ff11d` | dark-chrome accent (header/tabbar/eyebrow) |
+| `--green-strong` | `#67d414` | dark-chrome gradient mix |
+| `--radius-xl/lg/md/sm` | `34 / 26 / 18 / 14 px` | global radius tokens (header/tabbar use them) |
+| `--tabbar-height` | `94px` | `.tabbar` |
+| `--tabbar-offset` | `24px` | mobile sticky tabbar `bottom` |
+| `--tabbar-glass` | dark `rgba(5, 8, 5, 0.78)` | tabbar fill |
+| `--tabbar-line` / `--tabbar-glow` | neon line + glow | tabbar `::before` |
+
+`--teal` / calculator form, result cards, and wizard Next remain on the existing GitHub teal path so option generation/ranking/copy are unchanged.
+
+## Deferred / unavailable (explicitly not this PR)
+
+| Item | Status |
+|------|--------|
+| Baseline UI font **Manrope** | **Deferred.** Loading it would add a new Google Fonts request. `--font-ui` stays `"IBM Plex Sans", sans-serif`. Documented in `styles.css`. |
+| Baseline display font **Space Grotesk** | **Deferred.** Same reason. `--font-display` stays `"Sora", sans-serif`. |
+| Baseline `icon.png` / `icon-192.png` / `icon-512.png` / baseline `icon.svg` bytes | **Unavailable.** Extract still outside git. Regenerated PNGs are **not** baseline copies. |
+| Wizard SVGs, `assets/{vial,syringe,dose}-step.png`, `assets/ui-reference.png` | **Unavailable / not wired.** Existing GitHub `assets/Wizard-Step-*.png` unchanged. |
+| Full baseline `styles.css` as executable source | **Denied** (ALLOWLIST). |
+
+## Contrast / readability
+
+WCAG relative-luminance ratios computed in `scripts/ci/stage2-chrome-test.js`:
+
+| Pair | Ratio | Gate |
+|------|------:|------|
+| `#8ff11d` on dark `--bg` `#030504` | 14.37 | **Use** on dark chrome (AA text 4.5) |
+| `#8ff11d` on light `--bg` `#eff2ec` | 1.26 | **Do not use** as light-chrome text/line-on-page |
+| `--green-on-light` `#1f6b12` on light `--bg` | 5.86 | **Exception** for light header/tabbar/eyebrow |
+
+Light theme is still hidden in product UI; the exception is encoded so a later enable does not paint unreadable neon on cream.
+
+## Proposed product files (fresh scan 2026-09-09, post-Codex correction)
 
 | Path | Bytes | SHA-256 | Scan notes |
 |------|------:|---------|------------|
 | `icon.svg` (already on `main`) | 2791 | `b80e068d1878f23bf13640d58f08e9264f4391d88afac5cfbeb7eda2570b978c` | SVG xmlns only; no `<script>`, `foreignObject`, emails, secrets, PHI markers |
-| `icon.png` | 14642 | `1a9e9223989e2c658498069c4df3b09612ba92b7a74c560fb0293826b43cfeef` | PNG IHDR/IDAT/IEND only; no eXIf/tEXt/iTXt; 192×192 RGB |
-| `icon-192.png` | 14642 | `1a9e9223989e2c658498069c4df3b09612ba92b7a74c560fb0293826b43cfeef` | Same bytes as `icon.png` (192×192 raster) |
-| `icon-512.png` | 62523 | `ad6931d4cc21a86227299ab86acda4f5e930556fa8aa22a55456b50b7964cfb0` | PNG IHDR/IDAT/IEND only; no eXIf/tEXt/iTXt; 512×512 RGB |
-| `styles.css` token/chrome slice | 26517 | `55f5e965f72f4bc74a072cb84e8b46a5192f7aa7aaa9c8f2538bfadc13a3c7dd` | No secrets/PHI; no calculator builders. **Not** baseline `62ca986b…` |
-| `index.html` head chrome only | 19867 | `8b1691849f524e53d089c9ad844b352a418309e77cc4ac25b5245221f9cb97c3` | Calculator form IDs unchanged; `viewport-fit=cover` + PNG icon links |
-| `manifest.webmanifest` | 761 | `6bfdf1094430af3a7a1d44cc1335ea78ea992f1d48cedd33d56312fbd4f42f88` | Adds PNG icon entries; theme/background colors already on `main` |
+| `icon.png` | 14471 | `034e7d929e81ceed217ec91a5a191451f0839cfe0cf6b672d5c729dd93c69a8e` | PNG IHDR/IDAT/IEND only; 192×192 on `#030504` |
+| `icon-192.png` | 14471 | `034e7d929e81ceed217ec91a5a191451f0839cfe0cf6b672d5c729dd93c69a8e` | Same bytes as `icon.png` |
+| `icon-512.png` | 60653 | `c583652045730c3e556bc7eae27d785c563618fdddbddc14369c2a8c47c86200` | PNG IHDR/IDAT/IEND only; 512×512 on `#030504` |
+| `styles.css` chrome token slice | 28200 | `406a02e5134b550036c8353bcb70a2d17b05d1c57522139b5b93934bb9292dde` | **Not** baseline file `62ca986b…` |
+| `index.html` head chrome | 19867 | `df950fd43f96bdf6e9a35d76e56e4f528abf86adf0d1da17e75464d7452bcdd0` | Form IDs unchanged; `theme-color` `#030504` |
+| `manifest.webmanifest` | — | `7bfe6b655fa435385252f1acd67e4fee953ac54820d3022b943ff626cd7b4066` | PNG icons; background/theme `#030504` (aligned to baseline `--bg`, not a token *source*) |
 
-**Provenance of new PNGs:** rasterized in this workspace from the already-published FitGen shield `icon.svg` (git `46f8092`, Filipe) onto canvas `#f4efe6` (`manifest.webmanifest` `background_color` / `--fitgen-canvas`). These are **not** claimed to be byte-identical to the Aug-16 baseline PNG set.
+**Provenance of PNGs:** rasterized from in-repo FitGen `icon.svg` (git `46f8092`) onto baseline `--bg` `#030504`. **Not** byte-identical to the Aug-16 extract icon set.
 
-**License:** project-owned mark already in this public repository. No third-party raster from the extract was copied.
-
-**Denied / not present:** `peptide-app-phone-qr.png`; baseline wizard SVGs; `assets/{vial,syringe,dose}-step.png`; `assets/ui-reference.png`; baseline `app.js` / full `styles.css`; any `*-fix.js`.
-
-## Token slice (behavior-neutral)
-
-Added to GitHub `:root` (did **not** replace the file with baseline `styles.css`):
-
-- Type: `--font-ui`, `--font-display` (existing IBM Plex Sans / Sora)
-- FitGen install colors already in the PWA manifest: `--fitgen-canvas` `#f4efe6`, `--fitgen-theme` `#0f766e`, `--fitgen-theme-rgb`
-- Spacing: `--space-1`…`--space-4`; `--space-safe-*` from `env(safe-area-inset-*)` (plan v1.1 §6 note that baseline CSS handled safe-area)
-
-**Applied only to chrome:** `.app-shell` padding, `.app-header` / `.brand-mark` / `.tab-button.is-active` teal, mobile `.tabbar` safe-area, `.brand-copy h1` display font. Dark default theme is unchanged (a full light-theme flip would be a major visual redesign / Serious).
-
-**Not applied:** calculator form layout, result cards, option ranking, copy, persistence keys.
+**Denied / not present:** `peptide-app-phone-qr.png`; baseline wizard rasters; baseline `app.js` / full `styles.css`; any `*-fix.js`.
 
 ## Screenshots
 
-Header and tabbar crops only (no real user data; default product chrome). PNG metadata chunks: none.
+Header and tabbar crops. **Before** = `origin/main` chrome. **After** = this correction (baseline neon/dark glass). PNG metadata: none.
 
-| Before (`main`) | After (this PR) |
-|-----------------|-----------------|
+| Before (`main`) | After (baseline chrome tokens) |
+|-----------------|--------------------------------|
 | `docs/evidence/stage-2-chrome/before-desktop-header.png` | `docs/evidence/stage-2-chrome/after-desktop-header.png` |
 | `docs/evidence/stage-2-chrome/before-desktop-tabbar.png` | `docs/evidence/stage-2-chrome/after-desktop-tabbar.png` |
 | `docs/evidence/stage-2-chrome/before-mobile-header.png` | `docs/evidence/stage-2-chrome/after-mobile-header.png` |
 | `docs/evidence/stage-2-chrome/before-mobile-tabbar.png` | `docs/evidence/stage-2-chrome/after-mobile-tabbar.png` |
 
-Visible delta: header/tabbar active chrome shifts from cyan/violet toward FitGen theme teal `#0f766e`. PNG icons appear in the PWA/favicon set; in-page header still uses `icon.svg`.
+Visible delta: GitHub cyan/violet chrome → baseline `#030504` glass + neon `#8ff11d` tabbar line/active pill. Wizard Next may still appear as adjacent teal in mobile tabbar crops; that control was not restyled (calculator form).
 
 ## Golden / behavior freeze
 
-These SHA-256 values are unchanged vs `main` @ `9ee70a8` / cores frozen at `270e0eb`:
+Unchanged vs `main` @ `9ee70a8` / cores frozen at `270e0eb`:
 
 | Path | SHA-256 |
 |------|---------|
@@ -72,11 +94,11 @@ No storage keys added or renamed. Rollback = revert this PR.
 
 ## Residual risks (Codex)
 
-1. Baseline extract rasters were not available; PNG set is derived from in-repo SVG, not a byte-port of the Aug-16 icon files.
-2. Baseline `:root` hex values were not available; tokens come from in-repo manifest + documented safe-area note, not from hashing baseline `styles.css`.
-3. Existing GitHub `assets/Wizard-Step-*.png` are unchanged and remain the live wizard images (not newly wired).
-4. Mobile tabbar crops can include adjacent wizard Cancel/Next pixels because those controls sit next to the sticky tabbar; those controls were not restyled in this PR.
+1. PNG set is derived from in-repo SVG on `#030504`, not a byte-port of Aug-16 icons.
+2. Typography remains IBM Plex / Sora until a later scanned/vendored Manrope + Space Grotesk slice.
+3. Existing GitHub `assets/Wizard-Step-*.png` remain the live wizard images.
+4. Mobile tabbar crops can include adjacent wizard Cancel/Next pixels (teal); those controls were not restyled.
 
 ## Tests
 
-`scripts/ci/stage2-chrome-test.js` is invoked by `npm test` / `npm run ci`. Optional screenshot/raster helper: `node scripts/ux/stage2-chrome-capture.js` (not part of CI).
+`scripts/ci/stage2-chrome-test.js` (token values, contrast gates, deferred fonts, goldens). Optional: `node scripts/ux/stage2-chrome-capture.js`.
