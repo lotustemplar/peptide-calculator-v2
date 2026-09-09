@@ -11,7 +11,7 @@ Codex correction #4 (plan v1.1 §C4): hashing proves identity; it does **not** p
 | This evidence directory (README, HASHES, ALLOWLIST, SCAN, DIFF_SUMMARY) | **Allowlisted now** — sanitized text only |
 | Baseline `app.js` / `index.html` / `styles.css` | **Not committed** |
 | Baseline stub `*-fix.js` | **Not committed** |
-| Full RAR or complete extract | **Not committed** |
+| Full source archive, RAR/ZIP (or other) derivative, or complete extract | **Not committed** |
 | Screenshots of real user data | **Not committed** (none available in this workspace) |
 | Synthetic storage fixtures | **Not committed** in Stage 0 (optional later; no real PHI) |
 
@@ -31,7 +31,7 @@ These are candidates only. Listing them here is **not** authorization to add the
 
 | Class | Why |
 |-------|-----|
-| Full RAR / complete baseline dump | Codex #4; public-repo publication risk |
+| Full source archive or repackaged derivative (RAR/ZIP/etc.) and complete extract | Codex #4; public-repo publication risk — format does not change the deny |
 | Baseline `app.js`, `index.html`, full `styles.css` as executable app source | Dual-generation overwrite risk; not needed as fixtures for Stage 0. Prefer hashes + this text pack. Exception only if a later issue explicitly needs **non-executable** fixtures **after** a documented secrets/PHI/license scan. |
 | Baseline stub `runtime-fixes.js`, `export-fix.js`, `mobile-polish-fix.js`, `native-backup-fix.js`, `ui-polish-fix.js` | Orphans that only set `window.__fitgen*` flags; committing them as product files is misleading |
 | `archive/_tmp_app.js`, `archive/_tmp_index.html` | Older-lineage debris, not the rebuild identity |

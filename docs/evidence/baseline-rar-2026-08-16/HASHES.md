@@ -48,4 +48,6 @@ sha256sum app.js index.html styles.css runtime-fixes.js
 git rev-parse HEAD   # expect 270e0eb8730fb95b650e911463affddae223d655 on the frozen main tip
 ```
 
-Do not copy those baseline files into this repository to re-verify.
+Do not copy those baseline files, the source archive, or any RAR/ZIP (or other) derivative into this repository to re-verify.
+
+Codex independently re-hashed the extracted cores during review of `26f1abf` and confirmed the four baseline SHA-256 values and sizes in the table above. Those digest values are unchanged in this correction.
