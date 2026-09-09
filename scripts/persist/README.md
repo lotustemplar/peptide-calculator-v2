@@ -27,6 +27,12 @@ node scripts/persist/persist-test.js
 - Local-only export (native file bridge or download; no `navigator.share`)
 - Round-trip; unknown-field passthrough; **no baseline key mutate/delete**
 
+Optional real-Chrome smoke (not part of `npm test`):
+
+```bash
+node scripts/persist/browser-smoke.js
+```
+
 ## Out of scope
 
 - Stage 4 nav shell
