@@ -514,6 +514,146 @@ function seedGithub(storage, state) {
     persist.PERSIST_WRITE_STEPS.includes(persist.MEDICATIONS_STORAGE_KEY),
     "medications key is a persist write step"
   );
+  assert(typeof persist.attachMedicationsWriteBridge === "function", "persist index exports medications write bridge");
+  assert(typeof ux.attachMedicationsWriteBridge === "function", "ux index exports medications write bridge");
+  assert(generated.includes("attachMedicationsWriteBridge"), "browser bundle includes medications write bridge");
+  const bind = readText(path.join(repoRoot(), "p0-ux-bind.js"));
+  assert(/attachMedicationsWriteBridge\s*\(\s*window\.localStorage\s*\)/.test(bind), "bind attaches medications write bridge");
+})();
+
+function sampleLiveMed(id, name) {
+  return { id, name, dose: 1, unit: "mg", interval: 7 };
+}
+
+(function liveAddAfterEnvelopeSurvivesReloadAndExport() {
+  const storage = memoryStorage({});
+  const first = persist.previewImport({
+    text: loadFixture("github-backup-v1.json"),
+    current: persist.readGithubState(storage),
+    timeZone: TZ,
+    nowIso: NOW_ISO,
+  });
+  persist.applyImport(storage, first, "skip-existing", NOW_MS, false);
+  persist.attachMedicationsWriteBridge(storage);
+  const added = sampleLiveMed("syn-med-live-add", "Synthetic Gamma Plan");
+  const nextList = [...persist.readGithubState(storage).medications, added];
+  storage.setItem(persist.MEDICATIONS_STORAGE_KEY, JSON.stringify(nextList));
+  const live = persist.readGithubState(storage);
+  assert(
+    live.medications.some((row) => row.id === "syn-med-live-add"),
+    "live add after envelope is readable from canonical state"
+  );
+  const envelope = JSON.parse(storage.getItem(persist.ENVELOPE_STORAGE_KEY));
+  assert(
+    envelope.medications.some((row) => row.id === "syn-med-live-add"),
+    "live add is stored in the envelope, not only the mirror"
+  );
+  assertEqual(live.fills[0].savedId, "syn-fill-github-1", "live add keeps current fills");
+  const exported = persist.exportDocumentJson(live, NOW_ISO);
+  assert(/syn-med-live-add/.test(exported) && /Synthetic Gamma Plan/.test(exported), "export includes the live-added medication");
+  const reloaded = memoryStorage({ ...storage.data });
+  assert(
+    persist.readGithubState(reloaded).medications.some((row) => row.id === "syn-med-live-add"),
+    "reload after live add still has the medication"
+  );
+  assertEqual(ux.readMedications(reloaded).some((row) => row.id === "syn-med-live-add"), true, "readMedications prefers envelope after reload");
+})();
+
+(function liveDeleteThenTakenKeepsDeletion() {
+  const storage = memoryStorage({});
+  const first = persist.previewImport({
+    text: loadFixture("github-backup-v1.json"),
+    current: persist.readGithubState(storage),
+    timeZone: TZ,
+    nowIso: NOW_ISO,
+  });
+  persist.applyImport(storage, first, "skip-existing", NOW_MS, false);
+  persist.attachMedicationsWriteBridge(storage);
+  assertEqual(persist.readGithubState(storage).medications[0].id, "syn-med-github-1", "imported medication present before delete");
+  storage.setItem(persist.MEDICATIONS_STORAGE_KEY, JSON.stringify([]));
+  assertEqual(ux.readMedications(storage).length, 0, "bridge delete clears envelope medications");
+  const persisted = persist.readGithubState(storage);
+  ux.commitAppState(storage, {
+    fills: persisted.fills,
+    schedules: persisted.schedules,
+    occurrences: persisted.occurrences,
+  });
+  assertEqual(persist.readGithubState(storage).medications.length, 0, "Taken-style commit does not resurrect a deleted medication");
+  const envelope = JSON.parse(storage.getItem(persist.ENVELOPE_STORAGE_KEY));
+  assertEqual(envelope.medications.length, 0, "empty envelope medications is a real delete-all");
+  assertEqual(persisted.fills[0].savedId, "syn-fill-github-1", "delete keeps current fills");
+})();
+
+(function medicationsMirrorFailureAfterCanonicalReload() {
+  const storage = memoryStorage({});
+  const first = persist.previewImport({
+    text: loadFixture("github-backup-v1.json"),
+    current: persist.readGithubState(storage),
+    timeZone: TZ,
+    nowIso: NOW_ISO,
+  });
+  persist.applyImport(storage, first, "skip-existing", NOW_MS, false);
+  persist.attachMedicationsWriteBridge(storage);
+  const failing = memoryStorage({ ...storage.data }, { failAlways: [persist.MEDICATIONS_STORAGE_KEY] });
+  persist.attachMedicationsWriteBridge(failing);
+  const added = sampleLiveMed("syn-med-live-mirror-fail", "Synthetic Delta Plan");
+  const nextList = [...persist.readGithubState(failing).medications, added];
+  failing.setItem(persist.MEDICATIONS_STORAGE_KEY, JSON.stringify(nextList));
+  const envelope = JSON.parse(failing.getItem(persist.ENVELOPE_STORAGE_KEY));
+  assert(
+    envelope.medications.some((row) => row.id === "syn-med-live-mirror-fail"),
+    "canonical envelope has the live add even when the medications mirror throws"
+  );
+  const reloaded = memoryStorage({ ...failing.data });
+  assert(
+    persist.readGithubState(reloaded).medications.some((row) => row.id === "syn-med-live-mirror-fail"),
+    "reload after medications-mirror failure reads canonical envelope state"
+  );
+  assert(
+    persist.readGithubState(reloaded).fills[0].savedId === "syn-fill-github-1",
+    "reload after medications-mirror failure keeps current fills"
+  );
+})();
+
+(function preStage3MirrorHydratesOnceWithoutOverridingCanonical() {
+  const medA = sampleLiveMed("syn-med-legacy-a", "Synthetic Legacy Alpha Plan");
+  const medB = sampleLiveMed("syn-med-canonical-b", "Synthetic Canonical Beta Plan");
+  const storage = memoryStorage({
+    [persist.MEDICATIONS_STORAGE_KEY]: JSON.stringify([medA]),
+  });
+  ux.hydrateLegacyMirrors(storage);
+  const afterFirst = JSON.parse(storage.getItem(persist.ENVELOPE_STORAGE_KEY));
+  assertEqual(afterFirst.medications[0].id, "syn-med-legacy-a", "mirror-only data hydrates into the envelope once");
+  ux.commitAppState(storage, ux.readAppState(storage), { medications: [medB] });
+  assertEqual(ux.readMedications(storage)[0].id, "syn-med-canonical-b", "canonical edit replaces hydrated medications");
+  ux.hydrateLegacyMirrors(storage);
+  assertEqual(ux.readMedications(storage)[0].id, "syn-med-canonical-b", "second hydrate does not restore the pre-Stage-3 mirror");
+  storage.data[persist.MEDICATIONS_STORAGE_KEY] = JSON.stringify([medA]);
+  assertEqual(ux.readMedications(storage)[0].id, "syn-med-canonical-b", "stale mirror does not override envelope medications");
+  ux.hydrateLegacyMirrors(storage);
+  assertEqual(ux.readMedications(storage)[0].id, "syn-med-canonical-b", "hydrate after a stale mirror still prefers canonical");
+  assertEqual(
+    JSON.parse(storage.getItem(persist.MEDICATIONS_STORAGE_KEY))[0].id,
+    "syn-med-canonical-b",
+    "hydrate rewrites the stale mirror from the envelope"
+  );
+
+  const stage2 = memoryStorage({});
+  stage2.setItem(
+    persist.ENVELOPE_STORAGE_KEY,
+    JSON.stringify({ version: 1, fills: [], schedules: [], occurrences: [] })
+  );
+  stage2.data[persist.MEDICATIONS_STORAGE_KEY] = JSON.stringify([medA]);
+  ux.hydrateLegacyMirrors(stage2);
+  assertEqual(
+    JSON.parse(stage2.getItem(persist.ENVELOPE_STORAGE_KEY)).medications[0].id,
+    "syn-med-legacy-a",
+    "Stage-2 envelope without medications field hydrates the mirror once"
+  );
+  ux.commitAppState(stage2, ux.readAppState(stage2), { medications: [medB] });
+  stage2.data[persist.MEDICATIONS_STORAGE_KEY] = JSON.stringify([medA]);
+  ux.hydrateLegacyMirrors(stage2);
+  assertEqual(ux.readMedications(stage2)[0].id, "syn-med-canonical-b", "later canonical medications are not overridden by the old mirror");
 })();
 
 (function htmlHasRestoreControl() {

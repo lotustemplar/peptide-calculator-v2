@@ -1125,7 +1125,7 @@ function restoreFromSlot(storage, nowMs) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.githubStateEqual = exports.applyDuplicatePolicy = exports.previewBodyHtml = exports.previewImport = exports.parseBackupText = exports.mapGithubDocument = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.mapBaselineDocument = exports.mapToV3 = exports.schemaClassFromVersion = exports.detectGeneration = exports.classifyBackup = exports.importClassLabel = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_COEXIST_NOTE = exports.SCHEDULES_STORAGE_KEY = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.PROTECTED_WRITE_KEYS = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.BASELINE_ENVELOPE_KEY = exports.BACKUP_SCHEMA_V3 = void 0;
-exports.writeRecoverySlot = exports.restoreAvailable = exports.readRecoverySlot = exports.isRecoveryExpired = exports.isQuotaError = exports.inspectRestore = exports.guardedSetItem = exports.guardedRemoveItem = exports.buildRecoverySnapshot = exports.readGithubState = exports.readBaselineRaw = exports.commitGithubState = exports.cloneGithubState = exports.baselineKeyUnchanged = exports.restoreFromSlot = exports.previewImportFromStorage = exports.applyImport = exports.writeLocalBackup = exports.exportDocumentJson = exports.chooseLocalExportMode = exports.buildExportDocument = void 0;
+exports.writeRecoverySlot = exports.restoreAvailable = exports.readRecoverySlot = exports.isRecoveryExpired = exports.isQuotaError = exports.inspectRestore = exports.guardedSetItem = exports.guardedRemoveItem = exports.buildRecoverySnapshot = exports.writeMedicationsFromUi = exports.readMedications = exports.hydrateLegacyMirrors = exports.attachMedicationsWriteBridge = exports.readGithubState = exports.readBaselineRaw = exports.commitGithubState = exports.cloneGithubState = exports.baselineKeyUnchanged = exports.restoreFromSlot = exports.previewImportFromStorage = exports.applyImport = exports.writeLocalBackup = exports.exportDocumentJson = exports.chooseLocalExportMode = exports.buildExportDocument = void 0;
 var keys_1 = require("./keys");
 Object.defineProperty(exports, "BACKUP_SCHEMA_V3", { enumerable: true, get: function () { return keys_1.BACKUP_SCHEMA_V3; } });
 Object.defineProperty(exports, "BASELINE_ENVELOPE_KEY", { enumerable: true, get: function () { return keys_1.BASELINE_ENVELOPE_KEY; } });
@@ -1199,6 +1199,11 @@ Object.defineProperty(exports, "cloneGithubState", { enumerable: true, get: func
 Object.defineProperty(exports, "commitGithubState", { enumerable: true, get: function () { return writer_1.commitGithubState; } });
 Object.defineProperty(exports, "readBaselineRaw", { enumerable: true, get: function () { return writer_1.readBaselineRaw; } });
 Object.defineProperty(exports, "readGithubState", { enumerable: true, get: function () { return writer_1.readGithubState; } });
+var persist_1 = require("../ux/persist");
+Object.defineProperty(exports, "attachMedicationsWriteBridge", { enumerable: true, get: function () { return persist_1.attachMedicationsWriteBridge; } });
+Object.defineProperty(exports, "hydrateLegacyMirrors", { enumerable: true, get: function () { return persist_1.hydrateLegacyMirrors; } });
+Object.defineProperty(exports, "readMedications", { enumerable: true, get: function () { return persist_1.readMedications; } });
+Object.defineProperty(exports, "writeMedicationsFromUi", { enumerable: true, get: function () { return persist_1.writeMedicationsFromUi; } });
 var recovery_1 = require("./recovery");
 Object.defineProperty(exports, "buildRecoverySnapshot", { enumerable: true, get: function () { return recovery_1.buildRecoverySnapshot; } });
 Object.defineProperty(exports, "guardedRemoveItem", { enumerable: true, get: function () { return recovery_1.guardedRemoveItem; } });
@@ -2962,8 +2967,8 @@ function dialogAria(titleId) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = void 0;
+exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -3023,6 +3028,7 @@ Object.defineProperty(exports, "MEDICATIONS_STORAGE_KEY", { enumerable: true, ge
 Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.OCCURRENCES_STORAGE_KEY; } });
 Object.defineProperty(exports, "PERSIST_WRITE_STEPS", { enumerable: true, get: function () { return persist_1.PERSIST_WRITE_STEPS; } });
 Object.defineProperty(exports, "SCHEDULES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.SCHEDULES_STORAGE_KEY; } });
+Object.defineProperty(exports, "attachMedicationsWriteBridge", { enumerable: true, get: function () { return persist_1.attachMedicationsWriteBridge; } });
 Object.defineProperty(exports, "cloneAppState", { enumerable: true, get: function () { return persist_1.cloneAppState; } });
 Object.defineProperty(exports, "commitAppState", { enumerable: true, get: function () { return persist_1.commitAppState; } });
 Object.defineProperty(exports, "emptyAppState", { enumerable: true, get: function () { return persist_1.emptyAppState; } });
@@ -3030,6 +3036,7 @@ Object.defineProperty(exports, "hydrateLegacyMirrors", { enumerable: true, get: 
 Object.defineProperty(exports, "readAppState", { enumerable: true, get: function () { return persist_1.readAppState; } });
 Object.defineProperty(exports, "readMedications", { enumerable: true, get: function () { return persist_1.readMedications; } });
 Object.defineProperty(exports, "snapshotEqual", { enumerable: true, get: function () { return persist_1.snapshotEqual; } });
+Object.defineProperty(exports, "writeMedicationsFromUi", { enumerable: true, get: function () { return persist_1.writeMedicationsFromUi; } });
 var adapter_1 = require("./adapter");
 Object.defineProperty(exports, "applyWriterSnapshot", { enumerable: true, get: function () { return adapter_1.applyWriterSnapshot; } });
 Object.defineProperty(exports, "canUndoTaken", { enumerable: true, get: function () { return adapter_1.canUndoTaken; } });
@@ -3116,6 +3123,8 @@ exports.cloneAppState = cloneAppState;
 exports.readAppState = readAppState;
 exports.readMedications = readMedications;
 exports.commitAppState = commitAppState;
+exports.writeMedicationsFromUi = writeMedicationsFromUi;
+exports.attachMedicationsWriteBridge = attachMedicationsWriteBridge;
 exports.hydrateLegacyMirrors = hydrateLegacyMirrors;
 exports.snapshotEqual = snapshotEqual;
 const adapter_1 = require("./adapter");
@@ -3195,6 +3204,8 @@ function readMedications(storage) {
     }
     return parseJsonArray(storage.getItem(exports.MEDICATIONS_STORAGE_KEY));
 }
+let persistWriteDepth = 0;
+const bridgedStorages = new WeakSet();
 function writeMirror(storage, key, value) {
     try {
         storage.setItem(key, value);
@@ -3202,54 +3213,109 @@ function writeMirror(storage, key, value) {
     catch {
     }
 }
+function beginPersistWrite() {
+    persistWriteDepth += 1;
+}
+function endPersistWrite() {
+    persistWriteDepth -= 1;
+}
+function parseMedicationsWrite(value) {
+    try {
+        const parsed = JSON.parse(String(value));
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch {
+        return [];
+    }
+}
 function commitAppState(storage, next, options) {
-    const medications = options && Object.prototype.hasOwnProperty.call(options, "medications")
-        ? Array.isArray(options.medications)
-            ? options.medications
-            : []
-        : readMedications(storage);
-    const envelope = {
-        version: 1,
-        fills: next.fills,
-        schedules: next.schedules,
-        occurrences: next.occurrences,
-        medications,
+    beginPersistWrite();
+    try {
+        const medications = options && Object.prototype.hasOwnProperty.call(options, "medications")
+            ? Array.isArray(options.medications)
+                ? options.medications
+                : []
+            : readMedications(storage);
+        const envelope = {
+            version: 1,
+            fills: next.fills,
+            schedules: next.schedules,
+            occurrences: next.occurrences,
+            medications,
+        };
+        const envelopeJson = JSON.stringify(envelope);
+        const fillsJson = JSON.stringify(next.fills);
+        const schedulesJson = JSON.stringify(next.schedules);
+        const occurrencesJson = JSON.stringify(next.occurrences);
+        const medicationsJson = JSON.stringify(medications);
+        storage.setItem(exports.ENVELOPE_STORAGE_KEY, envelopeJson);
+        writeMirror(storage, exports.FILLS_STORAGE_KEY, fillsJson);
+        writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, schedulesJson);
+        writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, occurrencesJson);
+        writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, medicationsJson);
+    }
+    finally {
+        endPersistWrite();
+    }
+}
+function writeMedicationsFromUi(storage, medications) {
+    commitAppState(storage, readAppState(storage), { medications });
+}
+function attachMedicationsWriteBridge(storage) {
+    if (bridgedStorages.has(storage)) {
+        return;
+    }
+    bridgedStorages.add(storage);
+    const originalSetItem = storage.setItem.bind(storage);
+    storage.setItem = (key, value) => {
+        if (key === exports.MEDICATIONS_STORAGE_KEY && persistWriteDepth === 0) {
+            writeMedicationsFromUi(storage, parseMedicationsWrite(value));
+            return;
+        }
+        originalSetItem(key, value);
     };
-    const envelopeJson = JSON.stringify(envelope);
-    const fillsJson = JSON.stringify(next.fills);
-    const schedulesJson = JSON.stringify(next.schedules);
-    const occurrencesJson = JSON.stringify(next.occurrences);
-    const medicationsJson = JSON.stringify(medications);
-    storage.setItem(exports.ENVELOPE_STORAGE_KEY, envelopeJson);
-    writeMirror(storage, exports.FILLS_STORAGE_KEY, fillsJson);
-    writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, schedulesJson);
-    writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, occurrencesJson);
-    writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, medicationsJson);
+}
+function hasLegacyKeys(storage) {
+    return (storage.getItem(exports.FILLS_STORAGE_KEY) !== null ||
+        storage.getItem(exports.SCHEDULES_STORAGE_KEY) !== null ||
+        storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY) !== null ||
+        storage.getItem(exports.MEDICATIONS_STORAGE_KEY) !== null);
 }
 function hydrateLegacyMirrors(storage) {
-    const state = readAppState(storage);
-    const medications = readMedications(storage);
-    const hasEnvelope = Boolean(parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY)));
-    if (!hasEnvelope) {
-        const hasLegacy = storage.getItem(exports.FILLS_STORAGE_KEY) !== null ||
-            storage.getItem(exports.SCHEDULES_STORAGE_KEY) !== null ||
-            storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY) !== null ||
-            storage.getItem(exports.MEDICATIONS_STORAGE_KEY) !== null;
-        if (hasLegacy) {
+    beginPersistWrite();
+    try {
+        const envelope = parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY));
+        const state = readAppState(storage);
+        const mirrorMedications = parseJsonArray(storage.getItem(exports.MEDICATIONS_STORAGE_KEY));
+        if (!envelope) {
+            if (hasLegacyKeys(storage)) {
+                try {
+                    commitAppState(storage, state, { medications: mirrorMedications });
+                }
+                catch {
+                    return state;
+                }
+            }
+            return state;
+        }
+        if (!Array.isArray(envelope.medications)) {
             try {
-                commitAppState(storage, state, { medications });
+                commitAppState(storage, state, { medications: mirrorMedications });
             }
             catch {
                 return state;
             }
+            return state;
         }
+        writeMirror(storage, exports.FILLS_STORAGE_KEY, JSON.stringify(state.fills));
+        writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
+        writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
+        writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, JSON.stringify(envelope.medications));
         return state;
     }
-    writeMirror(storage, exports.FILLS_STORAGE_KEY, JSON.stringify(state.fills));
-    writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
-    writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
-    writeMirror(storage, exports.MEDICATIONS_STORAGE_KEY, JSON.stringify(medications));
-    return state;
+    finally {
+        endPersistWrite();
+    }
 }
 function snapshotEqual(left, right) {
     return JSON.stringify(left) === JSON.stringify(right);

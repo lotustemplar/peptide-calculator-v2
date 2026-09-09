@@ -23,6 +23,8 @@ node scripts/persist/persist-test.js
 - One recovery slot; 168h expiry; write+verify before replace; quota abort
 - Rollback; restart restore; current-slot-only after a second import
 - Envelope atomic commit includes medications; mirrors are best-effort
+- Live UI add/delete of medications (frozen `app.js` `writeStorage` on the medications key) is bridged into that envelope; Taken/save cannot resurrect or drop those edits
+- Pre-Stage-3 mirror-only medications hydrate into the envelope once; later envelope arrays win over a stale mirror (no timestamp guessing)
 - Baseline schedules mapped only from complete source interval/time/start
 - Local-only export (native file bridge or download; no `navigator.share`)
 - Round-trip; unknown-field passthrough; **no baseline key mutate/delete**

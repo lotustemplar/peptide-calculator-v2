@@ -56,7 +56,7 @@ Stage 3 does **not** invent `intervalDays`, `reminderTime`, or `startDate` when 
 
 Unknown fields (example fixture: `rxCui`) are kept on the entity object (passthrough) and listed in the quarantine summary. They are not silently stripped.
 
-P0.UX envelope `{ version: 1, fills, schedules, occurrences, medications? }` is GitHub-generation, still `legacy-unversioned` until exported as `schemaVersion: 3`. Medications belong in that envelope JSON so reload cannot observe new fills with old medications.
+P0.UX envelope `{ version: 1, fills, schedules, occurrences, medications }` is GitHub-generation, still `legacy-unversioned` until exported as `schemaVersion: 3`. Medications belong in that envelope JSON so reload cannot observe new fills with old medications. After a Stage 3 envelope write, `medications` is always an array (including `[]` for delete-all). A Stage-2 envelope that omitted the field is hydrated from the medications mirror **once**.
 
 ## Export dual-read (non-stranding)
 
@@ -66,6 +66,22 @@ P0.UX envelope `{ version: 1, fills, schedules, occurrences, medications? }` is 
 - Top-level `fills` / `schedules` / `occurrences` / `medications` in the current GitHub store shape
 
 A reverted pre-Stage-3 importer that only reads top-level arrays can still load the file. Nested-only newer files are `unknown-newer` and blocked.
+
+## Live medication writes (GitHub generation)
+
+Frozen `app.js` still persists add/delete with `writeStorage(STORAGE_KEYS.medications, …)` → `localStorage.setItem` on `peptide-calculator-v2-medications` only. Stage 3 does **not** edit `app.js`.
+
+`p0-ux-bind.js` calls `hydrateLegacyMirrors` then `attachMedicationsWriteBridge(localStorage)`. The bridge intercepts that medications key when a persist write is not already in progress and commits the parsed array through `commitAppState` together with the current fills/schedules/occurrences. Nested envelope/mirror `setItem`s are not re-entered. Invalid or non-array JSON is treated as `[]` (a real delete-all). There is **no** timestamp or version-counter comparison.
+
+`readMedications` uses `envelope.medications` whenever that field is an array, including empty. Taken/save omit the `medications` option and therefore preserve the envelope list. Because live add/delete already updated the envelope, that preserve path cannot resurrect a deleted row or drop a newly added row.
+
+Boot:
+
+- No envelope: `hydrateLegacyMirrors` copies pre-Stage-3 mirror-only medications into a new envelope **once**.
+- Envelope present without a `medications` array (Stage 2): the current mirror is written into the envelope **once**.
+- Envelope present with a `medications` array: hydrates rewrite the mirror **from** the envelope. A later stale mirror does not override canonical edits.
+
+The medications key remains a best-effort mirror after a successful envelope `setItem`. Mirror failure after that write must not mix generations; reload and export read the envelope.
 
 ## Duplicate policy
 

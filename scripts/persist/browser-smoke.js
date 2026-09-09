@@ -580,6 +580,104 @@ async function main() {
     notes.push("restore after restart returned v1 fills and medications");
     await shot("11-after-restore");
 
+    await goCabinet(cdp);
+    await cdp.evaluate(`(() => {
+      document.getElementById("med-name").value = "Synthetic Gamma Plan";
+      document.getElementById("med-dose").value = "2";
+      document.getElementById("med-unit").value = "mg";
+      document.getElementById("med-interval").value = "5";
+      document.getElementById("add-medication-form").requestSubmit();
+    })()`);
+    await waitFor(
+      cdp,
+      `JSON.parse(localStorage.getItem("peptide-calculator-v2-p0ux-store")||"{}").medications.some((row) => row.name === "Synthetic Gamma Plan")`,
+      8000
+    );
+    const afterLiveAdd = await cdp.evaluate(`(() => {
+      const envelope = JSON.parse(localStorage.getItem("peptide-calculator-v2-p0ux-store"));
+      const exported = window.FitGenP0Ux.exportDocumentJson(
+        window.FitGenP0Ux.readGithubState(window.localStorage),
+        "2026-09-09T12:00:00.000Z"
+      );
+      return {
+        envelopeHasGamma: envelope.medications.some((row) => row.name === "Synthetic Gamma Plan"),
+        exportHasGamma: exported.indexOf("Synthetic Gamma Plan") !== -1,
+        fill: envelope.fills[0].savedId,
+        share: window.__shareCalls
+      };
+    })()`);
+    if (!afterLiveAdd.envelopeHasGamma || !afterLiveAdd.exportHasGamma) {
+      throw new Error(`live add missing from envelope/export: ${JSON.stringify(afterLiveAdd)}`);
+    }
+    if (afterLiveAdd.fill !== "syn-fill-github-1") {
+      throw new Error("live add must not replace current fills");
+    }
+    if (afterLiveAdd.share !== 0) {
+      throw new Error("navigator.share invoked during live medication add");
+    }
+    notes.push("existing envelope: add medication remains in envelope and export");
+    await shot("12-after-live-med-add");
+
+    await cdp.evaluate(`document.getElementById("export-data").click()`);
+    await dialogOpen(cdp);
+    await cdp.evaluate(`document.getElementById("fitgen-confirm-primary").click()`);
+    await dialogHidden(cdp);
+    const shareAfterLiveExport = await cdp.evaluate(`window.__shareCalls`);
+    if (shareAfterLiveExport !== 0) {
+      throw new Error("navigator.share invoked on export after live add");
+    }
+
+    await cdp.evaluate(`window.FitGenP0Ux.hydrateLegacyMirrors(window.localStorage)`);
+    const afterReloadHydrate = await cdp.evaluate(`({
+      hasGamma: window.FitGenP0Ux.readGithubState(window.localStorage).medications.some((row) => row.name === "Synthetic Gamma Plan")
+    })`);
+    if (!afterReloadHydrate.hasGamma) {
+      throw new Error("reload/hydrate dropped the live-added medication");
+    }
+    notes.push("reload/hydrate kept the live-added medication");
+
+    const deletedId = await cdp.evaluate(`(() => {
+      const envelope = JSON.parse(localStorage.getItem("peptide-calculator-v2-p0ux-store"));
+      const gamma = envelope.medications.find((row) => row.name === "Synthetic Gamma Plan");
+      const btn = document.querySelector('[data-action="delete-med"][data-id="' + gamma.id + '"]');
+      if (!btn) {
+        return null;
+      }
+      btn.click();
+      return gamma.id;
+    })()`);
+    if (!deletedId) {
+      throw new Error("delete control for Synthetic Gamma Plan was missing");
+    }
+    await waitFor(
+      cdp,
+      `!JSON.parse(localStorage.getItem("peptide-calculator-v2-p0ux-store")||"{}").medications.some((row) => row.name === "Synthetic Gamma Plan")`,
+      8000
+    );
+    await cdp.evaluate(`window.FitGenP0Ux.commitAppState(
+      window.localStorage,
+      window.FitGenP0Ux.readAppState(window.localStorage)
+    )`);
+    const afterTaken = await cdp.evaluate(`(() => {
+      const envelope = JSON.parse(localStorage.getItem("peptide-calculator-v2-p0ux-store"));
+      return {
+        hasGamma: envelope.medications.some((row) => row.name === "Synthetic Gamma Plan"),
+        hasImported: envelope.medications.some((row) => row.id === "syn-med-github-1"),
+        fill: envelope.fills[0].savedId
+      };
+    })()`);
+    if (afterTaken.hasGamma) {
+      throw new Error("Taken-style commit resurrected the deleted medication");
+    }
+    if (!afterTaken.hasImported) {
+      throw new Error("deleting the live-added medication dropped the imported medication");
+    }
+    if (afterTaken.fill !== "syn-fill-github-1") {
+      throw new Error("Taken-style commit after delete replaced fills");
+    }
+    notes.push("delete then Taken/save commit kept the medication deleted");
+    await shot("13-after-live-med-delete-taken");
+
     const report = { ok: true, notes, shots, shareInvoked: 0 };
     fs.writeFileSync(path.join(OUT_DIR, "smoke-report.json"), JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report, null, 2));

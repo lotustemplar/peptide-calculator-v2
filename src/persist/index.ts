@@ -68,6 +68,12 @@ export {
   readGithubState,
 } from "./writer";
 export {
+  attachMedicationsWriteBridge,
+  hydrateLegacyMirrors,
+  readMedications,
+  writeMedicationsFromUi,
+} from "../ux/persist";
+export {
   buildRecoverySnapshot,
   guardedRemoveItem,
   guardedSetItem,

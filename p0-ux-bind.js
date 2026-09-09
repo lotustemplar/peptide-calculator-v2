@@ -10,6 +10,9 @@
   if (typeof ux.hydrateLegacyMirrors === "function") {
     ux.hydrateLegacyMirrors(window.localStorage);
   }
+  if (typeof ux.attachMedicationsWriteBridge === "function") {
+    ux.attachMedicationsWriteBridge(window.localStorage);
+  }
   const FIELD_IDS = {
     doseUnit: "dose-unit",
     vialAmount: "vial-mg",

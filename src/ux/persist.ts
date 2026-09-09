@@ -1,6 +1,8 @@
 /**
- * Atomic local persistence for coupled fills + schedules + occurrences.
+ * Atomic local persistence for coupled fills + schedules + occurrences + medications.
  * Canonical write is one JSON envelope. Legacy keys are read/write mirrors.
+ * Frozen app.js still setItem's the medications key; attachMedicationsWriteBridge
+ * promotes those writes into the envelope without timestamp guessing.
  */
 
 import { OCCURRENCES_STORAGE_KEY, type AppPersistState } from "./adapter";
@@ -95,7 +97,10 @@ export function readAppState(storage: StorageLike): AppPersistState {
   };
 }
 
-/** Prefer envelope medications (atomic with fills). Mirror key is fallback only. */
+/**
+ * Prefer envelope medications when that field is an array (including []).
+ * Empty array is a real delete-all. Mirror key is fallback only when the field is absent.
+ */
 export function readMedications(storage: StorageLike): unknown[] {
   const envelope = parseEnvelope(storage.getItem(ENVELOPE_STORAGE_KEY));
   if (envelope && Array.isArray(envelope.medications)) {
@@ -104,12 +109,32 @@ export function readMedications(storage: StorageLike): unknown[] {
   return parseJsonArray(storage.getItem(MEDICATIONS_STORAGE_KEY));
 }
 
+let persistWriteDepth = 0;
+const bridgedStorages = new WeakSet<object>();
+
 function writeMirror(storage: StorageLike, key: string, value: string): void {
   try {
     storage.setItem(key, value);
   } catch {
     // Mirror failure after a successful envelope write must not revert or mix
     // the canonical snapshot. Reload reads the envelope.
+  }
+}
+
+function beginPersistWrite(): void {
+  persistWriteDepth += 1;
+}
+
+function endPersistWrite(): void {
+  persistWriteDepth -= 1;
+}
+
+function parseMedicationsWrite(value: string): unknown[] {
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }
 
@@ -124,57 +149,109 @@ export function commitAppState(
   next: AppPersistState,
   options?: CommitAppStateOptions
 ): void {
-  const medications =
-    options && Object.prototype.hasOwnProperty.call(options, "medications")
-      ? Array.isArray(options.medications)
-        ? options.medications
-        : []
-      : readMedications(storage);
-  const envelope: PersistEnvelope = {
-    version: 1,
-    fills: next.fills,
-    schedules: next.schedules,
-    occurrences: next.occurrences,
-    medications,
-  };
-  const envelopeJson = JSON.stringify(envelope);
-  const fillsJson = JSON.stringify(next.fills);
-  const schedulesJson = JSON.stringify(next.schedules);
-  const occurrencesJson = JSON.stringify(next.occurrences);
-  const medicationsJson = JSON.stringify(medications);
+  beginPersistWrite();
+  try {
+    const medications =
+      options && Object.prototype.hasOwnProperty.call(options, "medications")
+        ? Array.isArray(options.medications)
+          ? options.medications
+          : []
+        : readMedications(storage);
+    const envelope: PersistEnvelope = {
+      version: 1,
+      fills: next.fills,
+      schedules: next.schedules,
+      occurrences: next.occurrences,
+      medications,
+    };
+    const envelopeJson = JSON.stringify(envelope);
+    const fillsJson = JSON.stringify(next.fills);
+    const schedulesJson = JSON.stringify(next.schedules);
+    const occurrencesJson = JSON.stringify(next.occurrences);
+    const medicationsJson = JSON.stringify(medications);
 
-  storage.setItem(ENVELOPE_STORAGE_KEY, envelopeJson);
-  writeMirror(storage, FILLS_STORAGE_KEY, fillsJson);
-  writeMirror(storage, SCHEDULES_STORAGE_KEY, schedulesJson);
-  writeMirror(storage, OCCURRENCES_STORAGE_KEY, occurrencesJson);
-  writeMirror(storage, MEDICATIONS_STORAGE_KEY, medicationsJson);
+    storage.setItem(ENVELOPE_STORAGE_KEY, envelopeJson);
+    writeMirror(storage, FILLS_STORAGE_KEY, fillsJson);
+    writeMirror(storage, SCHEDULES_STORAGE_KEY, schedulesJson);
+    writeMirror(storage, OCCURRENCES_STORAGE_KEY, occurrencesJson);
+    writeMirror(storage, MEDICATIONS_STORAGE_KEY, medicationsJson);
+  } finally {
+    endPersistWrite();
+  }
+}
+
+/** Live UI medication list (add/delete) committed with current fills/schedules/OCC. */
+export function writeMedicationsFromUi(storage: StorageLike, medications: unknown[]): void {
+  commitAppState(storage, readAppState(storage), { medications });
+}
+
+/**
+ * Compatibility for frozen `app.js`: `writeStorage` only `setItem`s the medications
+ * mirror. Intercept that key and route it through the envelope writer so Taken/save
+ * cannot overwrite a live add/delete from a stale envelope. Nested persist writes
+ * (depth > 0) use the original `setItem` and are not re-entered.
+ * Empty arrays are real delete-all. No timestamp comparison.
+ */
+export function attachMedicationsWriteBridge(storage: StorageLike): void {
+  if (bridgedStorages.has(storage as object)) {
+    return;
+  }
+  bridgedStorages.add(storage as object);
+  const originalSetItem = storage.setItem.bind(storage);
+  storage.setItem = (key: string, value: string) => {
+    if (key === MEDICATIONS_STORAGE_KEY && persistWriteDepth === 0) {
+      writeMedicationsFromUi(storage, parseMedicationsWrite(value));
+      return;
+    }
+    originalSetItem(key, value);
+  };
+}
+
+function hasLegacyKeys(storage: StorageLike): boolean {
+  return (
+    storage.getItem(FILLS_STORAGE_KEY) !== null ||
+    storage.getItem(SCHEDULES_STORAGE_KEY) !== null ||
+    storage.getItem(OCCURRENCES_STORAGE_KEY) !== null ||
+    storage.getItem(MEDICATIONS_STORAGE_KEY) !== null
+  );
 }
 
 /** Boot helper: prefer envelope, then rewrite legacy mirrors for older readers. */
 export function hydrateLegacyMirrors(storage: StorageLike): AppPersistState {
-  const state = readAppState(storage);
-  const medications = readMedications(storage);
-  const hasEnvelope = Boolean(parseEnvelope(storage.getItem(ENVELOPE_STORAGE_KEY)));
-  if (!hasEnvelope) {
-    const hasLegacy =
-      storage.getItem(FILLS_STORAGE_KEY) !== null ||
-      storage.getItem(SCHEDULES_STORAGE_KEY) !== null ||
-      storage.getItem(OCCURRENCES_STORAGE_KEY) !== null ||
-      storage.getItem(MEDICATIONS_STORAGE_KEY) !== null;
-    if (hasLegacy) {
+  beginPersistWrite();
+  try {
+    const envelope = parseEnvelope(storage.getItem(ENVELOPE_STORAGE_KEY));
+    const state = readAppState(storage);
+    const mirrorMedications = parseJsonArray(storage.getItem(MEDICATIONS_STORAGE_KEY));
+
+    if (!envelope) {
+      if (hasLegacyKeys(storage)) {
+        try {
+          commitAppState(storage, state, { medications: mirrorMedications });
+        } catch {
+          return state;
+        }
+      }
+      return state;
+    }
+
+    if (!Array.isArray(envelope.medications)) {
       try {
-        commitAppState(storage, state, { medications });
+        commitAppState(storage, state, { medications: mirrorMedications });
       } catch {
         return state;
       }
+      return state;
     }
+
+    writeMirror(storage, FILLS_STORAGE_KEY, JSON.stringify(state.fills));
+    writeMirror(storage, SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
+    writeMirror(storage, OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
+    writeMirror(storage, MEDICATIONS_STORAGE_KEY, JSON.stringify(envelope.medications));
     return state;
+  } finally {
+    endPersistWrite();
   }
-  writeMirror(storage, FILLS_STORAGE_KEY, JSON.stringify(state.fills));
-  writeMirror(storage, SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
-  writeMirror(storage, OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
-  writeMirror(storage, MEDICATIONS_STORAGE_KEY, JSON.stringify(medications));
-  return state;
 }
 
 export function snapshotEqual(left: AppPersistState, right: AppPersistState): boolean {

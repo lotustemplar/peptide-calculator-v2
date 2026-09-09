@@ -71,6 +71,7 @@ export {
   OCCURRENCES_STORAGE_KEY,
   PERSIST_WRITE_STEPS,
   SCHEDULES_STORAGE_KEY,
+  attachMedicationsWriteBridge,
   cloneAppState,
   commitAppState,
   emptyAppState,
@@ -78,6 +79,7 @@ export {
   readAppState,
   readMedications,
   snapshotEqual,
+  writeMedicationsFromUi,
 } from "./persist";
 export type { PersistEnvelope, StorageLike } from "./persist";
 
