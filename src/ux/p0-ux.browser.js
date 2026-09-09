@@ -30,9 +30,21 @@
       return modules[resolved].exports;
     };
   }
+  modules["occ/identity"] = { exports: {}, dirname: "occ" };
+  modules["occ/index"] = { exports: {}, dirname: "occ" };
+  modules["occ/legacy"] = { exports: {}, dirname: "occ" };
+  modules["occ/types"] = { exports: {}, dirname: "occ" };
+  modules["occ/validate"] = { exports: {}, dirname: "occ" };
+  modules["occ/writer"] = { exports: {}, dirname: "occ" };
+  modules["ux/adapter"] = { exports: {}, dirname: "ux" };
+  modules["ux/cabinet-cascade"] = { exports: {}, dirname: "ux" };
+  modules["ux/copy"] = { exports: {}, dirname: "ux" };
+  modules["ux/dialog"] = { exports: {}, dirname: "ux" };
+  modules["ux/index"] = { exports: {}, dirname: "ux" };
+  modules["ux/persist"] = { exports: {}, dirname: "ux" };
+  modules["ux/save-summary"] = { exports: {}, dirname: "ux" };
+  modules["ux/wizard"] = { exports: {}, dirname: "ux" };
 
-  modules["occ/identity"] = { exports: {} };
-  modules["occ/identity"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -171,8 +183,6 @@ function replaceOccurrence(records, next) {
   );
 
 
-  modules["occ/index"] = { exports: {} };
-  modules["occ/index"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -215,8 +225,6 @@ Object.defineProperty(exports, "undoTaken", { enumerable: true, get: function ()
   );
 
 
-  modules["occ/legacy"] = { exports: {} };
-  modules["occ/legacy"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -287,8 +295,6 @@ function materializeLegacyTakenDates(records, schedule, nowIso) {
   );
 
 
-  modules["occ/types"] = { exports: {} };
-  modules["occ/types"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -329,8 +335,6 @@ function cloneOccurrences(records) {
   );
 
 
-  modules["occ/validate"] = { exports: {} };
-  modules["occ/validate"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -407,8 +411,6 @@ function normalizeIsoInstant(value) {
   );
 
 
-  modules["occ/writer"] = { exports: {} };
-  modules["occ/writer"].dirname = "occ";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -607,8 +609,6 @@ function reloadSnapshot(snapshot) {
   );
 
 
-  modules["ux/adapter"] = { exports: {} };
-  modules["ux/adapter"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -860,8 +860,6 @@ function createTakenAdapter(deps) {
   );
 
 
-  modules["ux/cabinet-cascade"] = { exports: {} };
-  modules["ux/cabinet-cascade"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -937,8 +935,6 @@ function activeSchedules(schedules) {
   );
 
 
-  modules["ux/copy"] = { exports: {} };
-  modules["ux/copy"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1007,8 +1003,6 @@ function writerErrorMessage(code) {
   );
 
 
-  modules["ux/dialog"] = { exports: {} };
-  modules["ux/dialog"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1066,13 +1060,11 @@ function dialogAria(titleId) {
   );
 
 
-  modules["ux/index"] = { exports: {} };
-  modules["ux/index"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.canUndoTaken = exports.applyWriterSnapshot = exports.OCCURRENCES_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = void 0;
+exports.OCCURRENCES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.snapshotEqual = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -1125,8 +1117,19 @@ Object.defineProperty(exports, "dialogAria", { enumerable: true, get: function (
 Object.defineProperty(exports, "nextFocusIndex", { enumerable: true, get: function () { return dialog_1.nextFocusIndex; } });
 Object.defineProperty(exports, "shouldCloseOnKey", { enumerable: true, get: function () { return dialog_1.shouldCloseOnKey; } });
 Object.defineProperty(exports, "trapTabKey", { enumerable: true, get: function () { return dialog_1.trapTabKey; } });
+var persist_1 = require("./persist");
+Object.defineProperty(exports, "ENVELOPE_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.ENVELOPE_STORAGE_KEY; } });
+Object.defineProperty(exports, "FILLS_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.FILLS_STORAGE_KEY; } });
+Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.OCCURRENCES_STORAGE_KEY; } });
+Object.defineProperty(exports, "PERSIST_WRITE_STEPS", { enumerable: true, get: function () { return persist_1.PERSIST_WRITE_STEPS; } });
+Object.defineProperty(exports, "SCHEDULES_STORAGE_KEY", { enumerable: true, get: function () { return persist_1.SCHEDULES_STORAGE_KEY; } });
+Object.defineProperty(exports, "cloneAppState", { enumerable: true, get: function () { return persist_1.cloneAppState; } });
+Object.defineProperty(exports, "commitAppState", { enumerable: true, get: function () { return persist_1.commitAppState; } });
+Object.defineProperty(exports, "emptyAppState", { enumerable: true, get: function () { return persist_1.emptyAppState; } });
+Object.defineProperty(exports, "hydrateLegacyMirrors", { enumerable: true, get: function () { return persist_1.hydrateLegacyMirrors; } });
+Object.defineProperty(exports, "readAppState", { enumerable: true, get: function () { return persist_1.readAppState; } });
+Object.defineProperty(exports, "snapshotEqual", { enumerable: true, get: function () { return persist_1.snapshotEqual; } });
 var adapter_1 = require("./adapter");
-Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return adapter_1.OCCURRENCES_STORAGE_KEY; } });
 Object.defineProperty(exports, "applyWriterSnapshot", { enumerable: true, get: function () { return adapter_1.applyWriterSnapshot; } });
 Object.defineProperty(exports, "canUndoTaken", { enumerable: true, get: function () { return adapter_1.canUndoTaken; } });
 Object.defineProperty(exports, "createTakenAdapter", { enumerable: true, get: function () { return adapter_1.createTakenAdapter; } });
@@ -1153,8 +1156,140 @@ Object.defineProperty(exports, "undoTaken", { enumerable: true, get: function ()
   );
 
 
-  modules["ux/save-summary"] = { exports: {} };
-  modules["ux/save-summary"].dirname = "ux";
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PERSIST_WRITE_STEPS = exports.SCHEDULES_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.OCCURRENCES_STORAGE_KEY = void 0;
+exports.emptyAppState = emptyAppState;
+exports.cloneAppState = cloneAppState;
+exports.readAppState = readAppState;
+exports.commitAppState = commitAppState;
+exports.hydrateLegacyMirrors = hydrateLegacyMirrors;
+exports.snapshotEqual = snapshotEqual;
+const adapter_1 = require("./adapter");
+Object.defineProperty(exports, "OCCURRENCES_STORAGE_KEY", { enumerable: true, get: function () { return adapter_1.OCCURRENCES_STORAGE_KEY; } });
+exports.ENVELOPE_STORAGE_KEY = "peptide-calculator-v2-p0ux-store";
+exports.FILLS_STORAGE_KEY = "peptide-calculator-v2-fills";
+exports.SCHEDULES_STORAGE_KEY = "peptide-calculator-v2-schedules";
+exports.PERSIST_WRITE_STEPS = [
+    exports.ENVELOPE_STORAGE_KEY,
+    exports.FILLS_STORAGE_KEY,
+    exports.SCHEDULES_STORAGE_KEY,
+    adapter_1.OCCURRENCES_STORAGE_KEY,
+];
+function parseJsonArray(raw) {
+    if (!raw) {
+        return [];
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch {
+        return [];
+    }
+}
+function parseEnvelope(raw) {
+    if (!raw) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.version !== 1) {
+            return null;
+        }
+        if (!Array.isArray(parsed.fills) || !Array.isArray(parsed.schedules) || !Array.isArray(parsed.occurrences)) {
+            return null;
+        }
+        return {
+            version: 1,
+            fills: parsed.fills,
+            schedules: parsed.schedules,
+            occurrences: parsed.occurrences,
+        };
+    }
+    catch {
+        return null;
+    }
+}
+function emptyAppState() {
+    return { fills: [], schedules: [], occurrences: [] };
+}
+function cloneAppState(state) {
+    return JSON.parse(JSON.stringify(state));
+}
+function readAppState(storage) {
+    const envelope = parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY));
+    if (envelope) {
+        return {
+            fills: envelope.fills,
+            schedules: envelope.schedules,
+            occurrences: envelope.occurrences,
+        };
+    }
+    return {
+        fills: parseJsonArray(storage.getItem(exports.FILLS_STORAGE_KEY)),
+        schedules: parseJsonArray(storage.getItem(exports.SCHEDULES_STORAGE_KEY)),
+        occurrences: parseJsonArray(storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY)),
+    };
+}
+function writeMirror(storage, key, value) {
+    try {
+        storage.setItem(key, value);
+    }
+    catch {
+    }
+}
+function commitAppState(storage, next) {
+    const envelope = {
+        version: 1,
+        fills: next.fills,
+        schedules: next.schedules,
+        occurrences: next.occurrences,
+    };
+    const envelopeJson = JSON.stringify(envelope);
+    const fillsJson = JSON.stringify(next.fills);
+    const schedulesJson = JSON.stringify(next.schedules);
+    const occurrencesJson = JSON.stringify(next.occurrences);
+    storage.setItem(exports.ENVELOPE_STORAGE_KEY, envelopeJson);
+    writeMirror(storage, exports.FILLS_STORAGE_KEY, fillsJson);
+    writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, schedulesJson);
+    writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, occurrencesJson);
+}
+function hydrateLegacyMirrors(storage) {
+    const state = readAppState(storage);
+    const hasEnvelope = Boolean(parseEnvelope(storage.getItem(exports.ENVELOPE_STORAGE_KEY)));
+    if (!hasEnvelope) {
+        const hasLegacy = storage.getItem(exports.FILLS_STORAGE_KEY) !== null ||
+            storage.getItem(exports.SCHEDULES_STORAGE_KEY) !== null ||
+            storage.getItem(adapter_1.OCCURRENCES_STORAGE_KEY) !== null;
+        if (hasLegacy) {
+            try {
+                commitAppState(storage, state);
+            }
+            catch {
+                return state;
+            }
+        }
+        return state;
+    }
+    writeMirror(storage, exports.FILLS_STORAGE_KEY, JSON.stringify(state.fills));
+    writeMirror(storage, exports.SCHEDULES_STORAGE_KEY, JSON.stringify(state.schedules));
+    writeMirror(storage, adapter_1.OCCURRENCES_STORAGE_KEY, JSON.stringify(state.occurrences));
+    return state;
+}
+function snapshotEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+}
+
+  })(
+    modules["ux/persist"].exports,
+    createRequire(modules["ux/persist"].dirname),
+    modules["ux/persist"],
+    "ux"
+  );
+
+
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1225,8 +1360,6 @@ function summaryContainsForbiddenFraming(summary) {
   );
 
 
-  modules["ux/wizard"] = { exports: {} };
-  modules["ux/wizard"].dirname = "ux";
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

@@ -65,7 +65,21 @@ export {
 export type { ConfirmDialogModel, ConfirmKind } from "./dialog";
 
 export {
+  ENVELOPE_STORAGE_KEY,
+  FILLS_STORAGE_KEY,
   OCCURRENCES_STORAGE_KEY,
+  PERSIST_WRITE_STEPS,
+  SCHEDULES_STORAGE_KEY,
+  cloneAppState,
+  commitAppState,
+  emptyAppState,
+  hydrateLegacyMirrors,
+  readAppState,
+  snapshotEqual,
+} from "./persist";
+export type { PersistEnvelope, StorageLike } from "./persist";
+
+export {
   applyWriterSnapshot,
   canUndoTaken,
   createTakenAdapter,

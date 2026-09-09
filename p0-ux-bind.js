@@ -5,9 +5,11 @@
     return;
   }
 
-  const FILL_KEY = "peptide-calculator-v2-fills";
-  const SCHEDULE_KEY = "peptide-calculator-v2-schedules";
   const SELECTED_KEY = "peptide-calculator-v2-selected-fill";
+
+  if (typeof ux.hydrateLegacyMirrors === "function") {
+    ux.hydrateLegacyMirrors(window.localStorage);
+  }
   const FIELD_IDS = {
     doseUnit: "dose-unit",
     vialAmount: "vial-mg",
@@ -28,43 +30,33 @@
   let snackbarTimer = null;
   let snackbarUndo = null;
 
-  function readJson(key, fallback) {
-    try {
-      const raw = window.localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch {
-      return fallback;
-    }
+  function readPersisted() {
+    return ux.readAppState(window.localStorage);
   }
 
   function readFills() {
     if (typeof state !== "undefined" && Array.isArray(state.fills)) {
       return state.fills;
     }
-    return readJson(FILL_KEY, []);
+    return readPersisted().fills;
   }
 
   function readSchedules() {
     if (typeof state !== "undefined" && Array.isArray(state.schedules)) {
       return state.schedules;
     }
-    return readJson(SCHEDULE_KEY, []);
+    return readPersisted().schedules;
   }
 
   function readOccurrences() {
     if (typeof state !== "undefined" && Array.isArray(state.occurrences)) {
       return state.occurrences;
     }
-    return readJson(ux.OCCURRENCES_STORAGE_KEY, []);
+    return readPersisted().occurrences;
   }
 
   function writeAppState(next) {
-    const fillsJson = JSON.stringify(next.fills);
-    const schedulesJson = JSON.stringify(next.schedules);
-    const occJson = JSON.stringify(next.occurrences);
-    window.localStorage.setItem(FILL_KEY, fillsJson);
-    window.localStorage.setItem(SCHEDULE_KEY, schedulesJson);
-    window.localStorage.setItem(ux.OCCURRENCES_STORAGE_KEY, occJson);
+    ux.commitAppState(window.localStorage, next);
     if (typeof state !== "undefined") {
       state.fills = next.fills;
       state.schedules = next.schedules;

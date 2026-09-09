@@ -24,13 +24,17 @@ function listJsFiles(outDir) {
 
 function buildBundleSource(outDir) {
   const files = listJsFiles(outDir);
+  const register = files
+    .map(({ id }) => {
+      const dir = id.includes("/") ? id.slice(0, id.lastIndexOf("/")) : "";
+      return `  modules[${JSON.stringify(id)}] = { exports: {}, dirname: ${JSON.stringify(dir)} };`;
+    })
+    .join("\n");
   const modules = files
     .map(({ abs, id }) => {
       const body = fs.readFileSync(abs, "utf8");
       const dir = id.includes("/") ? id.slice(0, id.lastIndexOf("/")) : "";
       return `
-  modules[${JSON.stringify(id)}] = { exports: {} };
-  modules[${JSON.stringify(id)}].dirname = ${JSON.stringify(dir)};
   (function (exports, require, module, __dirname) {
 ${body}
   })(
@@ -42,6 +46,7 @@ ${body}
 `;
     })
     .join("\n");
+  const registerAndModules = `${register}\n${modules}`;
 
   return `/* Generated from src/occ + src/ux. Do not edit by hand. */
 (function (root) {
@@ -75,7 +80,7 @@ ${body}
       return modules[resolved].exports;
     };
   }
-${modules}
+${registerAndModules}
   root.FitGenP0Ux = modules["ux/index"].exports;
 })(typeof window !== "undefined" ? window : globalThis);
 `;

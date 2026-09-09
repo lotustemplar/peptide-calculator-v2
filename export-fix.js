@@ -44,14 +44,18 @@
   }
 
   function buildBackup() {
+    const persisted =
+      window.FitGenP0Ux && typeof window.FitGenP0Ux.readAppState === "function"
+        ? window.FitGenP0Ux.readAppState(window.localStorage)
+        : null;
     return {
       version: 2,
       exportedAt: new Date().toISOString(),
       userId: readStorage(STORAGE_KEYS.userId, null),
       medications: getArrayStateOrStorage(STORAGE_KEYS.medications, "medications"),
-      fills: getArrayStateOrStorage(STORAGE_KEYS.fills, "fills"),
-      schedules: getArrayStateOrStorage(STORAGE_KEYS.schedules, "schedules"),
-      occurrences: getArrayStateOrStorage(STORAGE_KEYS.occurrences, "occurrences"),
+      fills: persisted ? persisted.fills : getArrayStateOrStorage(STORAGE_KEYS.fills, "fills"),
+      schedules: persisted ? persisted.schedules : getArrayStateOrStorage(STORAGE_KEYS.schedules, "schedules"),
+      occurrences: persisted ? persisted.occurrences : getArrayStateOrStorage(STORAGE_KEYS.occurrences, "occurrences"),
     };
   }
 

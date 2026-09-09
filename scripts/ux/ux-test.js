@@ -7,6 +7,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 const { repoRoot, readText } = require("../ci/lib");
 const { compileUxModules } = require("./harness");
 const { BUNDLE_REL, emitBrowserBundle } = require("./emit-browser");
@@ -287,6 +288,137 @@ function makeAdapter(store, options) {
   assertEqual(mismatchStore.read().fills[0].depletionRemaining, 30, "unit mismatch keeps depletion");
 })();
 
+(function atomicEnvelopePersist() {
+  const pre = {
+    fills: [sampleFill()],
+    schedules: [sampleSchedule()],
+    occurrences: [],
+  };
+
+  function memoryStorage(initial, failKeys) {
+    const data = { ...initial };
+    return {
+      getItem(key) {
+        return Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null;
+      },
+      setItem(key, value) {
+        if ((failKeys || []).includes(key)) {
+          throw new Error(`injected fail ${key}`);
+        }
+        data[key] = String(value);
+      },
+      data,
+    };
+  }
+
+  function adapterFor(storage) {
+    return ux.createTakenAdapter({
+      readAppState: () => ux.readAppState(storage),
+      writeAppState: (next) => ux.commitAppState(storage, next),
+      timeZone: TZ,
+      nowIso: () => LATER,
+    });
+  }
+
+  const happy = memoryStorage({});
+  ux.commitAppState(happy, pre);
+  assert(ux.snapshotEqual(ux.readAppState(happy), pre), "envelope read matches committed pre-op");
+
+  const legacyOnly = memoryStorage({
+    [ux.FILLS_STORAGE_KEY]: JSON.stringify(pre.fills),
+    [ux.SCHEDULES_STORAGE_KEY]: JSON.stringify(pre.schedules),
+    [ux.OCCURRENCES_STORAGE_KEY]: JSON.stringify(pre.occurrences),
+  });
+  assert(ux.snapshotEqual(ux.readAppState(legacyOnly), pre), "legacy keys migrate on read when envelope is absent");
+  ux.hydrateLegacyMirrors(legacyOnly);
+  assert(Boolean(legacyOnly.getItem(ux.ENVELOPE_STORAGE_KEY)), "hydrate writes canonical envelope from legacy keys");
+
+  const failEnvelope = memoryStorage({}, [ux.ENVELOPE_STORAGE_KEY]);
+  ux.commitAppState(memoryStorage({}), pre);
+  try {
+    ux.commitAppState(failEnvelope, {
+      ...pre,
+      fills: [{ ...pre.fills[0], depletionRemaining: 1 }],
+    });
+    assert(false, "envelope failure must throw");
+  } catch (error) {
+    assert(/injected fail/.test(error.message), "envelope write is the throwing boundary");
+  }
+  assert(ux.snapshotEqual(ux.readAppState(failEnvelope), ux.emptyAppState()), "envelope failure reload is pre-op empty");
+
+  const seededFailEnvelope = memoryStorage({});
+  ux.commitAppState(seededFailEnvelope, pre);
+  const beforeEnvelope = ux.cloneAppState(ux.readAppState(seededFailEnvelope));
+  const failEnvelopeAfterSeed = memoryStorage({ ...seededFailEnvelope.data }, [ux.ENVELOPE_STORAGE_KEY]);
+  const takenFailEnvelope = adapterFor(failEnvelopeAfterSeed).markTaken("sched-1", TODAY);
+  assert(takenFailEnvelope.ok === false && takenFailEnvelope.code === "PERSIST_FAILED", "Taken reports persist failure when envelope write fails");
+  assert(ux.snapshotEqual(ux.readAppState(failEnvelopeAfterSeed), beforeEnvelope), "Taken envelope failure reload is entirely pre-op");
+  assertEqual(ux.readAppState(failEnvelopeAfterSeed).occurrences, [], "no mixed occurrence after envelope failure");
+  assertEqual(ux.readAppState(failEnvelopeAfterSeed).fills[0].depletionRemaining, 30, "no mixed depletion after envelope failure");
+
+  ux.PERSIST_WRITE_STEPS.filter((key) => key !== ux.ENVELOPE_STORAGE_KEY).forEach((mirrorKey) => {
+    const storage = memoryStorage({});
+    ux.commitAppState(storage, pre);
+    const failing = memoryStorage({ ...storage.data }, [mirrorKey]);
+    const taken = adapterFor(failing).markTaken("sched-1", TODAY);
+    assert(taken.ok === true && taken.noop === false, `Taken succeeds when only ${mirrorKey} mirror fails`);
+    const reloaded = ux.readAppState(failing);
+    assert(reloaded.occurrences[0]?.status === "taken", `reload after ${mirrorKey} mirror fail is post-op taken`);
+    assertEqual(reloaded.fills[0].depletionRemaining, 27, `reload after ${mirrorKey} mirror fail has matching depletion`);
+    assertEqual(reloaded.schedules[0].takenDates, [TODAY], `reload after ${mirrorKey} mirror fail has matching takenDates`);
+  });
+
+  const archivePre = {
+    fills: [sampleFill({ name: "Cabinet Peptide" })],
+    schedules: [sampleSchedule({ takenDates: ["2026-08-01"] })],
+    occurrences: [],
+  };
+  const archiveFailEnvelope = memoryStorage({});
+  ux.commitAppState(archiveFailEnvelope, archivePre);
+  const archiveBefore = ux.cloneAppState(ux.readAppState(archiveFailEnvelope));
+  const archiveFail = memoryStorage({ ...archiveFailEnvelope.data }, [ux.ENVELOPE_STORAGE_KEY]);
+  const planned = ux.applyCabinetArchive({
+    ...archiveBefore,
+    fillId: "fill-1",
+    todayKey: TODAY,
+  });
+  try {
+    ux.commitAppState(archiveFail, planned);
+    assert(false, "cabinet envelope failure must throw");
+  } catch {
+    assert(ux.snapshotEqual(ux.readAppState(archiveFail), archiveBefore), "cabinet envelope failure reload is pre-op");
+  }
+
+  const archiveMirror = memoryStorage({});
+  ux.commitAppState(archiveMirror, archivePre);
+  const archiveMirrorFail = memoryStorage({ ...archiveMirror.data }, [ux.FILLS_STORAGE_KEY]);
+  const archived = ux.applyCabinetArchive({
+    ...ux.readAppState(archiveMirrorFail),
+    fillId: "fill-1",
+    todayKey: TODAY,
+  });
+  ux.commitAppState(archiveMirrorFail, archived);
+  assert(ux.readAppState(archiveMirrorFail).fills[0].lifecycle === "archived", "cabinet mirror failure reload is post-op archive");
+  assertEqual(
+    ux.readAppState(archiveMirrorFail).schedules[0].takenDates,
+    ["2026-08-01"],
+    "cabinet archive after mirror failure retains history"
+  );
+
+  const savePre = ux.emptyAppState();
+  const saveFail = memoryStorage({}, [ux.ENVELOPE_STORAGE_KEY]);
+  try {
+    ux.commitAppState(saveFail, {
+      fills: [sampleFill({ name: "Saved" })],
+      schedules: [sampleSchedule()],
+      occurrences: [],
+    });
+    assert(false, "save envelope failure must throw");
+  } catch {
+    assert(ux.snapshotEqual(ux.readAppState(saveFail), savePre), "save envelope failure reload is pre-op");
+  }
+})();
+
 (function undoAfterRestart() {
   const store = memoryStore({
     fills: [sampleFill()],
@@ -355,6 +487,13 @@ function makeAdapter(store, options) {
   assert(generated === committed, "browser bundle is fresh from src/occ + src/ux");
   assert(generated.includes("root.FitGenP0Ux"), "bundle exports FitGenP0Ux");
   assert(generated.includes("markTaken"), "bundle includes occurrence writer");
+  const sandbox = { window: {}, globalThis: {} };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(generated, sandbox);
+  assert(typeof sandbox.FitGenP0Ux.validateWizardStep === "function", "bundle validateWizardStep loads");
+  assert(typeof sandbox.FitGenP0Ux.markTaken === "function", "bundle markTaken loads");
+  assert(typeof sandbox.FitGenP0Ux.createTakenAdapter === "function", "bundle createTakenAdapter loads");
 })();
 
 console.log(`P0.UX tests: ${passed} passed, ${failed} failed`);

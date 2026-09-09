@@ -312,8 +312,23 @@ async function syncRemindersToBackend() {
   }
 
   function persistState(fills, schedules) {
-    writeFills(fills);
-    writeSchedules(schedules);
+    if (window.FitGenP0Ux && typeof window.FitGenP0Ux.commitAppState === "function") {
+      const occurrences =
+        (typeof state !== "undefined" && Array.isArray(state.occurrences) && state.occurrences) ||
+        window.FitGenP0Ux.readAppState(window.localStorage).occurrences;
+      window.FitGenP0Ux.commitAppState(window.localStorage, {
+        fills,
+        schedules,
+        occurrences,
+      });
+      if (typeof state !== "undefined") {
+        state.fills = fills;
+        state.schedules = schedules;
+      }
+    } else {
+      writeFills(fills);
+      writeSchedules(schedules);
+    }
     renderAllFallback();
     syncRemindersToBackend();
   }

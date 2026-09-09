@@ -78,7 +78,32 @@ let reminderTimer = null;
 
 initialize();
 
+function persistCoupledState() {
+  if (window.FitGenP0Ux && typeof window.FitGenP0Ux.commitAppState === "function") {
+    window.FitGenP0Ux.commitAppState(window.localStorage, {
+      fills: state.fills,
+      schedules: state.schedules,
+      occurrences: state.occurrences || [],
+    });
+    return;
+  }
+  writeStorage(STORAGE_KEYS.fills, state.fills);
+  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  writeStorage(STORAGE_KEYS.occurrences, state.occurrences || []);
+}
+
+function hydrateFromEnvelope() {
+  if (!window.FitGenP0Ux || typeof window.FitGenP0Ux.readAppState !== "function") {
+    return;
+  }
+  const persisted = window.FitGenP0Ux.readAppState(window.localStorage);
+  state.fills = (persisted.fills || []).map(normalizeFill).filter(isValidFill);
+  state.schedules = (persisted.schedules || []).map(normalizeSchedule).filter(isValidSchedule);
+  state.occurrences = Array.isArray(persisted.occurrences) ? persisted.occurrences : [];
+}
+
 function initialize() {
+  hydrateFromEnvelope();
   writeStorage(STORAGE_KEYS.userId, state.userId);
   if (state.selectedFillId && !findFillById(state.selectedFillId)) {
     state.selectedFillId = state.fills[0]?.savedId || null;
@@ -811,7 +836,6 @@ function saveFillFromModal() {
   state.fills = [fill, ...state.fills];
   state.selectedFillId = fill.savedId;
   state.expandedFillId = fill.savedId;
-  writeStorage(STORAGE_KEYS.fills, state.fills);
   writeStorage(STORAGE_KEYS.selectedFill, state.selectedFillId);
   writeStorage(STORAGE_KEYS.expandedFill, state.expandedFillId);
 
@@ -821,6 +845,7 @@ function saveFillFromModal() {
     reminderTime,
     startDate,
   });
+  persistCoupledState();
 
   closeSaveFillModal();
   renderAll();
@@ -1372,7 +1397,6 @@ function buildCalendarEntries(schedules) {
     if (!fill || schedule.lifecycle === "archived") return;
 
     const takenDates = Array.isArray(schedule.takenDates) ? schedule.takenDates : [];
-    if (schedule.lifecycle === "archived") return;
     const [sy, sm, sd] = schedule.startDate.split("-").map(Number);
     let probe = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
     const intervalMs = schedule.intervalDays * DAY_MS;
@@ -1547,7 +1571,6 @@ function deleteFillRecord(fill) {
     state.fills = applied.fills;
     state.schedules = applied.schedules;
     state.occurrences = applied.occurrences;
-    writeStorage(STORAGE_KEYS.occurrences, state.occurrences);
   } else {
     state.fills = state.fills.filter((item) => item.savedId !== fill.savedId);
     state.schedules = state.schedules.filter((schedule) => schedule.fillSavedId !== fill.savedId);
@@ -1562,8 +1585,7 @@ function deleteFillRecord(fill) {
     state.expandedFillId = null;
   }
 
-  writeStorage(STORAGE_KEYS.fills, state.fills);
-  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  persistCoupledState();
   writeStorage(STORAGE_KEYS.selectedFill, state.selectedFillId);
   writeStorage(STORAGE_KEYS.expandedFill, state.expandedFillId);
   renderAll();
@@ -1790,7 +1812,7 @@ function markOccurrenceTaken(scheduleId, dateKey) {
     if (taken.includes(dateKey)) return s;
     return { ...s, takenDates: [...taken, dateKey] };
   });
-  writeStorage(STORAGE_KEYS.schedules, state.schedules);
+  persistCoupledState();
   renderCurrentPeptides();
   renderSchedules();
   renderCalendar();
