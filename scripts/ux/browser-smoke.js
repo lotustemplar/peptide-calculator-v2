@@ -16,6 +16,7 @@ const { spawn } = require("child_process");
 const { repoRoot } = require("../ci/lib");
 
 const PORT = Number(process.env.FITGEN_SMOKE_PORT || 4173);
+const CDP_PORT = Number(process.env.FITGEN_CDP_PORT || 9223);
 const OUT_DIR = process.env.FITGEN_SMOKE_OUT || path.join(repoRoot(), "artifacts", "p0-ux");
 const CHROME = process.env.CHROME_PATH || "/usr/local/bin/google-chrome";
 
@@ -122,7 +123,7 @@ async function main() {
       "--no-sandbox",
       "--disable-dev-shm-usage",
       `--user-data-dir=${userData}`,
-      "--remote-debugging-port=9222",
+      `--remote-debugging-port=${CDP_PORT}`,
       "about:blank",
     ],
     { stdio: "ignore" }
@@ -131,7 +132,7 @@ async function main() {
   let version;
   for (let i = 0; i < 40; i += 1) {
     try {
-      version = await httpJson("http://127.0.0.1:9222/json/version");
+      version = await httpJson(`http://127.0.0.1:${CDP_PORT}/json/version`);
       break;
     } catch {
       await wait(150);
@@ -142,7 +143,7 @@ async function main() {
     throw new Error("Chrome DevTools did not start");
   }
 
-  const targets = await httpJson("http://127.0.0.1:9222/json/list");
+  const targets = await httpJson(`http://127.0.0.1:${CDP_PORT}/json/list`);
   const page = targets.find((item) => item.type === "page") || targets[0];
   const cdp = new Cdp(page.webSocketDebuggerUrl);
   await cdp.send("Page.enable");
@@ -410,14 +411,17 @@ async function main() {
   await shot("13-mobile-undone-after-reload");
 
   await cdp.evaluate(`
+    document.querySelector('[data-view-target=calculator-view]').click();
     document.getElementById('vial-mg').value = '40';
+    document.getElementById('vial-mg').dispatchEvent(new Event('input', { bubbles: true }));
     document.querySelector('.wizard-cancel-btn').click();
   `);
   await waitFor(cdp, "!document.getElementById('fitgen-confirm-dialog').classList.contains('is-hidden')");
+  await wait(100);
   const focusStart = await cdp.evaluate(`document.activeElement && document.activeElement.id`);
   const aria = await cdp.evaluate(`({
-    modal: document.getElementById('fitgen-confirm-dialog').getAttribute('aria-modal'),
-    role: document.getElementById('fitgen-confirm-dialog').getAttribute('role')
+    modal: document.getElementById('fitgen-confirm-card').getAttribute('aria-modal'),
+    role: document.getElementById('fitgen-confirm-card').getAttribute('role')
   })`);
   if (aria.modal !== "true" || aria.role !== "dialog") {
     throw new Error(`dialog aria missing: ${JSON.stringify(aria)}`);
@@ -448,7 +452,6 @@ async function main() {
   const report = { ok: true, notes, shots };
   fs.writeFileSync(path.join(OUT_DIR, "smoke-report.json"), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
-
   cdp.close();
   chrome.kill();
 }
