@@ -1315,6 +1315,100 @@ body[data-theme="light"] .empty-state {
   align-items: center;
 }
 
+.med-form--names {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.med-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.med-name-field label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+#cabinet-view.is-active #medications-card {
+  /* ui-polish-fix.js hides this card; Stage 5 name CRUD must be visible. */
+  display: block !important;
+}
+
+#med-name-helper {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.fitgen-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fitgen-chip {
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  min-height: 44px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.fitgen-chip:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.fitgen-chip[aria-pressed="true"] {
+  /* Stage 5: no chip is preselected. This rule exists only so a future leak is visible. */
+  box-shadow: none;
+}
+
+.fitgen-name-autocomplete {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.fitgen-name-autocomplete.is-hidden {
+  display: none;
+}
+
+.fitgen-name-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fitgen-name-option.is-active,
+.fitgen-name-option:hover {
+  background: rgba(143, 241, 29, 0.12);
+}
+
+.med-card[data-name-state="unknown"] .med-name {
+  font-style: italic;
+}
+
 .med-form input,
 .med-form select {
   flex: 1 1 120px;
