@@ -498,6 +498,7 @@ function makeAdapter(store, options) {
   assert(typeof sandbox.FitGenP0Ux.createTakenAdapter === "function", "bundle createTakenAdapter loads");
   assert(typeof sandbox.FitGenP0Ux.applyImport === "function", "bundle applyImport loads");
   assert(typeof sandbox.FitGenP0Ux.previewImport === "function", "bundle previewImport loads");
+  assert(typeof sandbox.FitGenP0Ux.installTabAriaSync === "function", "bundle installTabAriaSync loads");
 })();
 
 console.log(`P0.UX tests: ${passed} passed, ${failed} failed`);

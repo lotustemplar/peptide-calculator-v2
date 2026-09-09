@@ -104,7 +104,8 @@ function main() {
   assert(/function handleTaken/.test(bind), "p0-ux-bind wires Taken");
   assert(/function handleUndo/.test(bind), "p0-ux-bind wires Undo");
   assert(/UNDO_SNACKBAR_MS/.test(bind), "snackbar duration uses UX contract");
-  assert(/function syncTabAria/.test(bind), "tab aria-current is synced after view changes");
+  assert(/installTabAriaSync/.test(bind), "p0-ux-bind installs tab aria-current watcher");
+  assert(/function syncTabAria/.test(bind), "tab aria-current helper still present");
 
   assert(/UNDO_SNACKBAR_MS = 8000/.test(dialog), "Undo snackbar duration is 8000ms");
   assert(/UX-WIZ-001/.test(wizard), "wizard module still owns UX-WIZ-001 Back preserve");

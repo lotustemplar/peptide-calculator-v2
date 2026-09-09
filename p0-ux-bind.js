@@ -324,6 +324,10 @@
   }
 
   function syncTabAria() {
+    if (typeof ux.syncTabAria === "function") {
+      ux.syncTabAria(document);
+      return;
+    }
     const active = document.querySelector(".app-view.is-active");
     const viewId = active ? active.id : "";
     document.querySelectorAll("[data-view-target]").forEach((tab) => {
@@ -588,9 +592,6 @@
       handleDeleteFill(event);
       handleTaken(event);
       handleUndo(event);
-      if (event.target.closest("[data-view-target]")) {
-        window.requestAnimationFrame(syncTabAria);
-      }
       if (event.target.closest("#export-data")) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -859,7 +860,11 @@
   }
 
   refreshRestoreControl();
-  syncTabAria();
+  if (typeof ux.installTabAriaSync === "function") {
+    ux.installTabAriaSync(document);
+  } else {
+    syncTabAria();
+  }
 
   window.FitGenP0UxBind = {
     adapter,
@@ -873,5 +878,6 @@
     activeFills: ux.activeFills,
     activeSchedules: ux.activeSchedules,
     refreshRestoreControl,
+    syncTabAria,
   };
 })();

@@ -23,9 +23,10 @@ This is **chrome / IA + existing P0 wiring only**. Calculator form/results, form
 |-------------------------|------------------|-------|
 | Baseline IA (extract outside git; Stage 0 hashes) | `index.html` hero, tab order/labels, view-chrome, tabbar after `main` | Do not load baseline `app.js` |
 | Stage 2 tokens (PR #27) | `styles.css` hero / fixed tabbar / view-chrome / snackbar placement | Tokens unchanged (`--bg` `#030504`, `--green` `#8ff11d`, tabbar 94/24) |
-| Existing P0 | `p0-ux-bind.js` (`handleWizardBack`, `syncTabAria`) | Writers stay in `src/ux/*` / `src/occ/*` |
+| Existing P0 | `p0-ux-bind.js` (`handleWizardBack`, `installTabAriaSync`) | Writers stay in `src/ux/*` / `src/occ/*` |
+| Tab a11y | `src/ux/tab-aria.ts` | `aria-current` follows restore, capture tab clicks, and programmatic view changes |
 | Schedule badge | `runtime-fixes.js` `renderScheduleIndicator` writes `.tab-label` | Prevents wiping tab icons |
-| Frozen | `app.js`, calc goldens, `src/occ/*`, `src/ux/*.ts` modules | Zero builder/formula/OCC edits |
+| Frozen | `app.js`, calc goldens, `src/occ/*` writers | Zero builder/formula/OCC edits |
 
 ## Screenshots
 
@@ -59,3 +60,4 @@ Rollback = revert this PR. Both storage generations remain loadable (Stage 3 env
 2. Typography remains IBM Plex / Sora (Manrope / Space Grotesk still deferred).
 3. Calculator form, results cards, and wizard step art stay on the GitHub path.
 4. Schedule due-count badge now writes `.tab-label` so icon markup survives.
+5. Codex `b7723af` review: `aria-current` is now kept in sync via `src/ux/tab-aria.ts` (MutationObserver + capture rAF). Regression: `scripts/ux/stage4-tab-aria-test.js`.

@@ -44,6 +44,10 @@ const jobs = [
     name: "Stage 4 shell/IA + P0 chrome wiring",
     file: path.join(__dirname, "ci", "stage4-shell-test.js"),
   },
+  {
+    name: "Stage 4 tab aria-current restore/click/programmatic",
+    file: path.join(__dirname, "ux", "stage4-tab-aria-test.js"),
+  },
 ];
 
 let failed = false;
