@@ -63,6 +63,7 @@
   modules["ux/save-summary"] = { exports: {}, dirname: "ux" };
   modules["ux/suggestion-typing"] = { exports: {}, dirname: "ux" };
   modules["ux/tab-aria"] = { exports: {}, dirname: "ux" };
+  modules["ux/ui-polish"] = { exports: {}, dirname: "ux" };
   modules["ux/wizard"] = { exports: {}, dirname: "ux" };
 
   (function (exports, require, module, __dirname) {
@@ -3152,9 +3153,10 @@ function applyEditedFill(input) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EDIT_FILL_DEFAULT_INTERVAL_DAYS = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planSuggestionFocus = exports.planSuggestionBlur = exports.findSuggestionWrap = exports.attachSuggestionTyping = exports.SUGGESTION_WRAP_CLASS = exports.SUGGESTION_TYPING_CLASS = exports.SUGGESTION_INPUT_IDS = exports.SUGGESTION_FOCUS_SCROLL_MS = exports.SUGGESTION_BLUR_HIDE_MS = exports.isPositiveNumber = exports.formatEditFillNumber = exports.editFillFormDefaults = exports.editFillDrawRangeMessage = exports.buildEditFillNote = exports.applyEditedFill = exports.EDIT_FILL_UNNAMED = exports.EDIT_FILL_MIN_DRAW_ML = exports.EDIT_FILL_INVALID_VALUES = exports.EDIT_FILL_DEFAULT_REMINDER_TIME = void 0;
-exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = void 0;
+exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.shouldShowCabinetChild = exports.shouldRemoveDuplicateDueTodayBanner = exports.removeDuplicateScheduleBanner = exports.isExpandedCaret = exports.isDueTodayBannerText = exports.collapseCabinetAtStartup = exports.applyCabinetAccordionLayout = exports.UI_POLISH_EXPANDED_CARET = exports.EXPANDED_FILL_STORAGE_KEY = exports.DUE_TODAY_BANNER_RE = exports.planSuggestionFocus = exports.planSuggestionBlur = exports.findSuggestionWrap = exports.attachSuggestionTyping = exports.SUGGESTION_WRAP_CLASS = exports.SUGGESTION_TYPING_CLASS = exports.SUGGESTION_INPUT_IDS = exports.SUGGESTION_FOCUS_SCROLL_MS = exports.SUGGESTION_BLUR_HIDE_MS = exports.isPositiveNumber = exports.formatEditFillNumber = exports.editFillFormDefaults = exports.editFillDrawRangeMessage = exports.buildEditFillNote = exports.applyEditedFill = exports.EDIT_FILL_UNNAMED = exports.EDIT_FILL_MIN_DRAW_ML = exports.EDIT_FILL_INVALID_VALUES = exports.EDIT_FILL_DEFAULT_REMINDER_TIME = void 0;
+exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = void 0;
+exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -3230,6 +3232,17 @@ Object.defineProperty(exports, "attachSuggestionTyping", { enumerable: true, get
 Object.defineProperty(exports, "findSuggestionWrap", { enumerable: true, get: function () { return suggestion_typing_1.findSuggestionWrap; } });
 Object.defineProperty(exports, "planSuggestionBlur", { enumerable: true, get: function () { return suggestion_typing_1.planSuggestionBlur; } });
 Object.defineProperty(exports, "planSuggestionFocus", { enumerable: true, get: function () { return suggestion_typing_1.planSuggestionFocus; } });
+var ui_polish_1 = require("./ui-polish");
+Object.defineProperty(exports, "DUE_TODAY_BANNER_RE", { enumerable: true, get: function () { return ui_polish_1.DUE_TODAY_BANNER_RE; } });
+Object.defineProperty(exports, "EXPANDED_FILL_STORAGE_KEY", { enumerable: true, get: function () { return ui_polish_1.EXPANDED_FILL_STORAGE_KEY; } });
+Object.defineProperty(exports, "UI_POLISH_EXPANDED_CARET", { enumerable: true, get: function () { return ui_polish_1.UI_POLISH_EXPANDED_CARET; } });
+Object.defineProperty(exports, "applyCabinetAccordionLayout", { enumerable: true, get: function () { return ui_polish_1.applyCabinetAccordionLayout; } });
+Object.defineProperty(exports, "collapseCabinetAtStartup", { enumerable: true, get: function () { return ui_polish_1.collapseCabinetAtStartup; } });
+Object.defineProperty(exports, "isDueTodayBannerText", { enumerable: true, get: function () { return ui_polish_1.isDueTodayBannerText; } });
+Object.defineProperty(exports, "isExpandedCaret", { enumerable: true, get: function () { return ui_polish_1.isExpandedCaret; } });
+Object.defineProperty(exports, "removeDuplicateScheduleBanner", { enumerable: true, get: function () { return ui_polish_1.removeDuplicateScheduleBanner; } });
+Object.defineProperty(exports, "shouldRemoveDuplicateDueTodayBanner", { enumerable: true, get: function () { return ui_polish_1.shouldRemoveDuplicateDueTodayBanner; } });
+Object.defineProperty(exports, "shouldShowCabinetChild", { enumerable: true, get: function () { return ui_polish_1.shouldShowCabinetChild; } });
 var dialog_1 = require("./dialog");
 Object.defineProperty(exports, "FOCUSABLE_SELECTOR", { enumerable: true, get: function () { return dialog_1.FOCUSABLE_SELECTOR; } });
 Object.defineProperty(exports, "FOCUS_VISIBLE_PX", { enumerable: true, get: function () { return dialog_1.FOCUS_VISIBLE_PX; } });
@@ -4057,6 +4070,142 @@ function installTabAriaSync(root) {
     modules["ux/tab-aria"].exports,
     createRequire(modules["ux/tab-aria"].dirname),
     modules["ux/tab-aria"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DUE_TODAY_BANNER_RE = exports.UI_POLISH_EXPANDED_CARET = exports.EXPANDED_FILL_STORAGE_KEY = void 0;
+exports.isExpandedCaret = isExpandedCaret;
+exports.isDueTodayBannerText = isDueTodayBannerText;
+exports.shouldShowCabinetChild = shouldShowCabinetChild;
+exports.shouldRemoveDuplicateDueTodayBanner = shouldRemoveDuplicateDueTodayBanner;
+exports.applyCabinetAccordionLayout = applyCabinetAccordionLayout;
+exports.collapseCabinetAtStartup = collapseCabinetAtStartup;
+exports.removeDuplicateScheduleBanner = removeDuplicateScheduleBanner;
+exports.EXPANDED_FILL_STORAGE_KEY = "peptide-calculator-v2-expanded-fill";
+exports.UI_POLISH_EXPANDED_CARET = "▾";
+exports.DUE_TODAY_BANNER_RE = /due today/i;
+function isExpandedCaret(text) {
+    return String(text || "").includes(exports.UI_POLISH_EXPANDED_CARET);
+}
+function isDueTodayBannerText(text) {
+    return exports.DUE_TODAY_BANNER_RE.test(String(text || ""));
+}
+function shouldShowCabinetChild(options) {
+    return options.isTopRow || options.expanded;
+}
+function shouldRemoveDuplicateDueTodayBanner(input) {
+    return input.childCount >= 2 && input.hasDueTodayCard && input.markTakenCount > 1;
+}
+function applyCabinetAccordionLayout(container) {
+    if (!container || typeof container.querySelectorAll !== "function") {
+        return 0;
+    }
+    const cards = container.querySelectorAll(".cabinet-card");
+    let applied = 0;
+    for (let index = 0; index < cards.length; index += 1) {
+        const card = cards[index];
+        const toggle = card.querySelector(".fill-toggle");
+        if (!toggle) {
+            continue;
+        }
+        const caret = toggle.querySelector(".caret");
+        const expanded = Boolean(caret && isExpandedCaret(caret.textContent));
+        const topRow = (typeof toggle.closest === "function"
+            ? toggle.closest(".fill-header, .list-topline, .card-topline")
+            : null) || toggle;
+        const children = card.children || [];
+        for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
+            const child = children[childIndex];
+            if (!child.style) {
+                continue;
+            }
+            child.style.display = shouldShowCabinetChild({
+                isTopRow: child === topRow,
+                expanded,
+            })
+                ? ""
+                : "none";
+        }
+        if (card.classList) {
+            if (expanded) {
+                card.classList.remove("is-collapsed");
+            }
+            else {
+                card.classList.add("is-collapsed");
+            }
+        }
+        applied += 1;
+    }
+    return applied;
+}
+function collapseCabinetAtStartup(container, state) {
+    if (state.collapsedOnce) {
+        applyCabinetAccordionLayout(container);
+        return { collapsedOnce: true, clicked: false };
+    }
+    if (!container || typeof container.querySelectorAll !== "function") {
+        return { collapsedOnce: false, clicked: false };
+    }
+    const toggles = container.querySelectorAll(".fill-toggle");
+    let openToggle = null;
+    for (let index = 0; index < toggles.length; index += 1) {
+        const button = toggles[index];
+        const caret = button.querySelector(".caret");
+        if (caret && isExpandedCaret(caret.textContent)) {
+            openToggle = button;
+            break;
+        }
+    }
+    if (openToggle && typeof openToggle.click === "function") {
+        state.collapsedOnce = true;
+        openToggle.click();
+        return { collapsedOnce: true, clicked: true };
+    }
+    if (container.querySelector(".cabinet-card")) {
+        applyCabinetAccordionLayout(container);
+        state.collapsedOnce = true;
+        return { collapsedOnce: true, clicked: false };
+    }
+    return { collapsedOnce: false, clicked: false };
+}
+function removeDuplicateScheduleBanner(list) {
+    if (!list || !list.children || typeof list.querySelectorAll !== "function") {
+        return false;
+    }
+    const cards = [];
+    for (let index = 0; index < list.children.length; index += 1) {
+        cards.push(list.children[index]);
+    }
+    const dueTodayCard = cards.find((card) => isDueTodayBannerText(card.textContent));
+    const markButtons = list.querySelectorAll('[data-action="mark-taken"]');
+    if (!dueTodayCard ||
+        !shouldRemoveDuplicateDueTodayBanner({
+            childCount: cards.length,
+            hasDueTodayCard: true,
+            markTakenCount: markButtons.length,
+        })) {
+        return false;
+    }
+    if (typeof dueTodayCard.remove === "function") {
+        dueTodayCard.remove();
+        return true;
+    }
+    if (dueTodayCard.parentElement && typeof dueTodayCard.parentElement.removeChild === "function") {
+        dueTodayCard.parentElement.removeChild(dueTodayCard);
+        return true;
+    }
+    dueTodayCard.style.display = "none";
+    return true;
+}
+
+  })(
+    modules["ux/ui-polish"].exports,
+    createRequire(modules["ux/ui-polish"].dirname),
+    modules["ux/ui-polish"],
     "ux"
   );
 

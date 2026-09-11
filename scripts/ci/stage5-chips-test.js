@@ -127,8 +127,8 @@ function main() {
   assert(!/data-chip-field="vial|data-chip-field="syringe|data-chip-field="water|data-chip-field="dose/.test(html), "HTML has no calc-field chip hosts");
   assert(/fitgen-chip-row/.test(css), "chip chrome lives in styles.css");
   assert(
-    /#cabinet-view\.is-active #medications-card/.test(css) && /display:\s*block\s*!important/.test(css),
-    "Stage 5 unhides medications-card that ui-polish-fix.js hides"
+    !/#medications-card[^{]*\{[^}]*display:\s*none/.test(css),
+    "medications-card is not CSS-hidden after ui-polish-fix.js retirement"
   );
   assert(/selected: false/.test(chipsTs), "chip model hard-codes selected false");
   assert(/UNKNOWN_NAME_STATE/.test(medNames), "unknown-state lives in src/ux/med-names.ts");

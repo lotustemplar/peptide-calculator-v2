@@ -98,6 +98,25 @@ export {
 export type { SuggestionInputNode, SuggestionTimers, SuggestionWrapNode } from "./suggestion-typing";
 
 export {
+  DUE_TODAY_BANNER_RE,
+  EXPANDED_FILL_STORAGE_KEY,
+  UI_POLISH_EXPANDED_CARET,
+  applyCabinetAccordionLayout,
+  collapseCabinetAtStartup,
+  isDueTodayBannerText,
+  isExpandedCaret,
+  removeDuplicateScheduleBanner,
+  shouldRemoveDuplicateDueTodayBanner,
+  shouldShowCabinetChild,
+} from "./ui-polish";
+export type {
+  CabinetCollapseResult,
+  CabinetCollapseState,
+  DuplicateBannerInput,
+  PolishQueryNode,
+} from "./ui-polish";
+
+export {
   FOCUSABLE_SELECTOR,
   FOCUS_VISIBLE_PX,
   MIN_TARGET_PX,
