@@ -372,6 +372,27 @@ function main() {
   assert(generated.includes("removeDuplicateScheduleBanner"), "browser bundle includes removeDuplicateScheduleBanner");
   assert(!generated.includes("installNotificationNoops"), "browser bundle does not include reminder stubs");
 
+  const evidenceDir = path.join(ROOT, "docs/evidence/stage-6b3-ui-polish");
+  const requiredShots = [
+    "after-desktop-cabinet-collapsed.png",
+    "after-mobile-cabinet-collapsed.png",
+    "after-desktop-cabinet-expanded.png",
+    "after-mobile-cabinet-expanded.png",
+    "after-desktop-cabinet-order.png",
+    "after-mobile-cabinet-order.png",
+    "after-desktop-schedule.png",
+    "after-mobile-schedule.png",
+    "after-desktop-selected-fill.png",
+    "after-mobile-selected-fill.png",
+    "after-desktop-notif-setup.png",
+    "after-mobile-notif-setup.png",
+  ];
+  assert(fs.existsSync(path.join(evidenceDir, "STAGE6B3.md")), "STAGE6B3 evidence manifest exists");
+  for (const name of requiredShots) {
+    const abs = path.join(evidenceDir, name);
+    assert(fs.existsSync(abs) && fs.statSync(abs).size > 1000, `evidence shot ${name} exists`);
+  }
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed) {
     process.exit(1);

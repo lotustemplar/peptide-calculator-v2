@@ -46,3 +46,9 @@ node scripts/ci/stage5-chips-test.js
 node scripts/ux/stage5-chips-capture.js --shots before
 node scripts/ux/stage5-chips-capture.js --shots after
 ```
+
+Issue #34 Stage 6b.3 cabinet accordion / Due Today banner evidence (also not part of `npm test`):
+
+```bash
+node scripts/ux/stage6b3-ui-polish-capture.js --shots after
+```
