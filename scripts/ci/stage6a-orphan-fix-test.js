@@ -8,7 +8,8 @@
  * Characterization: the five allowlisted patches are not loaded by
  * index.html and are not referenced by any runtime-loaded script.
  * Deletion lock: those files are gone from disk and from
- * scripts/ci/allowlists/runtime-fix-js.txt. Loaded patches stay put.
+ * scripts/ci/allowlists/runtime-fix-js.txt. Remaining loaded patches stay
+ * put except export-fix.js, which Stage 6b.1 retires separately.
  */
 
 const crypto = require("crypto");
@@ -28,7 +29,6 @@ const STAGE6A_ORPHANS = [
 ];
 
 const LOADED_PATCHES = [
-  "export-fix.js",
   "mobile-polish-fix.js",
   "native-backup-fix.js",
   "runtime-fixes.js",

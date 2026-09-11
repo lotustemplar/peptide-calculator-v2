@@ -2,7 +2,7 @@
 # Forward-looking only: adding any new matching file fails CI (SR-CI-001).
 # Do not add entries for new patches. Stage 6a removed unloaded orphans.
 # Remaining rows are still loaded by index.html (later Stage 6 slices).
-export-fix.js
+# Stage 6b.1 retired export-fix.js (Stage 3 bind + persist export owns #export-data).
 mobile-polish-fix.js
 native-backup-fix.js
 runtime-fixes.js
