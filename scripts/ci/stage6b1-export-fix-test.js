@@ -22,7 +22,6 @@ const { BUNDLE_REL, emitBrowserBundle } = require("../ux/emit-browser");
 const ROOT = repoRoot();
 const RETIRED = "export-fix.js";
 const REMAINING_LOADED = [
-  "mobile-polish-fix.js",
   "native-backup-fix.js",
   "runtime-fixes.js",
   "ui-polish-fix.js",
@@ -443,7 +442,7 @@ function main() {
   assertEqual(
     [...allowed].sort(),
     REMAINING_LOADED.slice().sort(),
-    "runtime-fix-js allowlist is exactly the four remaining loaded patches"
+    "runtime-fix-js allowlist is exactly the three remaining loaded patches"
   );
 
   assert(

@@ -459,6 +459,8 @@ function makeAdapter(store, options) {
   assert(/:focus-visible\s*\{[^}]*outline:\s*2px/s.test(css), "focus-visible 2px replacement");
   assert(/\.fitgen-dialog-card/.test(css), "in-app dialog styles exist");
   assert(/\.fitgen-snackbar/.test(css), "undo snackbar styles exist");
+  assert(/\.fitgen-suggestion-wrap\.is-typing/.test(css), "suggestion wrap hide-while-typing lives in styles.css");
+  assert(/\.fitgen-edit-overlay/.test(css), "edit-fill overlay styles live in styles.css");
 })();
 
 (function htmlSurfaces() {
@@ -470,6 +472,8 @@ function makeAdapter(store, options) {
   assert(html.includes("p0-ux.browser.js"), "FR-SCH-000 browser bundle is loaded");
   assert(html.includes("p0-ux-bind.js"), "P0.UX bind script is loaded");
   assert(html.includes("restore-backup-btn"), "Stage 3 restore control is present");
+  assert(html.includes("fitgen-edit-overlay"), "Stage 6b.2 edit-fill overlay is in markup");
+  assert(html.includes('id="fitgen-edit-title"'), "edit-fill dialog has a labelled title");
   assert(!/window\.alert\s*\(/.test(html), "no alert() in new markup");
 })();
 
@@ -477,6 +481,9 @@ function makeAdapter(store, options) {
   const bind = readText(path.join(repoRoot(), "p0-ux-bind.js"));
   assert(!/window\.alert\s*\(/.test(bind), "UX-SYS-001 bind does not use alert()");
   assert(!/window\.confirm\s*\(/.test(bind), "bind does not use native confirm");
+  assert(!/window\.prompt\s*\(/.test(bind), "bind does not use native prompt");
+  assert(bind.includes("applyEditedFill"), "bind owns absorbed edit-fill apply");
+  assert(bind.includes("attachSuggestionTyping"), "bind owns absorbed suggestion typing");
   assert(bind.includes("FitGenP0Ux"), "bind uses compiled P0.UX module");
   assert(bind.includes("markTaken") || bind.includes("createTakenAdapter"), "bind calls Taken adapter");
   assert(bind.includes("applyImport"), "bind wires Stage 3 applyImport");
@@ -499,6 +506,8 @@ function makeAdapter(store, options) {
   assert(typeof sandbox.FitGenP0Ux.applyImport === "function", "bundle applyImport loads");
   assert(typeof sandbox.FitGenP0Ux.previewImport === "function", "bundle previewImport loads");
   assert(typeof sandbox.FitGenP0Ux.installTabAriaSync === "function", "bundle installTabAriaSync loads");
+  assert(typeof sandbox.FitGenP0Ux.applyEditedFill === "function", "bundle applyEditedFill loads");
+  assert(typeof sandbox.FitGenP0Ux.attachSuggestionTyping === "function", "bundle attachSuggestionTyping loads");
 })();
 
 console.log(`P0.UX tests: ${passed} passed, ${failed} failed`);
