@@ -11,6 +11,7 @@
  * Stage 3: persist import safety for both data generations (Issue #28).
  * Stage 4: shell/IA + existing P0 Back/Cancel/Taken/Undo chrome (Issue #30).
  * Stage 5: med names + classified non-therapeutic chips (Issue #32).
+ * Stage 6a: unused orphan *-fix.js retirement (Issue #34).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -60,6 +61,10 @@ const jobs = [
   {
     name: "Stage 5 chip inventory + MED-FLAG freeze",
     file: path.join(__dirname, "ci", "stage5-chips-test.js"),
+  },
+  {
+    name: "Stage 6a orphan *-fix.js unused + retired",
+    file: path.join(__dirname, "ci", "stage6a-orphan-fix-test.js"),
   },
 ];
 

@@ -22,12 +22,6 @@
       "rationale": "CSS class token only; not user-facing clearance copy. Visual identity preserved in P0.6."
     },
     {
-      "file": "native-reminder-fix.js",
-      "patternId": "TAKE_AND_DRAW",
-      "context": "message: `Take ${doseAmount.toFixed(2).replace(/\\.00$/, \"\")} ${unitLabel} and draw ${drawMl.toFixed(2)} mL.`,",
-      "rationale": "Unloaded native reminder payload (UX-COPY-001). File is unloaded on main but still scanned; P0.6 did not re-enable sync or load this path."
-    },
-    {
       "file": "MEDIAN_SETUP.md",
       "patternId": "RECOMMENDED",
       "context": "## Recommended stack",
