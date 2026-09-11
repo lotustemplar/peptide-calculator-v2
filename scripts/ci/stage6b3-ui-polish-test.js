@@ -17,6 +17,7 @@ const { parsePathAllowlist } = require("./allowlist-freeze");
 const { readText, repoRoot, walkFiles } = require("./lib");
 const { compileUxModules } = require("../ux/harness");
 const { BUNDLE_REL, emitBrowserBundle } = require("../ux/emit-browser");
+const { assertPngHasVisibleContent } = require("./png-evidence");
 
 const ROOT = repoRoot();
 const RETIRED = "ui-polish-fix.js";
@@ -388,10 +389,25 @@ function main() {
     "after-mobile-notif-setup.png",
   ];
   assert(fs.existsSync(path.join(evidenceDir, "STAGE6B3.md")), "STAGE6B3 evidence manifest exists");
+  const shotStats = {};
   for (const name of requiredShots) {
     const abs = path.join(evidenceDir, name);
     assert(fs.existsSync(abs) && fs.statSync(abs).size > 1000, `evidence shot ${name} exists`);
+    try {
+      shotStats[name] = assertPngHasVisibleContent(abs);
+      assert(true, `evidence shot ${name} has visible non-uniform pixels (${shotStats[name].width}x${shotStats[name].height})`);
+    } catch (error) {
+      assert(false, error.message);
+    }
   }
+  const mobileNotif = shotStats["after-mobile-notif-setup.png"];
+  if (mobileNotif) {
+    assert(mobileNotif.height <= 1800, "mobile notif-setup is a reviewable viewport, not a beyond-viewport dump");
+    assert(mobileNotif.brightShare >= 0.02, "mobile notif-setup contains bright chrome pixels");
+  }
+  const notifBuf = fs.readFileSync(path.join(evidenceDir, "after-mobile-notif-setup.png"));
+  const scheduleBuf = fs.readFileSync(path.join(evidenceDir, "after-mobile-schedule.png"));
+  assert(!notifBuf.equals(scheduleBuf), "mobile notif-setup is a distinct crop from the schedule row shot");
 
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed) {

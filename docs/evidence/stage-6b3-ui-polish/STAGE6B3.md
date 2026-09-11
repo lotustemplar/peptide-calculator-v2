@@ -15,6 +15,8 @@ Fixtures use synthetic names **Demo Vial A** / **Demo Vial B** only. There is **
 
 PNG metadata: none intended (CDP PNG).
 
+Shots are **viewport-sized** (mobile 390×844 @2x, desktop 1280×800). The capture helper does **not** use `captureBeyondViewport` — oversized dumps preview on GitHub as an empty dark frame. After write, `scripts/ci/png-evidence.js` rejects uniform/blank or too-tall artifacts. Same check is part of `npm test` via `stage6b3-ui-polish-test.js`.
+
 ## What the shots show
 
 | Surface (Codex finding #1) | After |
@@ -36,7 +38,7 @@ PNG metadata: none intended (CDP PNG).
 | Selected-fill chrome visible | `after-desktop-selected-fill.png` | `after-mobile-selected-fill.png` |
 | Notification setup chrome visible | `after-desktop-notif-setup.png` | `after-mobile-notif-setup.png` |
 
-Capture helper (not part of `npm test`): `node scripts/ux/stage6b3-ui-polish-capture.js --shots after`.
+Capture helper (not part of `npm test`): `node scripts/ux/stage6b3-ui-polish-capture.js --shots after`. Inspect the written PNG pixels after generation; do not rely on DOM assertions alone.
 
 `runtime-fixes.js` (Stage 6c, not this slice) last-writes a fallback cabinet without `.fill-toggle`. The collapsed / expanded shots re-render `app.js` cabinet markup and apply the absorbed `collapseCabinetAtStartup` / accordion layout so the 6b.3 accordion is visible. Order, schedule, selected-fill, and notification shots are the as-loaded live chrome.
 

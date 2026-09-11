@@ -20,6 +20,7 @@ const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
 const { repoRoot } = require("../ci/lib");
+const { assertPngHasVisibleContent } = require("../ci/png-evidence");
 
 const PORT = Number(process.env.FITGEN_STAGE6B3_PORT || 4178);
 const CDP_PORT = Number(process.env.FITGEN_STAGE6B3_CDP_PORT || 9228);
@@ -366,7 +367,7 @@ async function screenshotViewport(cdp, filePath, selectors) {
   const { data } = await cdp.send("Page.captureScreenshot", {
     format: "png",
     fromSurface: true,
-    captureBeyondViewport: true,
+    captureBeyondViewport: false,
   });
   const buffer = Buffer.from(data, "base64");
   if (buffer.length < 1000) {
@@ -374,7 +375,8 @@ async function screenshotViewport(cdp, filePath, selectors) {
   }
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, buffer);
-  return buffer.length;
+  const stats = assertPngHasVisibleContent(filePath);
+  return { bytes: buffer.length, ...stats };
 }
 
 async function resetViewport(cdp, view) {
@@ -493,69 +495,83 @@ async function captureShots(cdp, label) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const views = [
-    { name: `${label}-mobile`, width: 390, height: 1600, dsf: 2, mobile: true },
-    { name: `${label}-desktop`, width: 1280, height: 1400, dsf: 1, mobile: false },
+    { name: `${label}-mobile`, width: 390, height: 844, dsf: 2, mobile: true },
+    { name: `${label}-desktop`, width: 1280, height: 800, dsf: 1, mobile: false },
   ];
 
   for (const view of views) {
     await loadSeededApp(cdp, view);
     await showView(cdp, "cabinet-view");
     const order = await assertCabinetOrder(cdp);
-    const orderBytes = await screenshotViewport(
+    const orderShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-cabinet-order.png`),
       ["#backup-card"]
     );
-    console.log(`wrote ${view.name}-cabinet-order.png (${orderBytes} bytes) ${JSON.stringify(order.medsText)}`);
+    console.log(
+      `wrote ${view.name}-cabinet-order.png (${orderShot.width}x${orderShot.height} ${orderShot.bytes} bytes) ${JSON.stringify(order.medsText)}`
+    );
 
     const collapsed = await restoreAppCabinetAccordion(cdp);
     if (!collapsed.collapsed || !collapsed.usageHidden) {
       throw new Error(`intended collapsed accordion not applied: ${JSON.stringify(collapsed)}`);
     }
-    const collapsedBytes = await screenshotViewport(
+    const collapsedShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-cabinet-collapsed.png`),
       ["#cabinet-card"]
     );
-    console.log(`wrote ${view.name}-cabinet-collapsed.png (${collapsedBytes} bytes) ${JSON.stringify(collapsed.names)}`);
+    console.log(
+      `wrote ${view.name}-cabinet-collapsed.png (${collapsedShot.width}x${collapsedShot.height} ${collapsedShot.bytes} bytes) ${JSON.stringify(collapsed.names)}`
+    );
 
     const expanded = await expandFirstCabinetFill(cdp);
     if (expanded.collapsed || !expanded.usageVisible) {
       throw new Error(`expanded cabinet rows not visible: ${JSON.stringify(expanded)}`);
     }
-    const expandedBytes = await screenshotViewport(
+    const expandedShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-cabinet-expanded.png`),
       ["#cabinet-card"]
     );
-    console.log(`wrote ${view.name}-cabinet-expanded.png (${expandedBytes} bytes) ${JSON.stringify(expanded)}`);
+    console.log(
+      `wrote ${view.name}-cabinet-expanded.png (${expandedShot.width}x${expandedShot.height} ${expandedShot.bytes} bytes) ${JSON.stringify(expanded)}`
+    );
 
     await showView(cdp, "schedule-view");
     await wait(250);
     const schedule = await assertSchedulePolish(cdp);
-    const scheduleBytes = await screenshotViewport(
+    const scheduleShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-schedule.png`),
-      ["#reminder-list"]
+      ["#reminder-list .list-card", "#reminder-list"]
     );
-    console.log(`wrote ${view.name}-schedule.png (${scheduleBytes} bytes) ${JSON.stringify(schedule.text)}`);
+    console.log(
+      `wrote ${view.name}-schedule.png (${scheduleShot.width}x${scheduleShot.height} ${scheduleShot.bytes} bytes) ${JSON.stringify(schedule.text)}`
+    );
 
+    await resetViewport(cdp, view);
+    await showView(cdp, "schedule-view");
     const notif = await assertNotifSetup(cdp);
-    const notifBytes = await screenshotViewport(
+    const notifShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-notif-setup.png`),
       ["#notif-setup-card"]
     );
-    console.log(`wrote ${view.name}-notif-setup.png (${notifBytes} bytes) ${JSON.stringify(notif.text)}`);
+    console.log(
+      `wrote ${view.name}-notif-setup.png (${notifShot.width}x${notifShot.height} ${notifShot.bytes} bytes) ${JSON.stringify(notif.text)}`
+    );
 
     await showView(cdp, "calculator-view");
     const selected = await assertSelectedFill(cdp);
-    const selectedBytes = await screenshotViewport(
+    const selectedShot = await screenshotViewport(
       cdp,
       path.join(OUT_DIR, `${view.name}-selected-fill.png`),
       ["#selected-fill"]
     );
-    console.log(`wrote ${view.name}-selected-fill.png (${selectedBytes} bytes) ${JSON.stringify(selected.text)}`);
+    console.log(
+      `wrote ${view.name}-selected-fill.png (${selectedShot.width}x${selectedShot.height} ${selectedShot.bytes} bytes) ${JSON.stringify(selected.text)}`
+    );
   }
 }
 
