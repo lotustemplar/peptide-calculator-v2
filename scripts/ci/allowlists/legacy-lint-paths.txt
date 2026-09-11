@@ -6,7 +6,6 @@ backend/server.js
 config.example.js
 config.js
 disable-web-reminder-fallback.js
-export-fix.js
 mobile-polish-fix.js
 native-backup-fix.js
 peptide-list.js
