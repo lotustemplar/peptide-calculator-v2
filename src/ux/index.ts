@@ -63,6 +63,41 @@ export {
 export type { CascadeApplyInput, CascadeApplyResult, CascadeFill, CascadePlan, CascadeSchedule } from "./cabinet-cascade";
 
 export {
+  EDIT_FILL_DEFAULT_INTERVAL_DAYS,
+  EDIT_FILL_DEFAULT_REMINDER_TIME,
+  EDIT_FILL_INVALID_VALUES,
+  EDIT_FILL_MIN_DRAW_ML,
+  EDIT_FILL_UNNAMED,
+  applyEditedFill,
+  buildEditFillNote,
+  editFillDrawRangeMessage,
+  editFillFormDefaults,
+  formatEditFillNumber,
+  isPositiveNumber,
+} from "./edit-fill";
+export type {
+  ApplyEditedFillInput,
+  ApplyEditedFillResult,
+  EditFillDefaults,
+  EditFillFormValues,
+  EditFillRecord,
+  EditFillSchedule,
+} from "./edit-fill";
+
+export {
+  SUGGESTION_BLUR_HIDE_MS,
+  SUGGESTION_FOCUS_SCROLL_MS,
+  SUGGESTION_INPUT_IDS,
+  SUGGESTION_TYPING_CLASS,
+  SUGGESTION_WRAP_CLASS,
+  attachSuggestionTyping,
+  findSuggestionWrap,
+  planSuggestionBlur,
+  planSuggestionFocus,
+} from "./suggestion-typing";
+export type { SuggestionInputNode, SuggestionTimers, SuggestionWrapNode } from "./suggestion-typing";
+
+export {
   FOCUSABLE_SELECTOR,
   FOCUS_VISIBLE_PX,
   MIN_TARGET_PX,

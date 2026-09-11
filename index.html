@@ -404,6 +404,51 @@
       </div>
     </div>
 
+    <div id="fitgen-edit-overlay" class="fitgen-edit-overlay" hidden>
+      <div class="fitgen-edit-card" role="dialog" aria-modal="true" aria-labelledby="fitgen-edit-title">
+        <div class="fitgen-edit-head">
+          <div>
+            <p class="section-kicker">Edit Fill</p>
+            <h2 id="fitgen-edit-title">Update your peptide fill</h2>
+            <p class="fitgen-edit-copy">Adjust the fill amount, dose, schedule cadence, and reminder time without dropping into raw prompt boxes.</p>
+          </div>
+          <button class="ghost-button icon-button" type="button" id="fitgen-edit-close" aria-label="Close edit fill dialog">×</button>
+        </div>
+        <p class="fitgen-edit-note" id="fitgen-edit-note"></p>
+        <p class="form-message warning is-hidden" id="fitgen-edit-error" role="alert"></p>
+        <form id="fitgen-edit-form" class="fitgen-edit-grid">
+          <label>
+            <span>Fill name</span>
+            <input id="fitgen-edit-name" type="text" maxlength="80" required>
+          </label>
+          <label>
+            <span>BAC water amount (mL)</span>
+            <input id="fitgen-edit-water" type="number" min="0.5" step="0.05" required>
+          </label>
+          <label>
+            <span id="fitgen-edit-dose-label">Dose amount</span>
+            <input id="fitgen-edit-dose" type="number" min="0.01" step="0.01" required>
+          </label>
+          <label>
+            <span>Every X days</span>
+            <input id="fitgen-edit-interval" type="number" min="1" step="1" required>
+          </label>
+          <label>
+            <span>Reminder time</span>
+            <input id="fitgen-edit-time" type="time" required>
+          </label>
+          <label>
+            <span>Start date</span>
+            <input id="fitgen-edit-start" type="date" required>
+          </label>
+          <div class="fitgen-edit-actions">
+            <button class="primary-button" type="submit">Save Changes</button>
+            <button class="secondary-button" type="button" id="fitgen-edit-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="modal-shell is-hidden" id="fitgen-confirm-dialog" aria-hidden="true">
       <div class="modal-backdrop" id="fitgen-confirm-backdrop"></div>
       <div
@@ -435,7 +480,6 @@
     <script src="./p0-ux-bind.js"></script>
     <script src="./app.js"></script>
     <script src="./runtime-fixes.js"></script>
-    <script src="./mobile-polish-fix.js"></script>
     <script src="./native-backup-fix.js"></script>
     <script src="./ui-polish-fix.js"></script>
   </body>

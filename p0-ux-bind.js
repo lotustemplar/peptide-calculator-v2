@@ -524,6 +524,225 @@
     });
   }
 
+  const EDIT_OVERLAY_ID = "fitgen-edit-overlay";
+  const ACTIVE_VIEW_KEY = "peptide-calculator-v2-active-view";
+
+  function editOverlay() {
+    return document.getElementById(EDIT_OVERLAY_ID);
+  }
+
+  function setEditFillError(message) {
+    const node = document.getElementById("fitgen-edit-error");
+    if (!node) {
+      return;
+    }
+    node.textContent = message || "";
+    node.classList.toggle("is-hidden", !message);
+  }
+
+  function closeEditFillModal() {
+    const overlay = editOverlay();
+    if (overlay) {
+      overlay.hidden = true;
+      overlay.removeAttribute("data-fill-id");
+    }
+    setEditFillError("");
+  }
+
+  function editModalMarkup() {
+    return `
+      <div class="fitgen-edit-card" role="dialog" aria-modal="true" aria-labelledby="fitgen-edit-title">
+        <div class="fitgen-edit-head">
+          <div>
+            <p class="section-kicker">Edit Fill</p>
+            <h2 id="fitgen-edit-title">Update your peptide fill</h2>
+            <p class="fitgen-edit-copy">Adjust the fill amount, dose, schedule cadence, and reminder time without dropping into raw prompt boxes.</p>
+          </div>
+          <button class="ghost-button icon-button" type="button" id="fitgen-edit-close" aria-label="Close edit fill dialog">×</button>
+        </div>
+        <p class="fitgen-edit-note" id="fitgen-edit-note"></p>
+        <p class="form-message warning is-hidden" id="fitgen-edit-error" role="alert"></p>
+        <form id="fitgen-edit-form" class="fitgen-edit-grid">
+          <label>
+            <span>Fill name</span>
+            <input id="fitgen-edit-name" type="text" maxlength="80" required>
+          </label>
+          <label>
+            <span>BAC water amount (mL)</span>
+            <input id="fitgen-edit-water" type="number" min="0.5" step="0.05" required>
+          </label>
+          <label>
+            <span id="fitgen-edit-dose-label">Dose amount</span>
+            <input id="fitgen-edit-dose" type="number" min="0.01" step="0.01" required>
+          </label>
+          <label>
+            <span>Every X days</span>
+            <input id="fitgen-edit-interval" type="number" min="1" step="1" required>
+          </label>
+          <label>
+            <span>Reminder time</span>
+            <input id="fitgen-edit-time" type="time" required>
+          </label>
+          <label>
+            <span>Start date</span>
+            <input id="fitgen-edit-start" type="date" required>
+          </label>
+          <div class="fitgen-edit-actions">
+            <button class="primary-button" type="submit">Save Changes</button>
+            <button class="secondary-button" type="button" id="fitgen-edit-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    `;
+  }
+
+  function ensureEditFillModal() {
+    let overlay = editOverlay();
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = EDIT_OVERLAY_ID;
+      overlay.className = "fitgen-edit-overlay";
+      overlay.hidden = true;
+      overlay.innerHTML = editModalMarkup();
+      document.body.appendChild(overlay);
+    }
+    if (overlay.dataset.fitgenEditBound === "true") {
+      return overlay;
+    }
+    overlay.dataset.fitgenEditBound = "true";
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        closeEditFillModal();
+      }
+    });
+    overlay.querySelector("#fitgen-edit-close")?.addEventListener("click", closeEditFillModal);
+    overlay.querySelector("#fitgen-edit-cancel")?.addEventListener("click", closeEditFillModal);
+    overlay.querySelector("#fitgen-edit-form")?.addEventListener("submit", saveEditedFill);
+    return overlay;
+  }
+
+  function openEditFillModal(fillId) {
+    if (!fillId || typeof ux.applyEditedFill !== "function") {
+      return;
+    }
+    const fill = readFills().find((item) => item.savedId === fillId);
+    if (!fill) {
+      return;
+    }
+    const schedules = readSchedules();
+    const linked = schedules.filter((item) => item.fillSavedId === fillId);
+    const defaults = ux.editFillFormDefaults(fill, linked[0] || null, todayKey(), linked.length);
+    const overlay = ensureEditFillModal();
+    overlay.dataset.fillId = fillId;
+    const name = overlay.querySelector("#fitgen-edit-name");
+    const water = overlay.querySelector("#fitgen-edit-water");
+    const dose = overlay.querySelector("#fitgen-edit-dose");
+    const interval = overlay.querySelector("#fitgen-edit-interval");
+    const time = overlay.querySelector("#fitgen-edit-time");
+    const start = overlay.querySelector("#fitgen-edit-start");
+    const doseLabel = overlay.querySelector("#fitgen-edit-dose-label");
+    const note = overlay.querySelector("#fitgen-edit-note");
+    if (name) name.value = defaults.name;
+    if (water) water.value = defaults.waterMl;
+    if (dose) dose.value = defaults.doseAmount;
+    if (interval) interval.value = defaults.intervalDays;
+    if (time) time.value = defaults.reminderTime;
+    if (start) start.value = defaults.startDate;
+    if (doseLabel) doseLabel.textContent = defaults.doseLabel;
+    if (note) note.textContent = defaults.note;
+    setEditFillError("");
+    overlay.hidden = false;
+    window.setTimeout(() => {
+      if (name && typeof name.focus === "function") {
+        name.focus();
+      }
+    }, 40);
+  }
+
+  async function saveEditedFill(event) {
+    event.preventDefault();
+    const overlay = editOverlay();
+    const fillId = overlay?.dataset.fillId;
+    if (!fillId) {
+      return;
+    }
+    const result = ux.applyEditedFill({
+      fills: readFills(),
+      schedules: readSchedules(),
+      fillId,
+      form: {
+        name: overlay.querySelector("#fitgen-edit-name")?.value || "",
+        waterMl: overlay.querySelector("#fitgen-edit-water")?.value || "",
+        doseAmount: overlay.querySelector("#fitgen-edit-dose")?.value || "",
+        intervalDays: overlay.querySelector("#fitgen-edit-interval")?.value || "",
+        reminderTime: overlay.querySelector("#fitgen-edit-time")?.value || "",
+        startDate: overlay.querySelector("#fitgen-edit-start")?.value || "",
+      },
+    });
+    if (!result.ok) {
+      if (result.code !== "NOT_FOUND") {
+        setEditFillError(result.message);
+      }
+      return;
+    }
+    try {
+      const next = {
+        fills: result.fills,
+        schedules: result.schedules,
+        occurrences: readOccurrences(),
+      };
+      writeAppState(next);
+      window.localStorage.setItem(ACTIVE_VIEW_KEY, JSON.stringify("cabinet-view"));
+      if (typeof state !== "undefined") {
+        state.activeView = "cabinet-view";
+      }
+      if (window.FitGenRuntimeBridge?.setView) {
+        window.FitGenRuntimeBridge.setView("cabinet-view");
+      }
+      if (typeof window.syncRemindersToBackend === "function") {
+        try {
+          await window.syncRemindersToBackend();
+        } catch {
+          // Overlay swallowed reminder-sync failures; keep that call shape.
+        }
+      }
+      if (window.FitGenRuntimeBridge?.persistAndRender) {
+        window.FitGenRuntimeBridge.persistAndRender(next.fills, next.schedules);
+      } else if (typeof window.renderAll === "function") {
+        try {
+          window.renderAll();
+        } catch {
+          rerender();
+        }
+      } else {
+        rerender();
+      }
+    } catch {
+      setEditFillError(ux.PERSIST_FAIL_ERROR);
+      return;
+    }
+    closeEditFillModal();
+  }
+
+  function handleEditFill(event) {
+    const button = event.target.closest("[data-action='edit-fill']");
+    if (!button) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openEditFillModal(button.dataset.id);
+  }
+
+  function attachSuggestionTypingHosts() {
+    if (typeof ux.attachSuggestionTyping !== "function") {
+      return;
+    }
+    ux.SUGGESTION_INPUT_IDS.forEach((inputId) => {
+      ux.attachSuggestionTyping(document.getElementById(inputId), window);
+    });
+  }
+
   function showInlineTakenError(host, message) {
     let node = host.querySelector(".fitgen-taken-error");
     if (!node) {
@@ -589,6 +808,7 @@
       handleWizardNext(event);
       handleWizardBack(event);
       handleWizardCancel(event);
+      handleEditFill(event);
       handleDeleteFill(event);
       handleTaken(event);
       handleUndo(event);
@@ -648,6 +868,12 @@
     }
   });
   document.addEventListener("keydown", (event) => {
+    const overlay = editOverlay();
+    if (overlay && !overlay.hidden && event.key === "Escape") {
+      event.preventDefault();
+      closeEditFillModal();
+      return;
+    }
     if (!confirmState) {
       return;
     }
@@ -1219,6 +1445,7 @@
     }
     attachNameField("med-name", "med-name-chips", "med-name-autocomplete");
     attachNameField("save-fill-name", "save-fill-name-chips", "save-fill-name-autocomplete");
+    attachSuggestionTypingHosts();
     renderStage5Medications();
     refreshNameChipHosts();
     window.setTimeout(revealMedicationsCard, 0);
@@ -1234,6 +1461,8 @@
   }
 
   refreshRestoreControl();
+  ensureEditFillModal();
+  attachSuggestionTypingHosts();
   if (typeof ux.installTabAriaSync === "function") {
     ux.installTabAriaSync(document);
   } else {
@@ -1258,5 +1487,8 @@
     refreshNameChipHosts,
     loadMedication,
     canLoadMedication: (med) => ux.canLoadMedication(med),
+    openEditFill: openEditFillModal,
+    closeEditFill: closeEditFillModal,
+    attachSuggestionTypingHosts,
   };
 })();

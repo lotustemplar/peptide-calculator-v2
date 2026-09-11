@@ -3,7 +3,7 @@
 # Do not add entries for new patches. Stage 6a removed unloaded orphans.
 # Remaining rows are still loaded by index.html (later Stage 6 slices).
 # Stage 6b.1 retired export-fix.js (Stage 3 bind + persist export owns #export-data).
-mobile-polish-fix.js
+# Stage 6b.2 retired mobile-polish-fix.js (bind + src/ux edit-fill + suggestion typing).
 native-backup-fix.js
 runtime-fixes.js
 ui-polish-fix.js

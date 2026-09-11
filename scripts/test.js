@@ -13,6 +13,7 @@
  * Stage 5: med names + classified non-therapeutic chips (Issue #32).
  * Stage 6a: unused orphan *-fix.js retirement (Issue #34).
  * Stage 6b.1: retire superseded export-fix.js; Stage 3 export path owns #export-data.
+ * Stage 6b.2: absorb mobile-polish-fix.js into src/ux + bind (edit-fill + suggestion typing).
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -70,6 +71,10 @@ const jobs = [
   {
     name: "Stage 6b.1 export-fix.js retired; Stage 3 export owns #export-data",
     file: path.join(__dirname, "ci", "stage6b1-export-fix-test.js"),
+  },
+  {
+    name: "Stage 6b.2 mobile-polish-fix.js absorbed into src/ + bind",
+    file: path.join(__dirname, "ci", "stage6b2-mobile-polish-test.js"),
   },
 ];
 

@@ -56,10 +56,12 @@
   modules["ux/chips"] = { exports: {}, dirname: "ux" };
   modules["ux/copy"] = { exports: {}, dirname: "ux" };
   modules["ux/dialog"] = { exports: {}, dirname: "ux" };
+  modules["ux/edit-fill"] = { exports: {}, dirname: "ux" };
   modules["ux/index"] = { exports: {}, dirname: "ux" };
   modules["ux/med-names"] = { exports: {}, dirname: "ux" };
   modules["ux/persist"] = { exports: {}, dirname: "ux" };
   modules["ux/save-summary"] = { exports: {}, dirname: "ux" };
+  modules["ux/suggestion-typing"] = { exports: {}, dirname: "ux" };
   modules["ux/tab-aria"] = { exports: {}, dirname: "ux" };
   modules["ux/wizard"] = { exports: {}, dirname: "ux" };
 
@@ -3034,10 +3036,125 @@ function dialogAria(titleId) {
   (function (exports, require, module, __dirname) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FOCUSABLE_SELECTOR = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
-exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = void 0;
-exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = void 0;
-exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = void 0;
+exports.EDIT_FILL_INVALID_VALUES = exports.EDIT_FILL_UNNAMED = exports.EDIT_FILL_DEFAULT_REMINDER_TIME = exports.EDIT_FILL_DEFAULT_INTERVAL_DAYS = exports.EDIT_FILL_MIN_DRAW_ML = void 0;
+exports.editFillDrawRangeMessage = editFillDrawRangeMessage;
+exports.isPositiveNumber = isPositiveNumber;
+exports.formatEditFillNumber = formatEditFillNumber;
+exports.buildEditFillNote = buildEditFillNote;
+exports.editFillFormDefaults = editFillFormDefaults;
+exports.applyEditedFill = applyEditedFill;
+exports.EDIT_FILL_MIN_DRAW_ML = 0.05;
+exports.EDIT_FILL_DEFAULT_INTERVAL_DAYS = 7;
+exports.EDIT_FILL_DEFAULT_REMINDER_TIME = "09:00";
+exports.EDIT_FILL_UNNAMED = "Unnamed Peptide Fill";
+exports.EDIT_FILL_INVALID_VALUES = "Please enter valid fill and schedule values.";
+function editFillDrawRangeMessage(doseMl) {
+    return `That dose would require ${doseMl.toFixed(2)} mL, which falls outside the supported draw range for this fill.`;
+}
+function isPositiveNumber(value) {
+    return Number.isFinite(Number(value)) && Number(value) > 0;
+}
+function formatEditFillNumber(value) {
+    return Number(value).toFixed(2).replace(/\.00$/, "");
+}
+function buildEditFillNote(fill, linkedScheduleCount) {
+    const unit = fill.unitLabel || "mg";
+    const shownCount = linkedScheduleCount || 1;
+    const plural = linkedScheduleCount === 1 ? "" : "s";
+    return `${formatEditFillNumber(fill.vialAmount)} ${unit} vial · currently ${formatEditFillNumber(fill.waterMl)} mL BAC water · ${shownCount} linked schedule${plural}.`;
+}
+function editFillFormDefaults(fill, primarySchedule, todayKey, linkedScheduleCount = 0) {
+    const unit = fill.unitLabel || "mg";
+    return {
+        name: fill.name || "",
+        waterMl: Number(fill.waterMl || 0).toFixed(2),
+        doseAmount: formatEditFillNumber(primarySchedule?.doseAmount || fill.recommendedDoseAmount || 0),
+        intervalDays: String(primarySchedule?.intervalDays || exports.EDIT_FILL_DEFAULT_INTERVAL_DAYS),
+        reminderTime: primarySchedule?.reminderTime || exports.EDIT_FILL_DEFAULT_REMINDER_TIME,
+        startDate: primarySchedule?.startDate || todayKey,
+        doseLabel: `Dose amount (${unit})`,
+        note: buildEditFillNote(fill, linkedScheduleCount),
+    };
+}
+function applyEditedFill(input) {
+    const fillIndex = input.fills.findIndex((item) => item.savedId === input.fillId);
+    if (fillIndex === -1) {
+        return { ok: false, code: "NOT_FOUND", message: "" };
+    }
+    const current = input.fills[fillIndex];
+    const nextName = String(input.form.name || "").trim() || current.name || exports.EDIT_FILL_UNNAMED;
+    const nextWaterMl = Number(input.form.waterMl);
+    const nextDoseAmount = Number(input.form.doseAmount);
+    const nextIntervalDays = Number(input.form.intervalDays);
+    const nextTime = String(input.form.reminderTime || "");
+    const nextStart = String(input.form.startDate || "");
+    const vialAmount = Number(current.vialAmount || 0);
+    const syringeMax = Number(current.syringeMax || 1);
+    if (!isPositiveNumber(vialAmount) ||
+        !isPositiveNumber(nextWaterMl) ||
+        !isPositiveNumber(nextDoseAmount) ||
+        !Number.isInteger(nextIntervalDays) ||
+        nextIntervalDays < 1 ||
+        !nextTime ||
+        !nextStart) {
+        return { ok: false, code: "INVALID_VALUES", message: exports.EDIT_FILL_INVALID_VALUES };
+    }
+    const nextConcentration = vialAmount / nextWaterMl;
+    const nextDoseMl = nextDoseAmount / nextConcentration;
+    if (!isPositiveNumber(nextDoseMl) || nextDoseMl < exports.EDIT_FILL_MIN_DRAW_ML || nextDoseMl > syringeMax) {
+        return { ok: false, code: "DRAW_RANGE", message: editFillDrawRangeMessage(nextDoseMl) };
+    }
+    const fill = {
+        ...current,
+        name: nextName,
+        waterMl: Number(nextWaterMl.toFixed(2)),
+        concentrationPerMl: nextConcentration,
+        recommendedDoseAmount: nextDoseAmount,
+        maxWaterMl: Math.max(Number(current.maxWaterMl || 0), Number(nextWaterMl.toFixed(2))),
+    };
+    const fills = input.fills.map((item, index) => (index === fillIndex ? fill : item));
+    const updatedSchedules = input.schedules.map((schedule) => {
+        if (schedule.fillSavedId !== input.fillId) {
+            return schedule;
+        }
+        return {
+            ...schedule,
+            doseAmount: nextDoseAmount,
+            doseMl: Number(nextDoseMl.toFixed(2)),
+            intervalDays: nextIntervalDays,
+            reminderTime: nextTime,
+            startDate: nextStart,
+            fillSnapshot: {
+                ...(schedule.fillSnapshot || {}),
+                ...fill,
+            },
+        };
+    });
+    return {
+        ok: true,
+        fills,
+        schedules: updatedSchedules,
+        fill,
+        doseMl: nextDoseMl,
+        linkedScheduleCount: updatedSchedules.filter((item) => item.fillSavedId === input.fillId).length,
+    };
+}
+
+  })(
+    modules["ux/edit-fill"].exports,
+    createRequire(modules["ux/edit-fill"].dirname),
+    modules["ux/edit-fill"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EDIT_FILL_DEFAULT_INTERVAL_DAYS = exports.planCabinetCascade = exports.isArchivedLifecycle = exports.applyCabinetArchive = exports.activeSchedules = exports.activeFills = exports.FILL_LIFECYCLE_ARCHIVED = exports.FILL_LIFECYCLE_ACTIVE = exports.validateSaveSchedule = exports.summaryContainsForbiddenFraming = exports.buildSaveSummary = exports.validateWizardStep = exports.parsePositiveNumber = exports.normalizeWizardValue = exports.isWizardDirty = exports.firstInvalidField = exports.discardWizardDraft = exports.characterizedDefaults = exports.CHARACTERIZED_DEFAULTS = exports.writerErrorMessage = exports.cabinetDeleteTitle = exports.cabinetDeleteBody = exports.UNDO_LABEL = exports.TAKEN_SNACKBAR_TEXT = exports.SAVE_SCHEDULE_ERROR = exports.SAVE_DISCLAIMER = exports.SAVE_CONFIRM_TITLE = exports.SAVE_CONFIRM_PRIMARY = exports.SAVE_CONFIRM_CANCEL = exports.PERSIST_FAIL_ERROR = exports.MED_SAVE_NAME = exports.MED_REMOVE_LABEL = exports.MED_NAME_PLACEHOLDER = exports.MED_NAME_LABEL = exports.MED_NAME_HELPER = exports.MED_NAME_CHIPS_LABEL = exports.MED_NAME_AUTOCOMPLETE_LABEL = exports.MED_LOAD_UNAVAILABLE = exports.MED_LOAD_LABEL = exports.MED_EMPTY_LIST = exports.MED_EDIT_LABEL = exports.MARK_TAKEN_LABEL = exports.FIELD_NUMBER_ERROR = exports.FIELD_DOSE_GT_VIAL_ERROR = exports.DISCARD_TITLE = exports.DISCARD_KEEP = exports.DISCARD_CONFIRM = exports.CHARACTERIZED_DEFAULTS_NOTE = exports.CABINET_DELETE_PRIMARY = exports.CABINET_DELETE_CANCEL = void 0;
+exports.formatStoredDose = exports.formatMedicationMeta = exports.loadMedicationIntoCalculator = exports.collapseNameWhitespace = exports.classifyMedName = exports.canLoadMedication = exports.buildMedicationRecord = exports.UNKNOWN_NAME_STATE = exports.UNKNOWN_NAME_DISPLAY = exports.RECENT_NAME_LIMIT = exports.KNOWN_NAME_STATE = exports.stage5NameChips = exports.isShippableChip = exports.forbiddenChipFraming = exports.assertNoPreselect = exports.UNKNOWN_CHIP_COPY = exports.CUSTOM_CHIP_COPY = exports.CHIP_FIELD_PEPTIDE_NAME = exports.CHIP_DEFAULT_SELECTION = exports.syncTabAria = exports.installTabAriaSync = exports.currentActiveViewId = exports.trapTabKey = exports.shouldCloseOnKey = exports.nextFocusIndex = exports.dialogAria = exports.confirmAllowsEscape = exports.UNDO_SNACKBAR_MS = exports.MIN_TARGET_PX = exports.FOCUS_VISIBLE_PX = exports.FOCUSABLE_SELECTOR = exports.planSuggestionFocus = exports.planSuggestionBlur = exports.findSuggestionWrap = exports.attachSuggestionTyping = exports.SUGGESTION_WRAP_CLASS = exports.SUGGESTION_TYPING_CLASS = exports.SUGGESTION_INPUT_IDS = exports.SUGGESTION_FOCUS_SCROLL_MS = exports.SUGGESTION_BLUR_HIDE_MS = exports.isPositiveNumber = exports.formatEditFillNumber = exports.editFillFormDefaults = exports.editFillDrawRangeMessage = exports.buildEditFillNote = exports.applyEditedFill = exports.EDIT_FILL_UNNAMED = exports.EDIT_FILL_MIN_DRAW_ML = exports.EDIT_FILL_INVALID_VALUES = exports.EDIT_FILL_DEFAULT_REMINDER_TIME = void 0;
+exports.EXPORT_CONFIRM_TITLE = exports.EXPORT_CONFIRM_PRIMARY = exports.EXPORT_CONFIRM_CANCEL = exports.BASELINE_SYNTHETIC_SCHEDULE_PREFIX = exports.BASELINE_ENVELOPE_KEY = exports.BASELINE_COEXIST_NOTE = exports.BACKUP_SCHEMA_V3 = exports.undoTaken = exports.reloadSnapshot = exports.materializeLegacyTakenDates = exports.markTaken = exports.lookupOccurrence = exports.explicitLegacyTakenDates = exports.toWriterSnapshot = exports.resolveTimeZone = exports.resolveScheduleFillId = exports.mirrorTakenDate = exports.isScheduleTakenOnDate = exports.hydrateLegacyOccurrences = exports.fillToDepletion = exports.createTakenAdapter = exports.canUndoTaken = exports.applyWriterSnapshot = exports.writeMedicationsFromUi = exports.snapshotEqual = exports.readMedications = exports.readAppState = exports.hydrateLegacyMirrors = exports.emptyAppState = exports.commitAppState = exports.cloneAppState = exports.attachMedicationsWriteBridge = exports.SCHEDULES_STORAGE_KEY = exports.PERSIST_WRITE_STEPS = exports.OCCURRENCES_STORAGE_KEY = exports.MEDICATIONS_STORAGE_KEY = exports.FILLS_STORAGE_KEY = exports.ENVELOPE_STORAGE_KEY = exports.upsertMedication = exports.removeMedication = exports.recentUserNames = exports.readMedNameState = exports.planMedicationLoad = exports.optionalUnitLabel = exports.optionalPositiveNumber = exports.nameMatchKey = exports.medicationFromUnknown = exports.matchNameSuggestions = exports.isUnknownNameInput = exports.formatStoredInterval = void 0;
+exports.writeLocalBackup = exports.restoreFromSlot = exports.restoreAvailable = exports.readGithubState = exports.previewImportFromStorage = exports.previewImport = exports.previewBodyHtml = exports.parseBackupText = exports.mapToV3 = exports.inspectRestore = exports.importClassLabel = exports.githubStateEqual = exports.exportDocumentJson = exports.classifyBackup = exports.chooseLocalExportMode = exports.buildExportDocument = exports.applyImport = exports.applyDuplicatePolicy = exports.RESTORE_UNAVAILABLE = exports.RESTORE_TITLE = exports.RESTORE_PRIMARY = exports.RESTORE_EXPIRED = exports.RESTORE_CORRUPT = exports.RESTORE_CANCEL = exports.RESTORE_BUTTON_LABEL = exports.RECOVERY_TTL_MS = exports.RECOVERY_SLOT_PENDING_KEY = exports.RECOVERY_SLOT_KEY = exports.IMPORT_SKIP_PRIMARY = exports.IMPORT_REPLACE_TITLE = exports.IMPORT_REPLACE_PRIMARY = exports.IMPORT_REPLACE_LINK = exports.IMPORT_REPLACE_BACK = exports.IMPORT_QUOTA_ERROR = exports.IMPORT_PREVIEW_TITLE = exports.IMPORT_CLOSE = exports.IMPORT_CANCEL = exports.IMPORT_BLOCKED_NEWER = exports.IMPORT_BLOCKED_EMPTY = exports.IMPORT_BLOCKED_CORRUPT = exports.IMPORT_APPLY_ERROR = exports.EXPORT_PLAINTEXT_WARNING = void 0;
 var copy_1 = require("./copy");
 Object.defineProperty(exports, "CABINET_DELETE_CANCEL", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_CANCEL; } });
 Object.defineProperty(exports, "CABINET_DELETE_PRIMARY", { enumerable: true, get: function () { return copy_1.CABINET_DELETE_PRIMARY; } });
@@ -3091,6 +3208,28 @@ Object.defineProperty(exports, "activeSchedules", { enumerable: true, get: funct
 Object.defineProperty(exports, "applyCabinetArchive", { enumerable: true, get: function () { return cabinet_cascade_1.applyCabinetArchive; } });
 Object.defineProperty(exports, "isArchivedLifecycle", { enumerable: true, get: function () { return cabinet_cascade_1.isArchivedLifecycle; } });
 Object.defineProperty(exports, "planCabinetCascade", { enumerable: true, get: function () { return cabinet_cascade_1.planCabinetCascade; } });
+var edit_fill_1 = require("./edit-fill");
+Object.defineProperty(exports, "EDIT_FILL_DEFAULT_INTERVAL_DAYS", { enumerable: true, get: function () { return edit_fill_1.EDIT_FILL_DEFAULT_INTERVAL_DAYS; } });
+Object.defineProperty(exports, "EDIT_FILL_DEFAULT_REMINDER_TIME", { enumerable: true, get: function () { return edit_fill_1.EDIT_FILL_DEFAULT_REMINDER_TIME; } });
+Object.defineProperty(exports, "EDIT_FILL_INVALID_VALUES", { enumerable: true, get: function () { return edit_fill_1.EDIT_FILL_INVALID_VALUES; } });
+Object.defineProperty(exports, "EDIT_FILL_MIN_DRAW_ML", { enumerable: true, get: function () { return edit_fill_1.EDIT_FILL_MIN_DRAW_ML; } });
+Object.defineProperty(exports, "EDIT_FILL_UNNAMED", { enumerable: true, get: function () { return edit_fill_1.EDIT_FILL_UNNAMED; } });
+Object.defineProperty(exports, "applyEditedFill", { enumerable: true, get: function () { return edit_fill_1.applyEditedFill; } });
+Object.defineProperty(exports, "buildEditFillNote", { enumerable: true, get: function () { return edit_fill_1.buildEditFillNote; } });
+Object.defineProperty(exports, "editFillDrawRangeMessage", { enumerable: true, get: function () { return edit_fill_1.editFillDrawRangeMessage; } });
+Object.defineProperty(exports, "editFillFormDefaults", { enumerable: true, get: function () { return edit_fill_1.editFillFormDefaults; } });
+Object.defineProperty(exports, "formatEditFillNumber", { enumerable: true, get: function () { return edit_fill_1.formatEditFillNumber; } });
+Object.defineProperty(exports, "isPositiveNumber", { enumerable: true, get: function () { return edit_fill_1.isPositiveNumber; } });
+var suggestion_typing_1 = require("./suggestion-typing");
+Object.defineProperty(exports, "SUGGESTION_BLUR_HIDE_MS", { enumerable: true, get: function () { return suggestion_typing_1.SUGGESTION_BLUR_HIDE_MS; } });
+Object.defineProperty(exports, "SUGGESTION_FOCUS_SCROLL_MS", { enumerable: true, get: function () { return suggestion_typing_1.SUGGESTION_FOCUS_SCROLL_MS; } });
+Object.defineProperty(exports, "SUGGESTION_INPUT_IDS", { enumerable: true, get: function () { return suggestion_typing_1.SUGGESTION_INPUT_IDS; } });
+Object.defineProperty(exports, "SUGGESTION_TYPING_CLASS", { enumerable: true, get: function () { return suggestion_typing_1.SUGGESTION_TYPING_CLASS; } });
+Object.defineProperty(exports, "SUGGESTION_WRAP_CLASS", { enumerable: true, get: function () { return suggestion_typing_1.SUGGESTION_WRAP_CLASS; } });
+Object.defineProperty(exports, "attachSuggestionTyping", { enumerable: true, get: function () { return suggestion_typing_1.attachSuggestionTyping; } });
+Object.defineProperty(exports, "findSuggestionWrap", { enumerable: true, get: function () { return suggestion_typing_1.findSuggestionWrap; } });
+Object.defineProperty(exports, "planSuggestionBlur", { enumerable: true, get: function () { return suggestion_typing_1.planSuggestionBlur; } });
+Object.defineProperty(exports, "planSuggestionFocus", { enumerable: true, get: function () { return suggestion_typing_1.planSuggestionFocus; } });
 var dialog_1 = require("./dialog");
 Object.defineProperty(exports, "FOCUSABLE_SELECTOR", { enumerable: true, get: function () { return dialog_1.FOCUSABLE_SELECTOR; } });
 Object.defineProperty(exports, "FOCUS_VISIBLE_PX", { enumerable: true, get: function () { return dialog_1.FOCUS_VISIBLE_PX; } });
@@ -3779,6 +3918,70 @@ function summaryContainsForbiddenFraming(summary) {
     modules["ux/save-summary"].exports,
     createRequire(modules["ux/save-summary"].dirname),
     modules["ux/save-summary"],
+    "ux"
+  );
+
+
+  (function (exports, require, module, __dirname) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SUGGESTION_INPUT_IDS = exports.SUGGESTION_BLUR_HIDE_MS = exports.SUGGESTION_FOCUS_SCROLL_MS = exports.SUGGESTION_TYPING_CLASS = exports.SUGGESTION_WRAP_CLASS = void 0;
+exports.findSuggestionWrap = findSuggestionWrap;
+exports.planSuggestionFocus = planSuggestionFocus;
+exports.planSuggestionBlur = planSuggestionBlur;
+exports.attachSuggestionTyping = attachSuggestionTyping;
+exports.SUGGESTION_WRAP_CLASS = "fitgen-suggestion-wrap";
+exports.SUGGESTION_TYPING_CLASS = "is-typing";
+exports.SUGGESTION_FOCUS_SCROLL_MS = 120;
+exports.SUGGESTION_BLUR_HIDE_MS = 160;
+exports.SUGGESTION_INPUT_IDS = ["save-fill-name", "med-name"];
+function findSuggestionWrap(input) {
+    const nested = input.parentElement?.querySelector(`.${exports.SUGGESTION_WRAP_CLASS}`) || null;
+    const wrap = nested || input.nextElementSibling || null;
+    if (!wrap || !wrap.classList || !wrap.classList.contains(exports.SUGGESTION_WRAP_CLASS)) {
+        return null;
+    }
+    return wrap;
+}
+function planSuggestionFocus() {
+    return {
+        addTyping: true,
+        scrollDelayMs: exports.SUGGESTION_FOCUS_SCROLL_MS,
+        scroll: { behavior: "smooth", block: "center" },
+    };
+}
+function planSuggestionBlur() {
+    return { removeTypingDelayMs: exports.SUGGESTION_BLUR_HIDE_MS };
+}
+function attachSuggestionTyping(input, timers) {
+    if (!input || input.dataset.fitgenTypingManaged === "true") {
+        return false;
+    }
+    const wrap = findSuggestionWrap(input);
+    if (!wrap) {
+        return false;
+    }
+    input.dataset.fitgenTypingManaged = "true";
+    const focusPlan = planSuggestionFocus();
+    input.addEventListener("focus", () => {
+        wrap.classList.add(exports.SUGGESTION_TYPING_CLASS);
+        timers.setTimeout(() => {
+            if (typeof input.scrollIntoView === "function") {
+                input.scrollIntoView(focusPlan.scroll);
+            }
+        }, focusPlan.scrollDelayMs);
+    });
+    const blurPlan = planSuggestionBlur();
+    input.addEventListener("blur", () => {
+        timers.setTimeout(() => wrap.classList.remove(exports.SUGGESTION_TYPING_CLASS), blurPlan.removeTypingDelayMs);
+    });
+    return true;
+}
+
+  })(
+    modules["ux/suggestion-typing"].exports,
+    createRequire(modules["ux/suggestion-typing"].dirname),
+    modules["ux/suggestion-typing"],
     "ux"
   );
 
