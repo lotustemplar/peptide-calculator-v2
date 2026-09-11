@@ -86,9 +86,11 @@ those allowlist rows. Head allowlists are frozen against the PR base.
 
 ### `allowlists/runtime-fix-js.txt`
 
-Every `*-fix.js` / `*-fixes.js` file already on `main`, including unloaded
-patches and `runtime-fixes.js`. Adding a new matching file fails CI. Adding a
-new allowlist row versus the PR base also fails CI.
+Remaining loaded `*-fix.js` / `*-fixes.js` files after Stage 6a orphan
+retirement (`export-fix.js`, `mobile-polish-fix.js`, `native-backup-fix.js`,
+`runtime-fixes.js`, `ui-polish-fix.js`). Adding a new matching file fails CI.
+Adding a new allowlist row versus the PR base also fails CI. Removals of
+retired patches are allowed.
 
 ### `allowlists/forbidden-copy.json`
 
@@ -96,10 +98,9 @@ Each exception is bound to **one exact normalized line** (`context`) plus
 `file` + `patternId`. A different “Recommended” (or any other token) in the
 same file does **not** consume that exception.
 
-Remaining allowlisted matches after P0.6:
+Remaining allowlisted matches after P0.6 / Stage 6a:
 
 - CSS class token `recommended` on result cards (`app.js`, `runtime-fixes.js`) — not user-facing copy
-- unloaded `native-reminder-fix.js` **Take … and draw** payload (still scanned; sync not re-enabled)
 - non-clinical `MEDIAN_SETUP.md` “Recommended stack”
 - process/docs “recommended” in `AGENTS.md` and `.github/AI_COLLABORATION.md`
 
