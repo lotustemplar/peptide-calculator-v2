@@ -163,7 +163,7 @@ assert(generated.includes("stage5NameChips"), "browser bundle exports stage5Name
 assert(generated.includes("classifyMedName"), "browser bundle exports classifyMedName");
 assert(/writeMedicationsFromUi/.test(bind), "bind writes medications through writeMedicationsFromUi");
 assert(/handleMedFormSubmit/.test(bind), "bind intercepts the medications form");
-assert(/revealMedicationsCard/.test(bind), "bind reveals the medications card hidden by ui-polish-fix");
+assert(/revealMedicationsCard/.test(bind), "bind still reveals medications-card after ui-polish retirement");
 assert(/data-action="edit-med"/.test(bind), "bind renders edit-name control");
 assert(/canLoadMedication/.test(bind), "bind gates Load on a complete stored dose+unit");
 assert(/MED_LOAD_UNAVAILABLE/.test(bind), "bind omits Load when no saved dose exists");

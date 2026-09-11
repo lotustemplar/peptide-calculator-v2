@@ -24,7 +24,6 @@ const RETIRED = "export-fix.js";
 const REMAINING_LOADED = [
   "native-backup-fix.js",
   "runtime-fixes.js",
-  "ui-polish-fix.js",
 ];
 const FROZEN_GOLDENS = "659c1865da95c3197395c931e154c4267c802d8aaf7842aee83345962d013acd";
 const FROZEN_APP = "489cd7b88b90e00bd2a700518312577cf5a65cf12cacc003d9a181422606a537";
@@ -442,7 +441,7 @@ function main() {
   assertEqual(
     [...allowed].sort(),
     REMAINING_LOADED.slice().sort(),
-    "runtime-fix-js allowlist is exactly the three remaining loaded patches"
+    "runtime-fix-js allowlist is exactly the two remaining loaded patches"
   );
 
   assert(

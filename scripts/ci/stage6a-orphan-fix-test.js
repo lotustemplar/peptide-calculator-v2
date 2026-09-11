@@ -31,7 +31,6 @@ const STAGE6A_ORPHANS = [
 const LOADED_PATCHES = [
   "native-backup-fix.js",
   "runtime-fixes.js",
-  "ui-polish-fix.js",
 ];
 
 const FROZEN_GOLDENS = "659c1865da95c3197395c931e154c4267c802d8aaf7842aee83345962d013acd";

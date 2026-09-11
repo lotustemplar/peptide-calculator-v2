@@ -461,6 +461,7 @@ function makeAdapter(store, options) {
   assert(/\.fitgen-snackbar/.test(css), "undo snackbar styles exist");
   assert(/\.fitgen-suggestion-wrap\.is-typing/.test(css), "suggestion wrap hide-while-typing lives in styles.css");
   assert(/\.fitgen-edit-overlay/.test(css), "edit-fill overlay styles live in styles.css");
+  assert(/#current-peptides \.cabinet-card/.test(css), "cabinet accordion collapse styles live in styles.css");
 })();
 
 (function htmlSurfaces() {
@@ -484,6 +485,9 @@ function makeAdapter(store, options) {
   assert(!/window\.prompt\s*\(/.test(bind), "bind does not use native prompt");
   assert(bind.includes("applyEditedFill"), "bind owns absorbed edit-fill apply");
   assert(bind.includes("attachSuggestionTyping"), "bind owns absorbed suggestion typing");
+  assert(bind.includes("applyCabinetAccordionLayout"), "bind owns absorbed cabinet accordion");
+  assert(bind.includes("removeDuplicateScheduleBanner"), "bind owns absorbed duplicate Due Today banner");
+  assert(!bind.includes("installNotificationNoops"), "bind does not install reminder no-ops");
   assert(bind.includes("FitGenP0Ux"), "bind uses compiled P0.UX module");
   assert(bind.includes("markTaken") || bind.includes("createTakenAdapter"), "bind calls Taken adapter");
   assert(bind.includes("applyImport"), "bind wires Stage 3 applyImport");
@@ -508,6 +512,9 @@ function makeAdapter(store, options) {
   assert(typeof sandbox.FitGenP0Ux.installTabAriaSync === "function", "bundle installTabAriaSync loads");
   assert(typeof sandbox.FitGenP0Ux.applyEditedFill === "function", "bundle applyEditedFill loads");
   assert(typeof sandbox.FitGenP0Ux.attachSuggestionTyping === "function", "bundle attachSuggestionTyping loads");
+  assert(typeof sandbox.FitGenP0Ux.applyCabinetAccordionLayout === "function", "bundle applyCabinetAccordionLayout loads");
+  assert(typeof sandbox.FitGenP0Ux.removeDuplicateScheduleBanner === "function", "bundle removeDuplicateScheduleBanner loads");
+  assert(typeof sandbox.FitGenP0Ux.installNotificationNoops !== "function", "bundle does not export reminder stubs");
 })();
 
 console.log(`P0.UX tests: ${passed} passed, ${failed} failed`);

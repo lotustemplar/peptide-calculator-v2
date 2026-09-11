@@ -1435,6 +1435,60 @@
     card.removeAttribute("hidden");
   }
 
+  let cabinetCollapsedOnce = false;
+
+  function refreshCabinetPolish() {
+    const container = document.getElementById("current-peptides");
+    if (!container || typeof ux.applyCabinetAccordionLayout !== "function") {
+      return;
+    }
+    if (typeof ux.collapseCabinetAtStartup === "function") {
+      const result = ux.collapseCabinetAtStartup(container, { collapsedOnce: cabinetCollapsedOnce });
+      cabinetCollapsedOnce = result.collapsedOnce;
+    }
+    ux.applyCabinetAccordionLayout(container);
+  }
+
+  function watchCabinetAccordion() {
+    const container = document.getElementById("current-peptides");
+    if (!container || container.dataset.uiPolishBound === "true") {
+      return;
+    }
+    container.dataset.uiPolishBound = "true";
+    container.addEventListener("click", (event) => {
+      const toggle = event.target instanceof Element ? event.target.closest(".fill-toggle") : null;
+      if (toggle) {
+        window.setTimeout(refreshCabinetPolish, 0);
+      }
+    });
+    const observer = new MutationObserver(() => {
+      refreshCabinetPolish();
+    });
+    observer.observe(container, { childList: true, subtree: true });
+    refreshCabinetPolish();
+  }
+
+  function watchDuplicateScheduleBanner() {
+    const reminderList = document.getElementById("reminder-list");
+    if (!reminderList || reminderList.dataset.uiPolishBound === "true") {
+      return;
+    }
+    if (typeof ux.removeDuplicateScheduleBanner !== "function") {
+      return;
+    }
+    reminderList.dataset.uiPolishBound = "true";
+    const observer = new MutationObserver(() => {
+      ux.removeDuplicateScheduleBanner(reminderList);
+    });
+    observer.observe(reminderList, { childList: true, subtree: true });
+    ux.removeDuplicateScheduleBanner(reminderList);
+  }
+
+  function installUiPolish() {
+    watchCabinetAccordion();
+    watchDuplicateScheduleBanner();
+  }
+
   function installStage5Meds() {
     revealMedicationsCard();
     wrapRenderMedications();
@@ -1468,6 +1522,7 @@
   } else {
     syncTabAria();
   }
+  onReady(installUiPolish);
   onReady(installStage5Meds);
 
   window.FitGenP0UxBind = {
@@ -1490,5 +1545,7 @@
     openEditFill: openEditFillModal,
     closeEditFill: closeEditFillModal,
     attachSuggestionTypingHosts,
+    installUiPolish,
+    refreshCabinetPolish,
   };
 })();

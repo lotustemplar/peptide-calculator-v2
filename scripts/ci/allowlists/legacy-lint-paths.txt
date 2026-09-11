@@ -9,4 +9,3 @@ disable-web-reminder-fallback.js
 native-backup-fix.js
 peptide-list.js
 runtime-fixes.js
-ui-polish-fix.js

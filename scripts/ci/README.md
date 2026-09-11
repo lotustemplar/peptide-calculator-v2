@@ -87,9 +87,9 @@ those allowlist rows. Head allowlists are frozen against the PR base.
 ### `allowlists/runtime-fix-js.txt`
 
 Remaining loaded `*-fix.js` / `*-fixes.js` files after Stage 6a orphans,
-Stage 6b.1 `export-fix.js`, and Stage 6b.2 `mobile-polish-fix.js` retirement
-(`native-backup-fix.js`, `runtime-fixes.js`, `ui-polish-fix.js`). Adding a new
-matching file fails CI.
+Stage 6b.1 `export-fix.js`, Stage 6b.2 `mobile-polish-fix.js`, and Stage 6b.3
+`ui-polish-fix.js` retirement (`native-backup-fix.js`, `runtime-fixes.js`).
+Adding a new matching file fails CI.
 Adding a new allowlist row versus the PR base also fails CI. Removals of
 retired patches are allowed.
 

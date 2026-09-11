@@ -1332,9 +1332,11 @@ body[data-theme="light"] .empty-state {
   color: var(--muted);
 }
 
-#cabinet-view.is-active #medications-card {
-  /* ui-polish-fix.js hides this card; Stage 5 name CRUD must be visible. */
-  display: block !important;
+/* Stage 6b.3 accordion: collapsed cabinet cards keep the header row only. */
+#current-peptides .cabinet-card:has(.peptide-fill-list.is-collapsed) > .usage-grid,
+#current-peptides .cabinet-card:has(.peptide-fill-list.is-collapsed) > .vial-row,
+#current-peptides .cabinet-card.is-collapsed > :not(.fill-header):not(.card-topline):not(.list-topline) {
+  display: none;
 }
 
 #med-name-helper {
