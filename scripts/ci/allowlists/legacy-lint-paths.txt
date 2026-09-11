@@ -6,6 +6,5 @@ backend/server.js
 config.example.js
 config.js
 disable-web-reminder-fallback.js
-native-backup-fix.js
 peptide-list.js
 runtime-fixes.js
