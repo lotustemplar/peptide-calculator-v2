@@ -19,6 +19,7 @@
  * Stage 6c-B1: absorb runtime-fixes.js injectFallbackStyles into styles.css.
  * Stage 6c-B2: RF-A-003 Cabinet Edit/Delete bubble-listener dead-path deletion.
  * Stage 6c-B3: RF-B-017/018 FitGenRuntimeBridge setView + closeSaveModal retarget.
+ * Stage 6c-B4: RF-B-016 tabs/view chrome — overlay capture stands down for app.js.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -100,6 +101,10 @@ const jobs = [
   {
     name: "Stage 6c-B3 RF-B-017/018 bridge setView + closeSaveModal chrome retarget",
     file: path.join(__dirname, "ci", "stage6c-b3-bridge-chrome-test.js"),
+  },
+  {
+    name: "Stage 6c-B4 RF-B-016 tabs/view chrome retarget",
+    file: path.join(__dirname, "ci", "stage6c-b4-tabs-view-test.js"),
   },
 ];
 
