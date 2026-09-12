@@ -17,6 +17,7 @@
  * Stage 6b.3: absorb ui-polish-fix.js accordion + duplicate banner; no reminder stubs.
  * Stage 6b.4: retire superseded native-backup-fix.js; Stage 3 export path owns #export-data.
  * Stage 6c-B1: absorb runtime-fixes.js injectFallbackStyles into styles.css.
+ * Stage 6c-B2: RF-A-003 Cabinet Edit/Delete bubble-listener dead-path deletion.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -90,6 +91,10 @@ const jobs = [
   {
     name: "Stage 6c-B1 RF-B-003 CSS injector absorbed into styles.css",
     file: path.join(__dirname, "ci", "stage6c-b1-css-test.js"),
+  },
+  {
+    name: "Stage 6c-B2 RF-A-003 Cabinet Edit/Delete bubble listeners deleted",
+    file: path.join(__dirname, "ci", "stage6c-b2-dead-paths-test.js"),
   },
 ];
 

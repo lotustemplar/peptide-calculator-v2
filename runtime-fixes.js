@@ -749,13 +749,7 @@ async function syncRemindersToBackend() {
         </article>
       `;
     }).join("");
-
-    currentPeptides.querySelectorAll('[data-action="edit-fill"]').forEach((button) => {
-      button.addEventListener("click", () => editFillRecord(button.dataset.id));
-    });
-    currentPeptides.querySelectorAll('[data-action="delete-fill"]').forEach((button) => {
-      button.addEventListener("click", () => deleteFillRecord(button.dataset.id));
-    });
+    // RF-A-003 (6c-B2): no per-button Edit/Delete bubble listeners — bind capture owns these actions.
   }
 
   function renderFallbackSchedules() {
