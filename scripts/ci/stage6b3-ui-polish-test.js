@@ -21,7 +21,7 @@ const { assertPngHasVisibleContent } = require("./png-evidence");
 
 const ROOT = repoRoot();
 const RETIRED = "ui-polish-fix.js";
-const REMAINING_LOADED = ["native-backup-fix.js", "runtime-fixes.js"];
+const REMAINING_LOADED = ["runtime-fixes.js"];
 const FROZEN_GOLDENS = "659c1865da95c3197395c931e154c4267c802d8aaf7842aee83345962d013acd";
 const FROZEN_APP = "489cd7b88b90e00bd2a700518312577cf5a65cf12cacc003d9a181422606a537";
 const FILLS_KEY = "peptide-calculator-v2-fills";
@@ -229,7 +229,7 @@ function main() {
   assertEqual(
     [...allowed].sort(),
     REMAINING_LOADED.slice().sort(),
-    "runtime-fix-js allowlist is exactly the two remaining loaded patches"
+    "runtime-fix-js allowlist is exactly the remaining loaded patch"
   );
 
   assert(html.includes('id="medications-card"'), "medications-card remains in cabinet markup");
@@ -296,7 +296,7 @@ function main() {
     runtimeSrc.includes("today-schedule-banner") && /due today/i.test(runtimeSrc) && runtimeSrc.includes('data-action="mark-taken"'),
     "runtime-fixes.js fallback still emits a Due Today banner plus mark-taken rows (banner absorb is still needed)"
   );
-  assert(loadedSrcs.includes("runtime-fixes.js") && loadedSrcs.includes("native-backup-fix.js"), "6b.4/6c patches remain loaded");
+  assert(loadedSrcs.includes("runtime-fixes.js"), "6c runtime-fixes.js remains loaded");
   assert(sha256File("app.js") === FROZEN_APP, "app.js SHA-256 unchanged (no formula-builder edits)");
   assert(
     sha256File("scripts/calc/fixtures/legacy-evidence-goldens.json") === FROZEN_GOLDENS,

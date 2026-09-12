@@ -2,12 +2,14 @@
 "use strict";
 
 /**
- * Stage 6b.1 — retire superseded export-fix.js (Issue #34).
+ * Stage 6b.4 — retire superseded native-backup-fix.js (Issue #34).
  *
- * Atlas amendment: the overlay is not ported. Stage 3 bind +
- * src/persist/export.ts (schemaVersion 3, FR-EXP-001 local file only)
- * already owns #export-data. These locks fail if the dead file is
- * reintroduced or if navigator.share sneaks back onto the live path.
+ * Atlas Spec 5641876671: prove-and-delete, not a port. The overlay cloned
+ * #export-data, built a legacy version:2 mirror-only backup (no occurrences),
+ * and could steal the click. Stage 3 bind + src/persist/export.ts already own
+ * the live path (warning → schemaVersion 3 → writeLocalBackup native|download).
+ * These locks fail if the dead file is reintroduced, if a second native click
+ * path bypasses the warning, or if bind no longer owns #export-data.
  */
 
 const crypto = require("crypto");
@@ -20,15 +22,16 @@ const { compileUxModules } = require("../ux/harness");
 const { BUNDLE_REL, emitBrowserBundle } = require("../ux/emit-browser");
 
 const ROOT = repoRoot();
-const RETIRED = "export-fix.js";
-const REMAINING_LOADED = [
-  "runtime-fixes.js",
-];
+const RETIRED = "native-backup-fix.js";
+const REMAINING_LOADED = ["runtime-fixes.js"];
 const FROZEN_GOLDENS = "659c1865da95c3197395c931e154c4267c802d8aaf7842aee83345962d013acd";
 const FROZEN_APP = "489cd7b88b90e00bd2a700518312577cf5a65cf12cacc003d9a181422606a537";
 const SHARE_CALL = /navigator\.share\s*\(/;
 const SAVE_PICKER = /showSaveFilePicker/;
-const FALLBACK_MODAL = /export-fallback-modal/;
+const OVERLAY_CLONE = /cloneNode\s*\(/;
+const OVERLAY_REPLACE = /replaceWith\s*\(/;
+const LEGACY_V2_BUILDER = /version\s*:\s*2/;
+const MIRROR_MEDS = /peptide-calculator-v2-medications/;
 
 let passed = 0;
 let failed = 0;
@@ -153,29 +156,32 @@ function createMockElement(id, tagName) {
         if (selector.startsWith(".") && node.classList.contains(selector.slice(1))) {
           return node;
         }
-        if (node.getAttribute && node.getAttribute(selector.replace(/^\[|\]$/g, "").split("=")[0])) {
-          return node;
-        }
         node = node.parentNode;
       }
       return null;
     },
-    addEventListener(type, fn) {
+    addEventListener(type, fn, options) {
       if (!listeners.has(type)) {
         listeners.set(type, []);
       }
-      listeners.get(type).push(fn);
+      listeners.get(type).push({
+        fn,
+        capture: options === true || (options && options.capture === true),
+      });
     },
     removeEventListener(type, fn) {
       const list = listeners.get(type) || [];
       listeners.set(
         type,
-        list.filter((item) => item !== fn)
+        list.filter((item) => item.fn !== fn)
       );
     },
     dispatchEvent(event) {
-      for (const fn of listeners.get(event.type) || []) {
-        fn(event);
+      for (const entry of listeners.get(event.type) || []) {
+        if (event.immediateStopped) {
+          break;
+        }
+        entry.fn(event);
       }
     },
     appendChild(child) {
@@ -203,14 +209,17 @@ function createMockElement(id, tagName) {
     querySelectorAll() {
       return [];
     },
+    _listeners: listeners,
   };
   return element;
 }
 
-function createExportHarness() {
+function createExportHarness(options) {
+  const nativeCalls = [];
+  const withNative = Boolean(options && options.native);
   const elementsById = new Map();
   const documentListeners = new Map();
-  let downloaded = [];
+  const downloaded = [];
   let shareCalls = 0;
   let objectUrls = 0;
 
@@ -297,13 +306,13 @@ function createExportHarness() {
       };
       return node;
     },
-    addEventListener(type, fn, options) {
+    addEventListener(type, fn, opts) {
       if (!documentListeners.has(type)) {
         documentListeners.set(type, []);
       }
       documentListeners.get(type).push({
         fn,
-        capture: options === true || (options && options.capture === true),
+        capture: opts === true || (opts && opts.capture === true),
       });
     },
     removeEventListener(type, fn) {
@@ -320,9 +329,16 @@ function createExportHarness() {
   const window = {
     document,
     localStorage,
-    FitGenNativeBackup: undefined,
+    FitGenNativeBackup: withNative
+      ? {
+          exportBackup(json, filename) {
+            nativeCalls.push({ json, filename });
+            return JSON.stringify({ ok: true });
+          },
+        }
+      : undefined,
     navigator: {
-      userAgent: "Stage6b1Harness",
+      userAgent: "Stage6b4Harness",
       share() {
         shareCalls += 1;
         throw new Error("navigator.share must not be invoked (FR-EXP-001)");
@@ -342,7 +358,7 @@ function createExportHarness() {
     URL: {
       createObjectURL(blob) {
         objectUrls += 1;
-        const href = `blob:stage6b1-${objectUrls}`;
+        const href = `blob:stage6b4-${objectUrls}`;
         const text = blob && blob._text != null ? blob._text : lastBlobText;
         blobs.set(href, text);
         return href;
@@ -387,6 +403,9 @@ function createExportHarness() {
       }
       entry.fn(event);
     }
+    if (!event.immediateStopped) {
+      target.dispatchEvent(event);
+    }
     return event;
   }
 
@@ -397,14 +416,81 @@ function createExportHarness() {
     elementsById,
     downloaded,
     blobs,
+    nativeCalls,
     lastBlobText: () => lastBlobText,
     dispatchDocumentClick,
     shareCallCount: () => shareCalls,
   };
 }
 
+function sampleAppState() {
+  return {
+    fills: [{ savedId: "fill-6b4", name: "Synthetic Native Probe", vialAmount: 10, unitLabel: "mg" }],
+    schedules: [{ id: "sched-6b4", fillSavedId: "fill-6b4", doseAmount: 1, unitLabel: "mg" }],
+    occurrences: [{ id: "occ-6b4", scheduleId: "sched-6b4", dateKey: "2026-09-11", status: "planned" }],
+    medications: [{ id: "med-6b4", name: "Synthetic Native Probe" }],
+  };
+}
+
+function loadBind(harness) {
+  const context = {
+    window: harness.window,
+    document: harness.document,
+    localStorage: harness.localStorage,
+    navigator: harness.window.navigator,
+    HTMLElement: harness.window.HTMLElement,
+    Element: harness.window.Element,
+    Blob: harness.window.Blob,
+    URL: harness.window.URL,
+    setTimeout: harness.window.setTimeout,
+    clearTimeout: harness.window.clearTimeout,
+    requestAnimationFrame: harness.window.requestAnimationFrame,
+    console,
+  };
+  context.globalThis = harness.window;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, BUNDLE_REL), "utf8"), context);
+  context.FitGenP0Ux = context.window.FitGenP0Ux;
+  const state = sampleAppState();
+  context.window.FitGenP0Ux.commitAppState(harness.localStorage, state, {
+    medications: state.medications,
+  });
+  vm.runInContext(fs.readFileSync(path.join(ROOT, "p0-ux-bind.js"), "utf8"), context);
+  return context;
+}
+
+function attachSupersededOverlay(harness) {
+  const exportButton = harness.elementsById.get("export-data");
+  let overlayFired = 0;
+  exportButton.addEventListener(
+    "click",
+    (event) => {
+      overlayFired += 1;
+      const native = harness.window.FitGenNativeBackup;
+      if (native && typeof native.exportBackup === "function") {
+        native.exportBackup(
+          JSON.stringify({
+            version: 2,
+            exportedAt: "2026-09-11T00:00:00.000Z",
+            medications: [],
+            fills: [],
+            schedules: [],
+          }),
+          "overlay-v2.json"
+        );
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true
+  );
+  return {
+    overlayFireCount: () => overlayFired,
+  };
+}
+
 function main() {
-  console.log("Stage 6b.1 export-fix.js retired; Stage 3 export path owns #export-data");
+  console.log("Stage 6b.4 native-backup-fix.js retired; Stage 3 export path owns #export-data");
 
   const html = readText(path.join(ROOT, "index.html"));
   const loadedSrcs = extractScriptSrcs(html);
@@ -423,14 +509,14 @@ function main() {
     "p0-ux-bind.js loads before app.js so capture owns #export-data"
   );
 
-  assert(!loadedSrcs.includes(RETIRED), "index.html no longer loads export-fix.js");
-  assert(!mentionsBasename(html, RETIRED), "index.html does not mention export-fix.js");
-  assert(!fs.existsSync(path.join(ROOT, RETIRED)), "export-fix.js is deleted from the repository root");
+  assert(!loadedSrcs.includes(RETIRED), "index.html no longer loads native-backup-fix.js");
+  assert(!mentionsBasename(html, RETIRED), "index.html does not mention native-backup-fix.js");
+  assert(!fs.existsSync(path.join(ROOT, RETIRED)), "native-backup-fix.js is deleted from the repository root");
   const reintroduced = walkFiles(ROOT)
     .map((abs) => path.relative(ROOT, abs).split(path.sep).join("/"))
     .filter((rel) => path.posix.basename(rel) === RETIRED);
-  assert(reintroduced.length === 0, "export-fix.js is not reintroduced anywhere in the tree");
-  assert(!allowed.has(RETIRED), "runtime-fix-js allowlist dropped export-fix.js only");
+  assert(reintroduced.length === 0, "native-backup-fix.js is not reintroduced anywhere in the tree");
+  assert(!allowed.has(RETIRED), "runtime-fix-js allowlist dropped native-backup-fix.js only");
 
   for (const patch of REMAINING_LOADED) {
     assert(loadedSrcs.includes(patch), `${patch} remains loaded by index.html`);
@@ -440,7 +526,7 @@ function main() {
   assertEqual(
     [...allowed].sort(),
     REMAINING_LOADED.slice().sort(),
-    "runtime-fix-js allowlist is exactly the remaining loaded patch"
+    "runtime-fix-js allowlist is exactly runtime-fixes.js"
   );
 
   assert(
@@ -453,9 +539,21 @@ function main() {
   );
   assert(bindSrc.includes("exportDocumentJson"), "bind confirm path calls exportDocumentJson");
   assert(bindSrc.includes("writeLocalBackup") && bindSrc.includes("writeLocalExport"), "bind writes via writeLocalBackup");
+  assert(
+    bindSrc.includes("FitGenNativeBackup") && bindSrc.includes("exportBackup"),
+    "Stage 3 writeLocalExport already uses FitGenNativeBackup when present"
+  );
   assert(!SHARE_CALL.test(bindSrc), "p0-ux-bind.js does not invoke navigator.share (FR-EXP-001)");
   assert(!SAVE_PICKER.test(bindSrc), "p0-ux-bind.js does not use showSaveFilePicker");
-  assert(!FALLBACK_MODAL.test(bindSrc), "p0-ux-bind.js does not open export-fallback-modal");
+  assert(!OVERLAY_CLONE.test(bindSrc) && !OVERLAY_REPLACE.test(bindSrc), "bind does not clone/replace #export-data");
+  assert(
+    !LEGACY_V2_BUILDER.test(bindSrc),
+    "bind does not port the overlay version:2 builder"
+  );
+  assert(
+    !MIRROR_MEDS.test(bindSrc),
+    "bind does not rebuild backups from peptide-calculator-v2-medications mirror keys"
+  );
 
   assert(
     persistExportSrc.includes("Never Web Share") && persistExportSrc.includes("FR-EXP-001"),
@@ -463,7 +561,11 @@ function main() {
   );
   assert(!SHARE_CALL.test(persistExportSrc), "src/persist/export.ts does not invoke navigator.share");
   assert(!SAVE_PICKER.test(persistExportSrc), "src/persist/export.ts does not use showSaveFilePicker");
-  assert(!FALLBACK_MODAL.test(persistExportSrc), "src/persist/export.ts does not build the overlay modal");
+  assert(!OVERLAY_CLONE.test(persistExportSrc) && !OVERLAY_REPLACE.test(persistExportSrc), "export.ts does not clone/replace the export button");
+  assert(
+    !LEGACY_V2_BUILDER.test(persistExportSrc),
+    "export.ts does not port the overlay version:2 builder"
+  );
 
   const liveShareHosts = ["p0-ux-bind.js", "src/persist/export.ts", "src/ux/p0-ux.browser.js", ...REMAINING_LOADED];
   for (const rel of liveShareHosts) {
@@ -486,100 +588,120 @@ function main() {
   const { ux } = compileUxModules();
   assert(typeof ux.exportDocumentJson === "function", "FitGenP0Ux.exportDocumentJson is the Stage 3 exporter");
   assert(typeof ux.writeLocalBackup === "function", "FitGenP0Ux.writeLocalBackup is the Stage 3 writer");
-  assert(typeof ux.buildExportDocument === "function", "FitGenP0Ux.buildExportDocument exists");
-  const sample = ux.buildExportDocument(
-    {
-      fills: [{ savedId: "fill-6b1", name: "Synthetic Export Probe", vialAmount: 10, unitLabel: "mg" }],
-      schedules: [{ id: "sched-6b1", fillSavedId: "fill-6b1", doseAmount: 1, unitLabel: "mg" }],
-      occurrences: [],
-      medications: [{ id: "med-6b1", name: "Synthetic Export Probe" }],
-    },
-    "2026-09-11T21:00:00.000Z"
+  assert(typeof ux.chooseLocalExportMode === "function", "FitGenP0Ux.chooseLocalExportMode exists");
+  assertEqual(
+    ux.chooseLocalExportMode({ exportBackup() {} }),
+    "native",
+    "chooseLocalExportMode prefers the native local-file bridge"
   );
+  assertEqual(ux.chooseLocalExportMode(null), "download", "chooseLocalExportMode downloads when native is absent");
+
+  const sample = ux.buildExportDocument(sampleAppState(), "2026-09-11T23:00:00.000Z");
   assertEqual(sample.schemaVersion, 3, "Stage 3 export document uses schemaVersion 3");
-  assert(Array.isArray(sample.fills) && Array.isArray(sample.entities.fills), "v3 dual-read top-level + entities");
+  assert(Array.isArray(sample.occurrences) && sample.occurrences.some((row) => row.id === "occ-6b4"), "v3 export includes occurrences (overlay v2 omitted them)");
   assert(
     !Object.prototype.hasOwnProperty.call(sample, "version") || sample.version !== 2,
     "Stage 3 export is not the overlay version:2 payload"
   );
 
-  emitBrowserBundle();
-  const harness = createExportHarness();
-  const context = {
-    window: harness.window,
-    document: harness.document,
-    localStorage: harness.localStorage,
-    navigator: harness.window.navigator,
-    HTMLElement: harness.window.HTMLElement,
-    Element: harness.window.Element,
-    Blob: harness.window.Blob,
-    URL: harness.window.URL,
-    setTimeout: harness.window.setTimeout,
-    clearTimeout: harness.window.clearTimeout,
-    requestAnimationFrame: harness.window.requestAnimationFrame,
-    console,
-  };
-  context.window = harness.window;
-  context.globalThis = harness.window;
-  context.Blob = harness.window.Blob;
-  context.URL = harness.window.URL;
-  vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, BUNDLE_REL), "utf8"), context);
-  context.FitGenP0Ux = context.window.FitGenP0Ux;
-  assert(typeof context.window.FitGenP0Ux.exportDocumentJson === "function", "runtime bundle exposes exportDocumentJson");
-  context.window.FitGenP0Ux.commitAppState(
-    harness.localStorage,
-    {
-      fills: [{ savedId: "fill-6b1", name: "Synthetic Export Probe", vialAmount: 10, unitLabel: "mg" }],
-      schedules: [{ id: "sched-6b1", fillSavedId: "fill-6b1", doseAmount: 1, unitLabel: "mg" }],
-      occurrences: [],
+  let nativeProbeJson = "";
+  const nativeMode = ux.writeLocalBackup('{"schemaVersion":3}\n', "fitgen-backup-2026-09-11.json", {
+    nativeExport(json, filename) {
+      nativeProbeJson = json;
+      assertEqual(filename, "fitgen-backup-2026-09-11.json", "native writer receives the Stage 3 filename");
+      return { ok: true };
     },
-    { medications: [{ id: "med-6b1", name: "Synthetic Export Probe" }] }
-  );
+    download() {
+      throw new Error("download must not run when native export succeeds");
+    },
+  });
+  assertEqual(nativeMode, "native", "writeLocalBackup returns native when the bridge succeeds");
+  assert(/schemaVersion/.test(nativeProbeJson), "native writer receives the Stage 3 JSON text");
+
+  emitBrowserBundle();
+
+  const downloadHarness = createExportHarness({ native: false });
   try {
-    vm.runInContext(fs.readFileSync(path.join(ROOT, "p0-ux-bind.js"), "utf8"), context);
+    loadBind(downloadHarness);
+    assert(downloadHarness.window.FitGenP0UxBind, "p0-ux-bind.js installed FitGenP0UxBind (download path)");
   } catch (error) {
-    assert(false, `p0-ux-bind.js loaded in harness (${error && error.message})`);
+    assert(false, `p0-ux-bind.js loaded in download harness (${error && error.message})`);
   }
-  assert(context.window.FitGenP0UxBind, "p0-ux-bind.js installed FitGenP0UxBind");
 
-  const exportButton = harness.elementsById.get("export-data");
-  const clickEvent = harness.dispatchDocumentClick(exportButton);
-  assert(clickEvent.defaultPrevented, "bind preventDefault on #export-data click");
-  assert(clickEvent.immediateStopped, "bind stopImmediatePropagation so later overlays cannot steal the click");
-  const dialog = harness.elementsById.get("fitgen-confirm-dialog");
-  const title = harness.elementsById.get("fitgen-confirm-title");
-  const body = harness.elementsById.get("fitgen-confirm-body");
-  assert(!dialog.classList.contains("is-hidden"), "Stage 3 export warning dialog is shown");
-  assert(/plaintext/i.test(title.textContent), "export warning title names plaintext");
-  assert(/plaintext/i.test(body.innerHTML) && /network/i.test(body.innerHTML), "export warning body keeps FR-EXP-001 copy");
-  assertEqual(harness.shareCallCount(), 0, "clicking #export-data does not call navigator.share");
-  assertEqual(harness.downloaded.length, 0, "warning dialog does not download until confirm");
+  const overlayOnDownload = attachSupersededOverlay(downloadHarness);
+  const downloadClick = downloadHarness.dispatchDocumentClick(downloadHarness.elementsById.get("export-data"));
+  assert(downloadClick.defaultPrevented, "bind preventDefault on #export-data click");
+  assert(downloadClick.immediateStopped, "bind stopImmediatePropagation so a later overlay cannot steal the click");
+  assertEqual(overlayOnDownload.overlayFireCount(), 0, "superseded overlay button listener does not run after bind capture");
+  const downloadDialog = downloadHarness.elementsById.get("fitgen-confirm-dialog");
+  assert(!downloadDialog.classList.contains("is-hidden"), "Stage 3 export warning dialog is shown without native bridge");
+  assertEqual(downloadHarness.shareCallCount(), 0, "clicking #export-data does not call navigator.share");
+  assertEqual(downloadHarness.downloaded.length, 0, "warning dialog does not download until confirm");
+  assertEqual(downloadHarness.nativeCalls.length, 0, "warning dialog does not call the native bridge until confirm");
 
-  harness.elementsById.get("fitgen-confirm-primary").click();
-  assertEqual(harness.shareCallCount(), 0, "confirming export does not call navigator.share");
-  assert(harness.downloaded.length === 1, "confirm writes one local JSON download");
-  const saved = harness.downloaded[0] || { href: "", filename: "" };
+  downloadHarness.elementsById.get("fitgen-confirm-primary").click();
+  assertEqual(downloadHarness.shareCallCount(), 0, "confirming export does not call navigator.share");
+  assertEqual(downloadHarness.nativeCalls.length, 0, "download path does not invent a native bridge call");
+  assert(downloadHarness.downloaded.length === 1, "confirm writes one local JSON download when native is absent");
+  const saved = downloadHarness.downloaded[0] || { href: "", filename: "" };
+  assert(/^fitgen-backup-\d{4}-\d{2}-\d{2}\.json$/.test(saved.filename), "download filename is fitgen-backup-YYYY-MM-DD.json");
+  const downloadJson = downloadHarness.blobs.get(saved.href) || downloadHarness.lastBlobText();
+  const downloadParsed = JSON.parse(downloadJson);
+  assertEqual(downloadParsed.schemaVersion, 3, "runtime download payload is schemaVersion 3");
   assert(
-    /^fitgen-backup-\d{4}-\d{2}-\d{2}\.json$/.test(saved.filename),
-    "download filename is fitgen-backup-YYYY-MM-DD.json"
-  );
-  const jsonText = harness.blobs.get(saved.href) || harness.lastBlobText();
-  assert(typeof jsonText === "string" && jsonText.length > 0, "download blob captured Stage 3 JSON");
-  const parsed = JSON.parse(jsonText);
-  assertEqual(parsed.schemaVersion, 3, "runtime export payload is schemaVersion 3");
-  assert(
-    parsed.fills.some((row) => row.savedId === "fill-6b1"),
-    "runtime export includes the persisted fill"
+    Array.isArray(downloadParsed.occurrences) && downloadParsed.occurrences.some((row) => row.id === "occ-6b4"),
+    "runtime download includes occurrences (not overlay mirror-only v2)"
   );
   assert(
-    parsed.medications.some((row) => row.name === "Synthetic Export Probe"),
-    "runtime export includes the persisted medication"
+    /Plaintext JSON backup saved/.test(downloadHarness.elementsById.get("backup-status").textContent),
+    "backup status reports local plaintext save on the download path"
   );
-  assert(!harness.document.getElementById("export-fallback-modal"), "Stage 3 path does not open the overlay fallback modal");
+
+  const nativeHarness = createExportHarness({ native: true });
+  try {
+    loadBind(nativeHarness);
+    assert(nativeHarness.window.FitGenP0UxBind, "p0-ux-bind.js installed FitGenP0UxBind (native path)");
+  } catch (error) {
+    assert(false, `p0-ux-bind.js loaded in native harness (${error && error.message})`);
+  }
+
+  const overlayOnNative = attachSupersededOverlay(nativeHarness);
+  const nativeClick = nativeHarness.dispatchDocumentClick(nativeHarness.elementsById.get("export-data"));
+  assert(nativeClick.defaultPrevented, "bind preventDefault even when FitGenNativeBackup is present");
+  assert(nativeClick.immediateStopped, "bind capture still wins when a native bridge exists");
+  assertEqual(overlayOnNative.overlayFireCount(), 0, "overlay cannot steal the native click from bind");
+  assertEqual(nativeHarness.nativeCalls.length, 0, "native bridge is not called until the Stage 3 warning is confirmed");
+  assert(!nativeHarness.elementsById.get("fitgen-confirm-dialog").classList.contains("is-hidden"), "Stage 3 warning still opens on the native path");
+  assert(/plaintext/i.test(nativeHarness.elementsById.get("fitgen-confirm-title").textContent), "native-path warning title names plaintext");
   assert(
-    /Plaintext JSON backup saved/.test(harness.elementsById.get("backup-status").textContent),
-    "backup status reports local plaintext save"
+    /plaintext/i.test(nativeHarness.elementsById.get("fitgen-confirm-body").innerHTML) &&
+      /network/i.test(nativeHarness.elementsById.get("fitgen-confirm-body").innerHTML),
+    "native-path warning body keeps FR-EXP-001 copy"
+  );
+
+  nativeHarness.elementsById.get("fitgen-confirm-primary").click();
+  assertEqual(nativeHarness.shareCallCount(), 0, "native confirm does not call navigator.share");
+  assertEqual(nativeHarness.downloaded.length, 0, "successful native export does not also download");
+  assert(nativeHarness.nativeCalls.length === 1, "confirm calls FitGenNativeBackup.exportBackup once");
+  const nativeCall = nativeHarness.nativeCalls[0] || { json: "", filename: "" };
+  assert(/^fitgen-backup-\d{4}-\d{2}-\d{2}\.json$/.test(nativeCall.filename), "native filename is fitgen-backup-YYYY-MM-DD.json");
+  const nativeParsed = JSON.parse(nativeCall.json);
+  assertEqual(nativeParsed.schemaVersion, 3, "native bridge receives schemaVersion 3, not overlay version:2");
+  assert(
+    !Object.prototype.hasOwnProperty.call(nativeParsed, "version") || nativeParsed.version !== 2,
+    "native payload is not the overlay version:2 object"
+  );
+  assert(
+    nativeParsed.fills.some((row) => row.savedId === "fill-6b4"),
+    "native payload includes the persisted fill"
+  );
+  assert(
+    Array.isArray(nativeParsed.occurrences) && nativeParsed.occurrences.some((row) => row.id === "occ-6b4"),
+    "native payload includes occurrences (overlay v2 omitted them)"
+  );
+  assert(
+    /Plaintext JSON backup saved/.test(nativeHarness.elementsById.get("backup-status").textContent),
+    "backup status reports local plaintext save on the native path"
   );
 
   assert(sha256File("app.js") === FROZEN_APP, "app.js SHA-256 unchanged (no formula-builder edits)");

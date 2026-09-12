@@ -29,7 +29,6 @@ const STAGE6A_ORPHANS = [
 ];
 
 const LOADED_PATCHES = [
-  "native-backup-fix.js",
   "runtime-fixes.js",
 ];
 

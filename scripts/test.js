@@ -15,6 +15,7 @@
  * Stage 6b.1: retire superseded export-fix.js; Stage 3 export path owns #export-data.
  * Stage 6b.2: absorb mobile-polish-fix.js into src/ux + bind (edit-fill + suggestion typing).
  * Stage 6b.3: absorb ui-polish-fix.js accordion + duplicate banner; no reminder stubs.
+ * Stage 6b.4: retire superseded native-backup-fix.js; Stage 3 export path owns #export-data.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -80,6 +81,10 @@ const jobs = [
   {
     name: "Stage 6b.3 ui-polish-fix.js absorbed accordion + banner; no reminder stubs",
     file: path.join(__dirname, "ci", "stage6b3-ui-polish-test.js"),
+  },
+  {
+    name: "Stage 6b.4 native-backup-fix.js retired; Stage 3 export owns #export-data",
+    file: path.join(__dirname, "ci", "stage6b4-native-backup-test.js"),
   },
 ];
 

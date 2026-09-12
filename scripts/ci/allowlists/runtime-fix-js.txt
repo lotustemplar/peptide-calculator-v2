@@ -5,5 +5,5 @@
 # Stage 6b.1 retired export-fix.js (Stage 3 bind + persist export owns #export-data).
 # Stage 6b.2 retired mobile-polish-fix.js (bind + src/ux edit-fill + suggestion typing).
 # Stage 6b.3 retired ui-polish-fix.js (accordion + duplicate banner; no reminder stubs).
-native-backup-fix.js
+# Stage 6b.4 retired native-backup-fix.js (Stage 3 bind + persist export already own native/download).
 runtime-fixes.js
