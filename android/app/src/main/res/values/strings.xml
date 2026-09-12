@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FitGen Peptide Calculator</string>
+    <string name="title_activity_main">FitGen Peptide Calculator</string>
+    <string name="package_name">com.fitgen.peptidecalculator</string>
+    <string name="custom_url_scheme">com.fitgen.peptidecalculator</string>
+</resources>

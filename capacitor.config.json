@@ -1,0 +1,8 @@
+{
+  "appId": "com.fitgen.peptidecalculator",
+  "appName": "FitGen Peptide Calculator",
+  "webDir": "www",
+  "android": {
+    "webContentsDebuggingEnabled": true
+  }
+}

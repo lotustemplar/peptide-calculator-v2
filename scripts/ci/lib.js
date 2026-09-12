@@ -12,6 +12,11 @@ const SKIP_DIR_NAMES = new Set([
   "coverage",
   "dist",
   "build",
+  // Generated Capacitor trees. Copied web assets include grandfathered
+  // runtime-fixes.js that must not look like a new runtime patch to SR-CI-001.
+  "www",
+  "android",
+  "ios",
 ]);
 
 function repoRoot() {
