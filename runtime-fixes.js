@@ -691,6 +691,10 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackCabinet() {
+    if (typeof window.renderCurrentPeptides === "function") {
+      window.renderCurrentPeptides();
+      return;
+    }
     const fills = readFills().filter(isActiveRecord);
     const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
 

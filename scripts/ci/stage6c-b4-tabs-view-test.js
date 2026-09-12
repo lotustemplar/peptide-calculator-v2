@@ -46,7 +46,7 @@ const FROZEN_ADJACENT = {
   renderScheduleIndicator: "0488c419aae55796df2f48dd031ba83f8c20f7d21bd331bbc7c3223c2cbb4e10",
   renderAllFallback: "058119c308cce97265223d43e481011b9359b16e0cb8872fef3d744482983a89",
   saveFallbackFill: "c196419821b1644f85bbb49020c21657b32b9969b4c17ba6f7b8a4fa9196becd",
-  renderFallbackCabinet: "f12da090b2b078595843c2097fbca68cc16471fe4f5398229ccf7b5a39b5da16",
+  renderFallbackCabinetFields: "6cc5043d0df998c32626ae8605149f25126ae0fa2c934fb2d8a770d93fc493ed",
 };
 
 const FROZEN_PERSIST_AND_RENDER = [
@@ -590,10 +590,13 @@ function main() {
     FROZEN_ADJACENT.saveFallbackFill,
     "RF-C-020 saveFallbackFill is unchanged"
   );
+  const cabinetSrc = extractNamedFunction(runtimeSrc, "renderFallbackCabinet");
+  const cabinetFieldsStart = cabinetSrc.indexOf("const fills = readFills().filter(isActiveRecord);");
+  assert(cabinetFieldsStart !== -1, "RF-C-015 fallback cabinet field body remains extractable");
   assertEqual(
-    sha256Text(extractNamedFunction(runtimeSrc, "renderFallbackCabinet")),
-    FROZEN_ADJACENT.renderFallbackCabinet,
-    "RF cabinet renderer is unchanged"
+    sha256Text(cabinetSrc.slice(cabinetFieldsStart)),
+    FROZEN_ADJACENT.renderFallbackCabinetFields,
+    "RF-C-015 fallback cabinet field template is unchanged (B5 owns only the owner-present guard)"
   );
   assert(
     /setActiveViewFallback\(\s*"cabinet-view"\s*\)/.test(extractNamedFunction(runtimeSrc, "saveFallbackFill")),
