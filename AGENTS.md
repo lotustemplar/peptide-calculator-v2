@@ -51,9 +51,9 @@ identity tag:
 
 Do not invent a third identity tag.
 
-### Shared status tags
+### Shared Grok / planning status tags
 
-Then include one status tag:
+Grok and planning comments then include one status tag:
 
 - `[CLAIM]`
 - `[PLAN]`
@@ -62,28 +62,40 @@ Then include one status tag:
 - `[BLOCKED]`
 - `[DECISION REQUIRED]`
 - `[COMPLETE]`
-- `[APPROVED]`
-- `[MERGE AUTHORIZED]`
 
-`[REVIEW]`, `[APPROVED]`, `[MERGE AUTHORIZED]`, and `[DECISION REQUIRED]` remain
-valid for compatibility. `[APPROVED]` is independent review acceptance and does
-not by itself authorize merge or deploy. `[MERGE AUTHORIZED]` is the explicit
-merge signal and still requires every other protocol gate.
+`[GROK] [REVIEW]` is the required Grok review-request tag on a pull request.
+`[GROK] [DECISION REQUIRED]` remains the Grok form when opening or updating a
+`[DECISION]` issue for Filipe.
 
-### Codex review-response tags
+### Codex review-response tags (new output)
 
-Codex review replies on pull requests use these additional tags:
+After reviewing an exact commit head, Codex posts exactly one of:
 
-- `[CHANGES_REQUIRED]` — Grok implements only the requested corrections within
-  approved scope, runs required tests, pushes to the same branch, and posts a
-  new `[GROK] [REVIEW]` for the new exact commit SHA. Legacy wording
-  `[CHANGES REQUESTED]` remains recognized as the same signal.
-- `[NEXT_STAGE_AUTHORIZED]` — Grok proceeds with the authorized stage without
-  waiting for Filipe unless the work crosses a Serious boundary.
-- `[OWNER_REQUIRED]` — Grok stops and waits for Filipe.
+- `[CODEX] [APPROVED]` — independent review accepts that exact head. This does
+  not by itself authorize merge or deploy.
+- `[CODEX] [CHANGES_REQUIRED]` — Grok implements only the requested corrections
+  within approved scope, runs required tests, pushes to the same branch, and
+  posts a new `[GROK] [REVIEW]` for the new exact commit SHA.
+- `[CODEX] [NEXT_STAGE_AUTHORIZED]` — Grok proceeds with the authorized stage
+  without waiting for Filipe unless the work crosses a Serious boundary. An
+  allowed exact-head merge is expressed with this tag and the authorized
+  40-character SHA in the comment body. Other protocol gates still apply.
+- `[CODEX] [OWNER_REQUIRED]` — Grok stops and waits for Filipe. Serious
+  decisions are routed through this tag.
 
-A Codex comment may combine `[CODEX]` with one of these tags, for example
-`[CODEX] [CHANGES_REQUIRED]`.
+Do not post `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`, `[CHANGES REQUESTED]`,
+or `[REVIEW]` as new Codex review-response tags.
+
+### Legacy inbound aliases
+
+Recognize these historical inbound tags where they already appear. Do not use
+them as new Codex outputs:
+
+- `[CHANGES REQUESTED]` — treat as `[CHANGES_REQUIRED]`
+- `[MERGE AUTHORIZED]` — treat as `[NEXT_STAGE_AUTHORIZED]` only when the
+  body names the authorized exact SHA; otherwise do not infer a merge
+- `[DECISION REQUIRED]` from Codex — treat as `[OWNER_REQUIRED]`
+- `[CODEX] [REVIEW]` — historical review note, not a current decision
 
 ## Human escalation
 
@@ -116,9 +128,9 @@ issue/PR review without human interruption.
    field format in `.github/AI_COLLABORATION.md`. Include the exact full commit
    SHA and direct links to the applicable issue comments. Do not place the only
    copy of the handoff on an issue or in chat.
-7. Codex independently reviews that exact commit head and posts
-   `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`, `[OWNER_REQUIRED]`,
-   `[APPROVED]`, `[MERGE AUTHORIZED]`, or `[DECISION REQUIRED]`.
+7. Codex independently reviews that exact commit head and posts exactly one
+   of `[APPROVED]`, `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`, or
+   `[OWNER_REQUIRED]`.
 8. After every correction push, post a fresh `[GROK] [REVIEW]` with the new
    exact commit SHA. Never ask Codex to review an old head. One handoff per
    exact commit head — do not repeatedly repost unchanged handoffs.
@@ -155,12 +167,15 @@ Rules:
   exact commit SHA. Never ask Codex to review an old head.
 - One handoff per exact commit head. Do not repeatedly repost an unchanged
   handoff.
-- `[CODEX] [CHANGES_REQUIRED]` (legacy `[CHANGES REQUESTED]`): implement only
-  the requested corrections within approved scope, run required tests, push to
-  the same branch, and post a new review handoff.
+- `[CODEX] [APPROVED]`: the exact head is accepted; this is not merge
+  authorization.
+- `[CODEX] [CHANGES_REQUIRED]` (legacy inbound `[CHANGES REQUESTED]`):
+  implement only the requested corrections within approved scope, run required
+  tests, push to the same branch, and post a new review handoff.
 - `[CODEX] [NEXT_STAGE_AUTHORIZED]`: proceed with the authorized stage without
-  waiting for Filipe unless the work crosses a Serious boundary.
-- `[CODEX] [OWNER_REQUIRED]`: stop and wait.
+  waiting for Filipe unless the work crosses a Serious boundary. Exact-head
+  merge authorization uses this tag and names the authorized SHA in the body.
+- `[CODEX] [OWNER_REQUIRED]`: stop and wait. Serious decisions use this tag.
 - Spec-only / inventory-only reviews still need a draft PR so Codex receives
   the handoff via PR events.
 
