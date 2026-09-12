@@ -1182,9 +1182,18 @@ async function syncRemindersToBackend() {
       renderAllFallback();
     },
     setView(viewId) {
+      if (typeof window.setActiveView === "function") {
+        window.setActiveView(viewId);
+        return;
+      }
       setActiveViewFallback(viewId);
     },
     closeSaveModal() {
+      if (typeof window.closeSaveFillModal === "function") {
+        window.closeSaveFillModal();
+        pendingOption = null;
+        return;
+      }
       closeFallbackSaveFillModal();
     },
     getPendingOption() {
