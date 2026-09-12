@@ -17,9 +17,17 @@ This document is the repo copy of the binding Stage 6c inventory Spec v2 posted 
 - packaging / Stage 7 / Mark missed
 - changes to `runtime-fixes.js`, `app.js`, `src/`, or allowlists
 
-`runtime-fixes.js` remains loaded and allowlisted until a later Filipe-named slice actually removes live owners.
+`runtime-fixes.js` remains loaded and allowlisted until a later **authorized** slice actually removes live owners. Approval of **this inventory map alone** does not authorize implementation, deletion, allowlist changes, merge, packaging, or Stage 7.
 
-**Next owner after this document:** Codex `[CODEX] [REVIEW]` of inventory Spec v2. No Forge implement CLAIM until Filipe names a post-approval slice id.
+### Slice authorization (Issue #2 coordination lock)
+
+Binding lock: Issue #2 comment [5643237028](https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5643237028).
+
+- **A and B** implementation slices stay unauthorized by this inventory PR. After this map is accepted, Codex may later authorize **one named slice at a time** with `[CODEX] [NEXT_STAGE_AUTHORIZED]`, after checking prerequisites, risk, dependencies, characterization/tests, and scope.
+- Every **RF-C-*** slice still requires `[CODEX] [OWNER_REQUIRED]` and Filipe’s Serious decision.
+- Filipe is contacted only for Serious / owner-only matters. Codex authorizes routine/elevated A/B work through `[CODEX] [NEXT_STAGE_AUTHORIZED]`.
+
+**Next owner after this document:** Codex `[CODEX] [REVIEW]` of inventory Spec v2.
 
 ## Source comments
 
@@ -29,6 +37,8 @@ This document is the repo copy of the binding Stage 6c inventory Spec v2 posted 
 | Superseded v1 inventory (history) | [GROK] [SPEC] Stage 6c — inventory-only decomposition | https://github.com/lotustemplar/peptide-calculator-v2/issues/34#issuecomment-5642322810 |
 | Superseded v1 amendment (history) | [GROK] [SPEC] Stage 6c inventory — amendment | https://github.com/lotustemplar/peptide-calculator-v2/issues/34#issuecomment-5642342379 |
 | Codex CHANGES addressed here | [CODEX] [REVIEW] — CHANGES REQUESTED | https://github.com/lotustemplar/peptide-calculator-v2/issues/34#issuecomment-5642346546 |
+| PR-first coordination lock | [GROK] [UPDATE] Filipe locked PR-first Codex handoffs | https://github.com/lotustemplar/peptide-calculator-v2/issues/2#issuecomment-5643237028 |
+| Governance correction trigger | [CODEX] [CHANGES_REQUIRED] on draft PR #41 | https://github.com/lotustemplar/peptide-calculator-v2/pull/41#issuecomment-5643262504 |
 
 ## Bucket rules (normative)
 
@@ -38,7 +48,7 @@ This document is the repo copy of the binding Stage 6c inventory Spec v2 posted 
 | **B** | Routine/elevated presentation or plumbing absorb — **one unambiguous product surface** |
 | **C** | Serious / frozen — formula, dose/draw presentation, due/taken semantics, reminder/notification architecture, backend sync, medical-adjacent claims |
 
-**B→C isolation rule (Codex #11 / standing):** A future **B** slice may **not** call, move, wrap, or alter a **C** function except through an **unchanged, characterized interface** that already exists at tip. If a candidate B needs to change C behavior, reclassify the work as **C** (or split off a C dependency first under separate Filipe go).
+**B→C isolation rule (Codex #11 / standing):** A future **B** slice may **not** call, move, wrap, or alter a **C** function except through an **unchanged, characterized interface** that already exists at tip. If a candidate B needs to change C behavior, reclassify the work as **C** (or split off a C dependency first). Any RF-C-* dependency or slice then requires `[CODEX] [OWNER_REQUIRED]` and Filipe’s Serious decision — not a routine A/B authorization.
 
 **Mixed-row rule:** No inventory row may be labeled `A/B`, `B/C`, or “B with C-adjacent note.” Split into atomic rows.
 
@@ -200,7 +210,7 @@ This document is the repo copy of the binding Stage 6c inventory Spec v2 posted 
 
 ## Revised future order (**still not authorized**)
 
-Only after Codex approves **this v2 map** and Filipe opens a **named** slice:
+Recommended **A/B** order only. Still **not authorized** by this inventory PR. After Codex accepts this v2 map, a named A/B slice may start only when Codex posts `[CODEX] [NEXT_STAGE_AUTHORIZED]` for that **one** slice (prerequisites, risk, dependencies, characterization/tests, and scope checked):
 
 1. **6c-B1** — RF-B-003 CSS injector → `styles.css`
 2. **6c-B2** — RF-A-003 (+ RF-A-001/004/005 only if proven) dead-path deletion tests
@@ -209,10 +219,10 @@ Only after Codex approves **this v2 map** and Filipe opens a **named** slice:
 5. **6c-B5** — RF-B-010 cabinet shell stop-last-write / restore 6b.3 accordion hosts (screenshots); **no** RF-C-015 fields
 6. **6c-B6** — RF-B-011/012 schedule chrome + banner-at-source parity with 6b.3
 
-**Stop.** All RF-C-* remain allowlisted until separate Serious goes.
+**Stop.** All RF-C-* remain allowlisted until `[CODEX] [OWNER_REQUIRED]` and Filipe’s Serious decision. Approval of this inventory map alone does not authorize implementation, deletion, allowlist changes, merge, packaging, or Stage 7.
 
 ## Next owner
 
 **Codex** — `[CODEX] [REVIEW]` **inventory Spec v2** (this document + Issue comment 5642634248). Challenge any remaining mixed coupling.
 
-**No Forge implement CLAIM** until Filipe names a post-approval slice id.
+A/B implementation remains unauthorized until a later `[CODEX] [NEXT_STAGE_AUTHORIZED]` names one slice. RF-C-* remains blocked pending `[CODEX] [OWNER_REQUIRED]` and Filipe’s Serious decision.
