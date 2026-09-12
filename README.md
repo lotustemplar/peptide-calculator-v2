@@ -36,6 +36,17 @@ Median docs:
 - OneSignal plugin: https://docs.median.co/docs/onesignal
 - Open URL from notification: https://docs.median.co/docs/open-url-from-notification
 
+## Android internal-test APK (Issue #18)
+
+A free Capacitor 7 wrapper lives in `android/` and is documented in
+`docs/android-internal-test-apk.md`. GitHub Actions builds a **debug** APK and
+uploads it only as a workflow artifact (`fitgen-internal-test-apk`). It does
+**not** create or update a GitHub Release.
+
+This is not a Play Store or production release. Reminder / background delivery
+is **UNVERIFIED** on this wrapper. Real-device behavior stays labeled
+**UNVERIFIED** unless a device pass is recorded.
+
 ## CI (P0.0)
 
 Pull-request quality gates live in `.github/workflows/ci.yml` and are documented

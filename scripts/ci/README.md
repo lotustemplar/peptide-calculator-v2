@@ -65,7 +65,7 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS/TS/TSX outside the legacy-path allowlist |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
-| Test runner | `scripts/test.js` | Gate self-tests, P0.1 calculator tests, P0.6 copy tests, P0.OCC, P0.UX, Stage 2 chrome/assets, Stage 3 persist, Stage 4–6b checks, or Stage 6c-B1/B2/B3/B4 recovery checks fail |
+| Test runner | `scripts/test.js` | Gate self-tests, P0.1 calculator tests, P0.6 copy tests, P0.OCC, P0.UX, Stage 2 chrome/assets, Stage 3 persist, Stage 4–6b checks, Stage 6c-B1/B2/B3/B4/B5/B6 recovery checks, or Android packaging tests fail |
 
 P0.1 calculator **legacy-evidence** goldens and FR-CALC-010 domain fixtures
 live in `scripts/calc/` and are invoked by `scripts/test.js` / `npm test`.
@@ -76,6 +76,12 @@ in `src/occ/` with tests in `scripts/occ/`. They do not change live Taken UI.
 
 Stage 3 / P0.3 import-safety modules live in `src/persist/` with tests in
 `scripts/persist/`. They must not mutate `fitgen-peptide-rebuild-v1`.
+
+`walkFiles` skips generated Capacitor trees (`www/`, `android/`, `ios/`) so
+copied grandfathered `runtime-fixes.js` cannot look like a new runtime patch.
+Android packaging tests live in `scripts/android/` (Issue #18). They rebuild
+the www copy list from current `main` and require an Actions-artifact APK
+workflow with no GitHub Release create/update.
 
 ## Allowlist rationale
 

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+www/
 .DS_Store
 Thumbs.db
 
@@ -8,3 +9,19 @@ Thumbs.db
 *.rar
 /peptide-calculator-v2*.zip
 /baseline-compare/
+
+# Capacitor / Android generated outputs. The android/ project is committed;
+# build products, local SDK paths, and synced WebView assets are not.
+android/app/build/
+android/app/release/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/app/src/main/assets/public/
+*.apk
+*.aab
+*.ap_
+*.keystore
+*.jks
+!android/gradle/wrapper/gradle-wrapper.jar
