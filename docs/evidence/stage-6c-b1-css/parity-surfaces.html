@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>FitGen 6c-B1 CSS parity fixture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="../../../styles.css">
+    <style>
+      /* Fixture-only surface switch. Not loaded by the production app. */
+      [data-parity-surface]:not(.is-shown) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body data-theme="dark">
+    <div class="app-shell">
+      <header class="app-header app-hero">
+        <div class="brand-lockup">
+          <div class="brand-copy">
+            <span class="eyebrow">FitGen</span>
+            <h1>Peptide Calculator</h1>
+            <p class="hero-lead">Stage 6c-B1 CSS parity fixture — synthetic Demo Vial A only.</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="app-view is-active is-shown" data-parity-surface="cabinet">
+          <header class="view-chrome">
+            <span class="section-kicker">Cabinet</span>
+            <p class="view-chrome-title">Saved fills, plans, and backup</p>
+          </header>
+          <section class="card full-height-card" id="cabinet-card">
+            <div class="section-heading compact">
+              <span class="section-kicker">Peptide Cabinet</span>
+              <h2>Track fills, remaining vial volume, and reorder timing</h2>
+              <p>Synthetic fixture. No personal dosing history.</p>
+            </div>
+            <div id="current-peptides" class="stack-list">
+              <article class="cabinet-card">
+                <div class="card-topline">
+                  <div>
+                    <h3>Demo Vial A</h3>
+                    <p class="card-note"><span class="water-amount-emphasis">2.00 mL</span> - BAC WATER AMOUNT</p>
+                    <p class="card-note">15 mg/mL concentration</p>
+                  </div>
+                </div>
+                <div class="vial-row-fallback">
+                  <div class="vial-visual-fallback">
+                    <div class="vial-shell-fallback">
+                      <div class="vial-liquid-fallback" style="height:72%"></div>
+                      <div class="vial-threshold-fallback" style="bottom:40%"></div>
+                    </div>
+                    <span class="vial-remaining-label">72% left</span>
+                  </div>
+                  <div class="vial-copy-fallback">
+                    <strong>21.60 mg remaining</strong>
+                    <span class="card-note">1.44 mL left in the vial</span>
+                    <span class="card-note">7 doses left</span>
+                    <span class="card-note">Next dose Sep 12, 2026 at 09:00</span>
+                  </div>
+                </div>
+                <div class="result-metrics">
+                  <div class="metric">
+                    <span>Draw each dose</span>
+                    <strong>0.20 mL</strong>
+                  </div>
+                  <div class="metric">
+                    <span>Dose</span>
+                    <strong>3 mg</strong>
+                  </div>
+                  <div class="metric">
+                    <span>Frequency</span>
+                    <strong>Every 7 days</strong>
+                  </div>
+                </div>
+                <div class="cabinet-actions-fallback">
+                  <button class="mini-button fitgen-target-44" type="button">Edit</button>
+                  <button class="mini-button fitgen-target-44" type="button">Delete</button>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="app-view is-active" data-parity-surface="schedule">
+          <header class="view-chrome">
+            <span class="section-kicker">Schedule</span>
+            <p class="view-chrome-title">Today's plans and taken status</p>
+          </header>
+          <section class="card full-height-card" id="dosage-card">
+            <div id="reminder-list" class="stack-list">
+              <div class="today-schedule-banner">
+                <h3>Due Today</h3>
+                <p>1 peptide dose due today.</p>
+                <div class="today-schedule-card">
+                  <h4>Demo Vial A</h4>
+                  <p>3 mg at 09:00. Draw 0.20 mL.</p>
+                  <div class="today-schedule-actions">
+                    <button class="primary-button fitgen-target-44" type="button">Mark as taken</button>
+                  </div>
+                </div>
+              </div>
+              <article class="list-card">
+                <div class="list-topline">
+                  <div>
+                    <h3>Demo Vial A</h3>
+                    <p class="card-note">3 mg every 7 days</p>
+                  </div>
+                  <span class="schedule-status-pill is-ready">Due today</span>
+                </div>
+                <div class="schedule-metrics">
+                  <div class="metric">
+                    <span>Draw each dose</span>
+                    <strong>0.20 mL</strong>
+                  </div>
+                  <div class="metric">
+                    <span>Next dose</span>
+                    <strong>Sep 12, 2026 at 09:00</strong>
+                  </div>
+                </div>
+                <div class="today-schedule-actions">
+                  <button class="primary-button fitgen-target-44" type="button">Mark as taken</button>
+                </div>
+              </article>
+              <article class="list-card">
+                <div class="list-topline">
+                  <div>
+                    <h3>Demo Vial B</h3>
+                    <p class="card-note">2 mg every 7 days</p>
+                  </div>
+                  <span class="schedule-status-pill is-complete">Taken today</span>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="app-view is-active" data-parity-surface="notif">
+          <header class="view-chrome">
+            <span class="section-kicker">Schedule</span>
+            <p class="view-chrome-title">Notification setup chrome</p>
+          </header>
+          <section class="card notif-setup-card" id="notif-setup-card">
+            <span class="section-kicker">Native Reminders</span>
+            <h2 class="notif-setup-title">Save reminders directly on this phone</h2>
+            <p class="notif-setup-sub">Synthetic fixture for the absorbed notification-actions row. No device identifiers.</p>
+            <div class="notification-actions">
+              <button type="button" class="primary-button" id="enable-notifications">Enable Native Alerts</button>
+              <button type="button" class="secondary-button">Save Native Reminders</button>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="tabbar" aria-label="App sections">
+        <button class="tab-button" type="button">
+          <span class="tab-label">Add</span>
+        </button>
+        <button class="tab-button has-alert is-active" type="button">
+          <span class="tab-label">Schedule (1)</span>
+        </button>
+        <button class="tab-button" type="button">
+          <span class="tab-label">Calendar</span>
+        </button>
+        <button class="tab-button" type="button">
+          <span class="tab-label">Cabinet</span>
+        </button>
+      </nav>
+    </div>
+  </body>
+</html>

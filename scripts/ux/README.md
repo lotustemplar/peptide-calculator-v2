@@ -52,3 +52,9 @@ Issue #34 Stage 6b.3 cabinet accordion / Due Today banner evidence (also not par
 ```bash
 node scripts/ux/stage6b3-ui-polish-capture.js --shots after
 ```
+
+Issue #34 Stage 6c-B1 CSS parity evidence (also not part of `npm test`):
+
+```bash
+node scripts/ux/stage6c-b1-css-capture.js --shots after
+```

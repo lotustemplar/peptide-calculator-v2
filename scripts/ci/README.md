@@ -65,7 +65,7 @@ Removals remain allowed (patch retirement / P0.6 copy rewrite).
 | Lint | `check-lint.js` | ESLint fails on `scripts/` or on changed/new JS/CJS/MJS/TS/TSX outside the legacy-path allowlist |
 | No new `*-fix.js` | `check-no-new-fix-js.js` | A new `*-fix.js` / `*-fixes.js` exists, or the fix-js allowlist gained a row versus base |
 | Forbidden copy | `check-forbidden-copy.js` | A new clearance/clinical/MED-FLAG match is not bound to an exact baseline context, or the copy allowlist gained a row versus base |
-| Test runner | `scripts/test.js` | Gate self-tests, P0.1 calculator tests, P0.6 copy tests, P0.OCC, P0.UX, Stage 2 chrome/assets, Stage 3 persist, or Stage 4 shell/IA checks fail |
+| Test runner | `scripts/test.js` | Gate self-tests, P0.1 calculator tests, P0.6 copy tests, P0.OCC, P0.UX, Stage 2 chrome/assets, Stage 3 persist, Stage 4–6b checks, or Stage 6c-B1 CSS absorb checks fail |
 
 P0.1 calculator **legacy-evidence** goldens and FR-CALC-010 domain fixtures
 live in `scripts/calc/` and are invoked by `scripts/test.js` / `npm test`.

@@ -16,6 +16,7 @@
  * Stage 6b.2: absorb mobile-polish-fix.js into src/ux + bind (edit-fill + suggestion typing).
  * Stage 6b.3: absorb ui-polish-fix.js accordion + duplicate banner; no reminder stubs.
  * Stage 6b.4: retire superseded native-backup-fix.js; Stage 3 export path owns #export-data.
+ * Stage 6c-B1: absorb runtime-fixes.js injectFallbackStyles into styles.css.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -85,6 +86,10 @@ const jobs = [
   {
     name: "Stage 6b.4 native-backup-fix.js retired; Stage 3 export owns #export-data",
     file: path.join(__dirname, "ci", "stage6b4-native-backup-test.js"),
+  },
+  {
+    name: "Stage 6c-B1 RF-B-003 CSS injector absorbed into styles.css",
+    file: path.join(__dirname, "ci", "stage6c-b1-css-test.js"),
   },
 ];
 
