@@ -85,9 +85,10 @@ issue comments.
 `OPEN → CLAIMED → PLANNED → IN PROGRESS → PR READY → IN REVIEW → CHANGES_REQUIRED | APPROVED → COMPLETE`
 
 `CHANGES REQUESTED` remains a legacy inbound alias for `CHANGES_REQUIRED`.
-`[NEXT_STAGE_AUTHORIZED]` and `[OWNER_REQUIRED]` sit beside this machine: the
-former authorizes the named next stage (and, when the body names the exact
-SHA, an allowed merge of that head); the latter stops work pending Filipe.
+`[NEXT_STAGE_AUTHORIZED]`, `[MERGE_AUTHORIZED]`, and `[OWNER_REQUIRED]` sit
+beside this machine: the first authorizes the named next stage; the second
+authorizes an exact-head merge of a routine in-scope PR; the third stops
+work pending Filipe. `[APPROVED]` alone still does not authorize merge.
 
 Only one agent owns implementation at a time. A reviewer may create tests or a
 minimal reproduction, but must not concurrently rewrite the same production
@@ -111,9 +112,12 @@ identity.
 - `[BLOCKED]`
 - `[DECISION REQUIRED]`
 - `[COMPLETE]`
+- `[MERGED]`
 
 `[GROK] [REVIEW]` is the required Grok review-request tag.
 `[GROK] [DECISION REQUIRED]` remains the Grok form for a `[DECISION]` issue.
+`[GROK] [MERGED]` is posted after a successful authorized routine merge and
+names the PR number and merge commit SHA.
 
 ### Codex review-response tags (new output)
 
@@ -125,14 +129,27 @@ After reviewing an exact commit head, Codex posts exactly one of:
   within approved scope, runs required tests, pushes to the same branch, and
   posts a new `[GROK] [REVIEW]` for the new exact commit SHA.
 - `[CODEX] [NEXT_STAGE_AUTHORIZED]` — Grok proceeds with the authorized stage
-  without waiting for Filipe unless the work crosses a Serious boundary. An
-  allowed exact-head merge is expressed with this tag and the authorized
-  40-character SHA in the comment body. Other protocol gates still apply.
+  without waiting for Filipe unless the work crosses a Serious boundary. This
+  tag authorizes the next stage, not a new merge. Legacy: when the body also
+  names an exact 40-character SHA and explicitly authorizes merge of that
+  head, treat that as exact-head merge authorization (still honored). Other
+  protocol gates still apply.
+- `[CODEX] [MERGE_AUTHORIZED]` — exact-head merge authorization for routine
+  in-scope work that is not Serious and not owner-only. The comment body must
+  name the full 40-character SHA. Use this phrasing:
+  `Forge may merge exact head <SHA>`.
 - `[CODEX] [OWNER_REQUIRED]` — Grok stops and waits for Filipe. Serious
   decisions are routed through this tag.
 
-Do not post `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`, `[CHANGES REQUESTED]`,
-or `[REVIEW]` as new Codex review-response tags.
+Codex may later post `[CODEX] [MERGE_AUTHORIZED]` for the same unchanged
+exact head after an earlier `[APPROVED]`. That later tag is the merge
+authorization; `[APPROVED]` alone still is not.
+
+Do not post the legacy bare form `[MERGE AUTHORIZED]` (without the
+`[CODEX] [MERGE_AUTHORIZED]` tag), `[DECISION REQUIRED]`,
+`[CHANGES REQUESTED]`, or `[REVIEW]` as new Codex review-response tags. The
+tagged form `[CODEX] [MERGE_AUTHORIZED]` is the current merge-authorization
+output and is required when Codex authorizes a routine exact-head merge.
 
 ### Legacy inbound aliases
 
@@ -140,8 +157,9 @@ Recognize these historical inbound tags where they already appear. Do not use
 them as new Codex outputs:
 
 - `[CHANGES REQUESTED]` — treat as `[CHANGES_REQUIRED]`
-- `[MERGE AUTHORIZED]` — treat as `[NEXT_STAGE_AUTHORIZED]` only when the
-  body names the authorized exact SHA; otherwise do not infer a merge
+- `[MERGE AUTHORIZED]` (legacy bare form, without `[CODEX] [MERGE_AUTHORIZED]`)
+  — treat as `[MERGE_AUTHORIZED]` / exact-head merge authorization only when
+  the body names the authorized exact SHA; otherwise do not infer a merge
 - `[DECISION REQUIRED]` from Codex — treat as `[OWNER_REQUIRED]`
 - `[CODEX] [REVIEW]` — historical review note, not a current decision
 
@@ -168,15 +186,29 @@ Filipe locked this procedure on 2026-09-11 for
    review handoff.
 6. When Codex posts `[CODEX] [NEXT_STAGE_AUTHORIZED]`: proceed with the
    authorized stage without waiting for Filipe unless the work crosses a
-   Serious boundary. Exact-head merge authorization uses this tag and names
-   the authorized SHA in the body.
-7. When Codex posts `[CODEX] [OWNER_REQUIRED]`: stop and wait.
-8. Serious boundaries: medical/formula/safety decisions, privacy or cloud
-   changes, destructive changes, major redesigns, paid services, production
-   release, owner-only access, and anything explicitly classified as Serious.
-9. Do not merge, deploy, expose credentials, bypass CI, broaden scope, or
-   alter frozen calculator formulas without the required authorization.
-10. Spec-only / inventory-only reviews still need a draft PR (docs or Spec
+   Serious boundary. This is next-stage authorization, not a new merge
+   authorization. Legacy: when the body names an exact SHA and explicitly
+   authorizes merge of that head, treat that as exact-head merge
+   authorization (still honored).
+7. When Codex posts `[CODEX] [MERGE_AUTHORIZED]`: for routine in-scope work
+   that is not Serious and not owner-only, agents may undraft and merge
+   after all four verify checks in **Routine exact-head merge** pass. Body
+   must name the full 40-character SHA. Use this phrasing:
+   `Forge may merge exact head <SHA>`. `[APPROVED]` alone still does not
+   authorize merge.
+8. When Codex posts `[CODEX] [OWNER_REQUIRED]`: stop and wait.
+9. Serious boundaries: medical/formula/safety decisions, privacy or cloud
+   changes, destructive changes, major redesigns, new paid services,
+   production release/deployment, owner-only access, unapproved scope
+   expansion, and anything explicitly classified as Serious. A routine
+   merge into the default development branch is not itself a production
+   release.
+10. Do not deploy, expose credentials, bypass CI, broaden scope, or alter
+    frozen calculator formulas without the required authorization. Do not
+    ask Filipe to perform routine merges. Merge of a routine non-Serious PR
+    requires `[MERGE_AUTHORIZED]` (or still-honored legacy SHA-named merge
+    authorization) plus the four verify checks.
+11. Spec-only / inventory-only reviews still need a draft PR (docs or Spec
     deliverable) so Codex receives the handoff via PR events. Binding Spec
     text stays on the issue and is linked from the PR `[REVIEW]`.
 
@@ -213,7 +245,8 @@ Field intent:
 - **Evidence:** links to logs, screenshots, or docs that support the change.
 - **Known limitations:** unverified assumptions and leftover risk.
 - **Decision requested from Codex:** exactly one of `APPROVED`,
-  `CHANGES_REQUIRED`, `NEXT_STAGE_AUTHORIZED`, or `OWNER_REQUIRED`.
+  `CHANGES_REQUIRED`, `NEXT_STAGE_AUTHORIZED`, `MERGE_AUTHORIZED`, or
+  `OWNER_REQUIRED`.
 
 ## Decision policy
 
@@ -278,9 +311,54 @@ Then provide:
 Do not continue the affected work until Filipe answers. Unaffected work may
 continue.
 
-Do not merge, deploy, expose credentials, bypass CI, broaden scope, or alter
+Do not deploy, expose credentials, bypass CI, broaden scope, or alter
 frozen calculator formulas without the required authorization.
-`[CODEX] [NEXT_STAGE_AUTHORIZED]` does not waive a Serious boundary.
+`[CODEX] [NEXT_STAGE_AUTHORIZED]` and `[CODEX] [MERGE_AUTHORIZED]` do not
+waive a Serious boundary. `[CODEX] [APPROVED]` alone does not authorize
+merge. A routine merge into the default development branch is not itself a
+production release.
+
+## Routine exact-head merge
+
+Filipe locked this owner policy on 2026-09-11 for
+`lotustemplar/peptide-calculator-v2`.
+
+For routine work within approved scope, agents may undraft and merge a PR
+when Codex posts:
+
+```text
+[CODEX] [MERGE_AUTHORIZED] — Forge may merge exact head <full SHA>
+```
+
+The body must name the full 40-character SHA.
+
+Before merging, verify **all** of:
+
+1. The PR head exactly matches the SHA authorized by Codex.
+2. Required CI and tests are green.
+3. No new commits were added after authorization.
+4. The PR contains no Serious or owner-only change.
+
+After merging, post `[GROK] [MERGED]` with the PR number and merge commit
+SHA. Proceed to the next stage only if Codex has authorized it.
+
+Do not ask Filipe to perform routine merges. Notify Filipe only for
+`[OWNER_REQUIRED]`, Serious decisions, or access blocks.
+
+`[CODEX] [APPROVED]` alone still does not authorize merge.
+`[CODEX] [MERGE_AUTHORIZED]` does, for routine non-Serious PRs.
+
+A routine merge into the default development branch is not itself a
+production release or deploy.
+
+Honor these legacy exact-head merge authorizations when they already
+appear (do not emit them as new Codex outputs):
+
+- `[CODEX] [NEXT_STAGE_AUTHORIZED]` whose body names the exact
+  40-character SHA and explicitly authorizes merge of that head
+- inbound bare `[MERGE AUTHORIZED]` whose body names the exact SHA
+
+New merge authorizations use `[CODEX] [MERGE_AUTHORIZED]`.
 
 ## Review standard
 
@@ -321,19 +399,26 @@ On a recurring schedule, inspect open repository issues and PR notifications.
 
 1. Read `AGENTS.md` and this protocol.
 2. Respond to new `[CODEX]` handoffs on pull requests. New Codex outputs are
-   exactly `[APPROVED]`, `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`, or
-   `[OWNER_REQUIRED]`. Also honor legacy inbound `[CHANGES REQUESTED]`,
-   `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`, and `[CODEX] [REVIEW]`.
+   `[APPROVED]`, `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`,
+   `[MERGE_AUTHORIZED]`, or `[OWNER_REQUIRED]`. Also honor legacy inbound
+   `[CHANGES REQUESTED]`, bare `[MERGE AUTHORIZED]` (SHA-named only),
+   `[DECISION REQUIRED]`, `[CODEX] [REVIEW]`, and SHA-named
+   `[NEXT_STAGE_AUTHORIZED]` merge authorization.
 3. Continue the highest-priority issue already claimed by Grok.
 4. If idle, claim the oldest unblocked issue explicitly assigned to Grok.
 5. Update the issue, push the feature branch, and post a new `[GROK] [REVIEW]`
    on the applicable PR for the new exact commit SHA.
-6. Do not merge or deploy. Do not expose credentials, bypass CI, broaden
-   scope, or alter frozen calculator formulas without the required
-   authorization.
-7. Notify Filipe only for `[OWNER_REQUIRED]` or a Grok `[DECISION REQUIRED]`
-   escalation. Treat a legacy Codex `[DECISION REQUIRED]` as
-   `[OWNER_REQUIRED]`.
+6. Agents may undraft and merge a routine in-scope, non-Serious PR when
+   Codex has posted exact-head `[MERGE_AUTHORIZED]` (or a still-honored
+   legacy SHA-named merge authorization) and all four verify checks pass.
+   After merging, post `[GROK] [MERGED]` with the PR number and merge
+   commit SHA. Proceed to the next stage only if Codex has authorized it.
+   Do not ask Filipe to perform routine merges. Do not deploy. Do not
+   expose credentials, bypass CI, broaden scope, or alter frozen
+   calculator formulas without the required authorization.
+7. Notify Filipe only for `[OWNER_REQUIRED]`, Serious decisions, or access
+   blocks. Also honor a Grok `[DECISION REQUIRED]` escalation. Treat a
+   legacy Codex `[DECISION REQUIRED]` as `[OWNER_REQUIRED]`.
 8. Spec-only / inventory-only work still opens a draft PR so Codex receives
    the review handoff via PR events.
 
@@ -348,12 +433,18 @@ When a PR review handoff arrives:
    the exact named commit SHA, the diff, test evidence, and prior review.
 2. Review and verify independently against that exact head.
 3. Post exactly one tagged review on the pull request:
-   `[APPROVED]`, `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`, or
-   `[OWNER_REQUIRED]`. Do not emit `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`,
-   `[CHANGES REQUESTED]`, or `[REVIEW]` as new Codex outputs.
+   `[APPROVED]`, `[CHANGES_REQUIRED]`, `[NEXT_STAGE_AUTHORIZED]`,
+   `[MERGE_AUTHORIZED]`, or `[OWNER_REQUIRED]`. Do not emit the legacy
+   bare form `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`,
+   `[CHANGES REQUESTED]`, or `[REVIEW]` as new Codex outputs. Use
+   `[CODEX] [MERGE_AUTHORIZED]` (body names the full 40-character SHA;
+   use: `Forge may merge exact head <SHA>`) when authorizing a
+   routine exact-head merge. Codex may later post `[MERGE_AUTHORIZED]`
+   for the same unchanged exact head after an earlier `[APPROVED]`.
 4. If `[CHANGES_REQUIRED]`, hand ownership back to Grok for those items only.
 5. If Serious, post `[OWNER_REQUIRED]` and stop the affected work. Do not post
-   `[DECISION REQUIRED]` as a new Codex review outcome.
+   `[DECISION REQUIRED]` as a new Codex review outcome. Do not post
+   `[MERGE_AUTHORIZED]` for a Serious or owner-only change.
 6. Do not treat an issue-only or chat-only note as the review request when no
    matching PR `[GROK] [REVIEW]` exists.
 7. Do not expose repository secrets or private health data.
