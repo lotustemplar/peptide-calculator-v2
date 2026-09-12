@@ -417,9 +417,12 @@ function main() {
   assert(
     runtimeSrc.includes("cabinet-actions-fallback") &&
       runtimeSrc.includes("vial-row-fallback") &&
-      runtimeSrc.includes("today-schedule-banner") &&
       runtimeSrc.includes("water-amount-emphasis"),
-    "runtime-fixes.js still emits the fallback class names (markup not rewritten)"
+    "runtime-fixes.js still emits the cabinet fallback class names (markup not rewritten)"
+  );
+  assert(
+    !/class=["']today-schedule-banner["']/.test(runtimeSrc),
+    "6c-B6 RF-B-012: runtime-fixes.js no longer writes the Due Today banner class (CSS rule remains)"
   );
   assert(
     !bindSrc.includes("injectFallbackStyles") && !bindSrc.includes("runtime-fixes-style"),

@@ -293,8 +293,8 @@ function main() {
   assert(!bindSrc.includes(BASELINE_KEY) && !polishSrc.includes(BASELINE_KEY), "this slice does not mention the baseline rebuild key");
 
   assert(
-    runtimeSrc.includes("today-schedule-banner") && /due today/i.test(runtimeSrc) && runtimeSrc.includes('data-action="mark-taken"'),
-    "runtime-fixes.js fallback still emits a Due Today banner plus mark-taken rows (banner absorb is still needed)"
+    !/class=["']today-schedule-banner["']/.test(runtimeSrc) && runtimeSrc.includes('data-action="mark-taken"'),
+    "6c-B6 RF-B-012: runtime-fixes.js no longer writes the Due Today banner class at source; mark-taken rows remain"
   );
   assert(loadedSrcs.includes("runtime-fixes.js"), "6c runtime-fixes.js remains loaded");
   assert(sha256File("app.js") === FROZEN_APP, "app.js SHA-256 unchanged (no formula-builder edits)");

@@ -1,0 +1,371 @@
+{
+  "label": "after",
+  "capturedAt": "2026-09-12T19:24:39.498Z",
+  "privacy": "synthetic Demo Vial A / Demo Vial B only",
+  "viewports": [
+    {
+      "viewport": "mobile",
+      "shots": {
+        "scheduleEmpty": {
+          "file": "after-mobile-schedule-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 0,
+            "emptyCount": 1,
+            "emptyText": [
+              "No dosage plans yet. Saving a fill can create the first schedule automatically."
+            ],
+            "markTakenCount": 0,
+            "undoCount": 0,
+            "pills": [],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "No dosage plans yet. Saving a fill can create the first schedule automatically.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarEmpty": {
+          "file": "after-mobile-calendar-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 0,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 1,
+            "emptyText": [
+              "Your calendar is empty right now. Save a fill or add a dosage plan to see your dose timeline here."
+            ],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Your calendar is empty right now. Save a fill or add a dosage plan to see your dose timeline here.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "schedulePopulated": {
+          "file": "after-mobile-schedule-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg • draw 0.2 mL every 7 days Due today Start Sep 12, 2026 Next dose Sep 19, 9:00 AM Mark as taken Test Alert Delete",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarPopulated": {
+          "file": "after-mobile-calendar-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 5,
+            "itemCount": 5,
+            "sectionHeaders": [
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 5,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Due today Mark as taken Sep 19, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 26, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarDates": {
+          "file": "after-mobile-calendar-dates.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 7,
+            "itemCount": 7,
+            "sectionHeaders": [
+              "Past Doses",
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 7,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "PAST DOSES Aug 29, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 5, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "focusMarkTaken": {
+          "file": "after-mobile-focus-mark-taken.png",
+          "pixels": "780x1688",
+          "focus": {
+            "ok": true,
+            "action": "mark-taken",
+            "selector": "#reminder-list [data-action=\"mark-taken\"]",
+            "text": "Mark as taken"
+          },
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg • draw 0.2 mL every 7 days Due today Start Sep 12, 2026 Next dose Sep 19, 9:00 AM Mark as taken Test Alert Delete",
+            "focus": {
+              "tag": "BUTTON",
+              "action": "mark-taken",
+              "className": "primary-button fitgen-target-44",
+              "text": "Mark as taken"
+            }
+          }
+        },
+        "focusCalendar": {
+          "file": "after-mobile-focus-calendar.png",
+          "pixels": "780x1688",
+          "focus": {
+            "ok": true,
+            "action": "mark-taken",
+            "selector": "#calendar-list [data-action=\"mark-taken\"]",
+            "text": "Mark as taken"
+          },
+          "state": {
+            "dayCount": 5,
+            "itemCount": 5,
+            "sectionHeaders": [
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 5,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Due today Mark as taken Sep 19, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 26, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BUTTON",
+              "action": "mark-taken",
+              "className": "mini-button mark-taken-btn fitgen-target-44",
+              "text": "Mark as taken"
+            }
+          }
+        }
+      }
+    },
+    {
+      "viewport": "desktop",
+      "shots": {
+        "scheduleEmpty": {
+          "file": "after-desktop-schedule-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 0,
+            "emptyCount": 1,
+            "emptyText": [
+              "No dosage plans yet. Saving a fill can create the first schedule automatically."
+            ],
+            "markTakenCount": 0,
+            "undoCount": 0,
+            "pills": [],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "No dosage plans yet. Saving a fill can create the first schedule automatically.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarEmpty": {
+          "file": "after-desktop-calendar-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 0,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 1,
+            "emptyText": [
+              "Your calendar is empty right now. Save a fill or add a dosage plan to see your dose timeline here."
+            ],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Your calendar is empty right now. Save a fill or add a dosage plan to see your dose timeline here.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "schedulePopulated": {
+          "file": "after-desktop-schedule-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg • draw 0.2 mL every 7 days Due today Start Sep 12, 2026 Next dose Sep 19, 9:00 AM Mark as taken Test Alert Delete",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarPopulated": {
+          "file": "after-desktop-calendar-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 5,
+            "itemCount": 5,
+            "sectionHeaders": [
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 5,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Due today Mark as taken Sep 19, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 26, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarDates": {
+          "file": "after-desktop-calendar-dates.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 7,
+            "itemCount": 7,
+            "sectionHeaders": [
+              "Past Doses",
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 7,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "PAST DOSES Aug 29, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 5, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "focusMarkTaken": {
+          "file": "after-desktop-focus-mark-taken.png",
+          "pixels": "1280x800",
+          "focus": {
+            "ok": true,
+            "action": "mark-taken",
+            "selector": "#reminder-list [data-action=\"mark-taken\"]",
+            "text": "Mark as taken"
+          },
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg • draw 0.2 mL every 7 days Due today Start Sep 12, 2026 Next dose Sep 19, 9:00 AM Mark as taken Test Alert Delete",
+            "focus": {
+              "tag": "BUTTON",
+              "action": "mark-taken",
+              "className": "primary-button fitgen-target-44",
+              "text": "Mark as taken"
+            }
+          }
+        },
+        "focusCalendar": {
+          "file": "after-desktop-focus-calendar.png",
+          "pixels": "1280x800",
+          "focus": {
+            "ok": true,
+            "action": "mark-taken",
+            "selector": "#calendar-list [data-action=\"mark-taken\"]",
+            "text": "Mark as taken"
+          },
+          "state": {
+            "dayCount": 5,
+            "itemCount": 5,
+            "sectionHeaders": [
+              "Upcoming"
+            ],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 5,
+            "htmlHasSectionHeaders": true,
+            "ownerPresent": true,
+            "text": "UPCOMING Sep 12, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Due today Mark as taken Sep 19, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00 AM Mark as taken Sep 26, 2026 1 dose Demo Vial A 3 mg • draw 0.2 mL 9:00",
+            "focus": {
+              "tag": "BUTTON",
+              "action": "mark-taken",
+              "className": "mini-button mark-taken-btn fitgen-target-44",
+              "text": "Mark as taken"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
