@@ -52,7 +52,10 @@ exact result
 
 ## Review request
 
-<!-- Name the independent reviewer and what must be verified. -->
+<!-- Actionable Codex review is PR-first. After opening this PR, post a new
+[GROK] [REVIEW] comment using the required fields in AGENTS.md and
+.github/AI_COLLABORATION.md. Do not leave the only copy of the handoff on an
+issue or in chat. -->
 
 - Reviewer:
 - Blocking areas:
