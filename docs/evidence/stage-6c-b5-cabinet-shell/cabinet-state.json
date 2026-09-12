@@ -1,0 +1,469 @@
+{
+  "label": "after",
+  "capturedAt": "2026-09-12T17:57:49.147Z",
+  "privacy": "synthetic Demo Vial A / Demo Vial B only",
+  "viewports": [
+    {
+      "viewport": "mobile",
+      "shots": {
+        "empty": {
+          "file": "after-mobile-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": false,
+            "emptyText": "No fills saved yet. Save an option in Fill to start your Peptide Cabinet.",
+            "names": [],
+            "cards": [],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 0,
+            "renameCount": 0,
+            "deleteCount": 0,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "populated": {
+          "file": "after-mobile-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▸ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan ▸ Demo Vial B Add 2 mL BAC water to 20 mg. 0 plans",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "collapsed": {
+          "file": "after-mobile-collapsed.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▸ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan ▸ Demo Vial B Add 2 mL BAC water to 20 mg. 0 plans",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "expanded": {
+          "file": "after-mobile-expanded.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▾ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan Concentration 15 mg/mL Doses taken 0 / 10 Doses left 9 90% full Mark doses taken to track depletion Next dose ",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▾",
+                "panelCollapsed": false,
+                "usageDisplay": "grid"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "actions": {
+          "file": "after-mobile-actions.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▾ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan Concentration 15 mg/mL Doses taken 0 / 10 Doses left 9 90% full Mark doses taken to track depletion Next dose ",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▾",
+                "panelCollapsed": false,
+                "usageDisplay": "grid"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "focusToggle": {
+          "file": "after-mobile-focus-toggle.png",
+          "pixels": "780x1688",
+          "focus": {
+            "ok": true,
+            "action": "toggle-fill",
+            "text": "▾Demo Vial A"
+          }
+        },
+        "focusDelete": {
+          "file": "after-mobile-focus-delete.png",
+          "pixels": "780x1688",
+          "focus": {
+            "ok": true,
+            "action": "delete-fill",
+            "text": "Delete"
+          }
+        }
+      }
+    },
+    {
+      "viewport": "desktop",
+      "shots": {
+        "empty": {
+          "file": "after-desktop-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": false,
+            "emptyText": "No fills saved yet. Save an option in Fill to start your Peptide Cabinet.",
+            "names": [],
+            "cards": [],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 0,
+            "renameCount": 0,
+            "deleteCount": 0,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "populated": {
+          "file": "after-desktop-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▸ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan ▸ Demo Vial B Add 2 mL BAC water to 20 mg. 0 plans",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "collapsed": {
+          "file": "after-desktop-collapsed.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▸ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan ▸ Demo Vial B Add 2 mL BAC water to 20 mg. 0 plans",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "expanded": {
+          "file": "after-desktop-expanded.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▾ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan Concentration 15 mg/mL Doses taken 0 / 10 Doses left 9 90% full Mark doses taken to track depletion Next dose ",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▾",
+                "panelCollapsed": false,
+                "usageDisplay": "grid"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "actions": {
+          "file": "after-desktop-actions.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": true,
+            "htmlHasFallbackActions": false,
+            "emptyText": "▾ Demo Vial A Add 2 mL BAC water to 30 mg. 1 plan Concentration 15 mg/mL Doses taken 0 / 10 Doses left 9 90% full Mark doses taken to track depletion Next dose ",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▾",
+                "panelCollapsed": false,
+                "usageDisplay": "grid"
+              },
+              {
+                "collapsed": true,
+                "hasToggle": true,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "▸",
+                "panelCollapsed": true,
+                "usageDisplay": "none"
+              }
+            ],
+            "toggleCount": 2,
+            "panelCount": 2,
+            "editCount": 0,
+            "renameCount": 2,
+            "deleteCount": 2,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "focusToggle": {
+          "file": "after-desktop-focus-toggle.png",
+          "pixels": "1280x800",
+          "focus": {
+            "ok": true,
+            "action": "toggle-fill",
+            "text": "▾Demo Vial A"
+          }
+        },
+        "focusDelete": {
+          "file": "after-desktop-focus-delete.png",
+          "pixels": "1280x800",
+          "focus": {
+            "ok": true,
+            "action": "delete-fill",
+            "text": "Delete"
+          }
+        }
+      }
+    }
+  ]
+}

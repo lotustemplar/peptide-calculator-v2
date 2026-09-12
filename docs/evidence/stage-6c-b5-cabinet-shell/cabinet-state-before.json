@@ -1,0 +1,249 @@
+{
+  "label": "before",
+  "capturedAt": "2026-09-12T17:55:58.318Z",
+  "privacy": "synthetic Demo Vial A / Demo Vial B only",
+  "viewports": [
+    {
+      "viewport": "mobile",
+      "shots": {
+        "empty": {
+          "file": "before-mobile-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": false,
+            "emptyText": "No fills saved yet.",
+            "names": [],
+            "cards": [],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 0,
+            "renameCount": 0,
+            "deleteCount": 0,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "populated": {
+          "file": "before-mobile-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": true,
+            "emptyText": "Demo Vial A 2.00 mL - BAC WATER AMOUNT 15 mg/mL concentration 100% left 30 mg remaining 2.00 mL left in the vial 10 doses left Next dose Sep 12, 2026 at 09:00 D",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              },
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              }
+            ],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 2,
+            "renameCount": 0,
+            "deleteCount": 2,
+            "fallbackActionCount": 2,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "actions": {
+          "file": "before-mobile-actions.png",
+          "pixels": "780x1688",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": true,
+            "emptyText": "Demo Vial A 2.00 mL - BAC WATER AMOUNT 15 mg/mL concentration 100% left 30 mg remaining 2.00 mL left in the vial 10 doses left Next dose Sep 12, 2026 at 09:00 D",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              },
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              }
+            ],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 2,
+            "renameCount": 0,
+            "deleteCount": 2,
+            "fallbackActionCount": 2,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        }
+      }
+    },
+    {
+      "viewport": "desktop",
+      "shots": {
+        "empty": {
+          "file": "before-desktop-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": false,
+            "emptyText": "No fills saved yet.",
+            "names": [],
+            "cards": [],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 0,
+            "renameCount": 0,
+            "deleteCount": 0,
+            "fallbackActionCount": 0,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "populated": {
+          "file": "before-desktop-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": true,
+            "emptyText": "Demo Vial A 2.00 mL - BAC WATER AMOUNT 15 mg/mL concentration 100% left 30 mg remaining 2.00 mL left in the vial 10 doses left Next dose Sep 12, 2026 at 09:00 D",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              },
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              }
+            ],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 2,
+            "renameCount": 0,
+            "deleteCount": 2,
+            "fallbackActionCount": 2,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "actions": {
+          "file": "before-desktop-actions.png",
+          "pixels": "1280x800",
+          "state": {
+            "htmlHasFillToggle": false,
+            "htmlHasFallbackActions": true,
+            "emptyText": "Demo Vial A 2.00 mL - BAC WATER AMOUNT 15 mg/mL concentration 100% left 30 mg remaining 2.00 mL left in the vial 10 doses left Next dose Sep 12, 2026 at 09:00 D",
+            "names": [
+              "Demo Vial A",
+              "Demo Vial B"
+            ],
+            "cards": [
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              },
+              {
+                "collapsed": false,
+                "hasToggle": false,
+                "toggleAriaExpanded": null,
+                "toggleAriaControls": null,
+                "caret": "",
+                "panelCollapsed": false,
+                "usageDisplay": null
+              }
+            ],
+            "toggleCount": 0,
+            "panelCount": 0,
+            "editCount": 2,
+            "renameCount": 0,
+            "deleteCount": 2,
+            "fallbackActionCount": 2,
+            "ownerPresent": true,
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        }
+      }
+    }
+  ]
+}
