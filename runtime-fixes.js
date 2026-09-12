@@ -760,26 +760,21 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackSchedules() {
+    if (typeof window.renderSchedules === "function") {
+      window.renderSchedules();
+      return;
+    }
     const fills = readFills().filter(isActiveRecord);
     const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
     const todayDue = getTodayDueSchedules();
 
-    const bannerHtml = todayDue.length
-      ? `
-        <div class="today-schedule-banner">
-          <h3>Due Today</h3>
-          <p>${todayDue.length} peptide dose${todayDue.length === 1 ? "" : "s"} due today.</p>
-          ${todayDue.map(({ schedule, fill }) => `
-            <div class="today-schedule-card">
-              <h4>${escapeHtml(fill.name)}</h4>
-              <p>${formatDose(schedule.doseAmount, schedule.unitLabel)} at ${escapeHtml(schedule.reminderTime)}. Draw ${formatDrawMl(schedule.doseMl)}.</p>
-              <div class="today-schedule-actions">
-                <button class="primary-button fitgen-target-44" type="button" data-action="mark-taken" data-id="${schedule.id}" data-date="${todayKey()}">Mark as taken</button>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      `
+    // RF-B-012: do not emit the Due Today banner class at source.
+    // Characterized 6b.3 visible-result parity: whenever that banner was
+    // written, due rows also emitted mark-taken, so bind always stripped it.
+    // Keep the due-today empty chrome only; list cards stay on the unchanged
+    // RF-C-016 interface.
+    const dueTodayEmptyHtml = todayDue.length
+      ? ""
       : '<div class="empty-state">No peptides are due today.</div>';
 
     const listHtml = schedules.length
@@ -825,7 +820,7 @@ async function syncRemindersToBackend() {
         }).join("")
       : '<div class="empty-state">No schedules saved yet. Save a fill first.</div>';
 
-    reminderList.innerHTML = `${bannerHtml}${listHtml}`;
+    reminderList.innerHTML = `${dueTodayEmptyHtml}${listHtml}`;
 
     reminderList.querySelectorAll('[data-action="mark-taken"]').forEach((button) => {
       button.addEventListener("click", () => markScheduleTaken(button.dataset.id));
@@ -833,6 +828,10 @@ async function syncRemindersToBackend() {
   }
 
   function renderFallbackCalendar() {
+    if (typeof window.renderCalendar === "function") {
+      window.renderCalendar();
+      return;
+    }
     const fills = readFills().filter(isActiveRecord);
     const schedules = readSchedules().map(normalizeSchedule).filter(isActiveRecord);
     if (!schedules.length) {

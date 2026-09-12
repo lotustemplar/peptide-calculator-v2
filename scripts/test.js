@@ -21,6 +21,7 @@
  * Stage 6c-B3: RF-B-017/018 FitGenRuntimeBridge setView + closeSaveModal retarget.
  * Stage 6c-B4: RF-B-016 tabs/view chrome — overlay capture stands down for app.js.
  * Stage 6c-B5: RF-B-010 Cabinet shell stop-last-write + restore 6b.3 accordion hosts.
+ * Stage 6c-B6: RF-B-011/012 schedule/calendar chrome + stop Due Today banner emit.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -110,6 +111,10 @@ const jobs = [
   {
     name: "Stage 6c-B5 RF-B-010 Cabinet shell stop-last-write + accordion hosts",
     file: path.join(__dirname, "ci", "stage6c-b5-cabinet-shell-test.js"),
+  },
+  {
+    name: "Stage 6c-B6 RF-B-011/012 schedule/calendar chrome + banner-at-source",
+    file: path.join(__dirname, "ci", "stage6c-b6-schedule-chrome-test.js"),
   },
 ];
 

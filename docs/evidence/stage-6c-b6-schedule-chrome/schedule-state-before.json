@@ -1,0 +1,245 @@
+{
+  "label": "before",
+  "capturedAt": "2026-09-12T19:21:47.430Z",
+  "privacy": "synthetic Demo Vial A / Demo Vial B only",
+  "viewports": [
+    {
+      "viewport": "mobile",
+      "shots": {
+        "scheduleEmpty": {
+          "file": "before-mobile-schedule-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 0,
+            "emptyCount": 2,
+            "emptyText": [
+              "No peptides are due today.",
+              "No schedules saved yet. Save a fill first."
+            ],
+            "markTakenCount": 0,
+            "undoCount": 0,
+            "pills": [],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "No peptides are due today. No schedules saved yet. Save a fill first.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarEmpty": {
+          "file": "before-mobile-calendar-empty.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 0,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 1,
+            "emptyText": [
+              "No calendar items yet."
+            ],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "No calendar items yet.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "schedulePopulated": {
+          "file": "before-mobile-schedule-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg every 7 days Due today Draw each dose 0.20 mL Next dose Sep 12, 2026 at 09:00 Mark as taken",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarPopulated": {
+          "file": "before-mobile-calendar-populated.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 1,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A Next due Sep 12, 2026 at 09:00 Frequency Every 7 days Draw each dose 0.20 mL",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarDates": {
+          "file": "before-mobile-calendar-dates.png",
+          "pixels": "780x1688",
+          "state": {
+            "dayCount": 1,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A Next due Sep 12, 2026 at 09:00 Frequency Every 7 days Draw each dose 0.20 mL",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        }
+      }
+    },
+    {
+      "viewport": "desktop",
+      "shots": {
+        "scheduleEmpty": {
+          "file": "before-desktop-schedule-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 0,
+            "emptyCount": 2,
+            "emptyText": [
+              "No peptides are due today.",
+              "No schedules saved yet. Save a fill first."
+            ],
+            "markTakenCount": 0,
+            "undoCount": 0,
+            "pills": [],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "No peptides are due today. No schedules saved yet. Save a fill first.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarEmpty": {
+          "file": "before-desktop-calendar-empty.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 0,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 1,
+            "emptyText": [
+              "No calendar items yet."
+            ],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "No calendar items yet.",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "schedulePopulated": {
+          "file": "before-desktop-schedule-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "bannerCount": 0,
+            "cardCount": 1,
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 1,
+            "undoCount": 0,
+            "pills": [
+              "Due today"
+            ],
+            "htmlHasBanner": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A 3 mg every 7 days Due today Draw each dose 0.20 mL Next dose Sep 12, 2026 at 09:00 Mark as taken",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarPopulated": {
+          "file": "before-desktop-calendar-populated.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 1,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A Next due Sep 12, 2026 at 09:00 Frequency Every 7 days Draw each dose 0.20 mL",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        },
+        "calendarDates": {
+          "file": "before-desktop-calendar-dates.png",
+          "pixels": "1280x800",
+          "state": {
+            "dayCount": 1,
+            "itemCount": 0,
+            "sectionHeaders": [],
+            "emptyCount": 0,
+            "emptyText": [],
+            "markTakenCount": 0,
+            "htmlHasSectionHeaders": false,
+            "ownerPresent": true,
+            "text": "Demo Vial A Next due Sep 12, 2026 at 09:00 Frequency Every 7 days Draw each dose 0.20 mL",
+            "focus": {
+              "tag": "BODY",
+              "action": null,
+              "className": "",
+              "text": "FitGen Peptide Calculator Measurement planner for fills, schedules, and cabinet "
+            }
+          }
+        }
+      }
+    }
+  ]
+}
