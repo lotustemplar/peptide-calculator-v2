@@ -18,6 +18,7 @@
  * Stage 6b.4: retire superseded native-backup-fix.js; Stage 3 export path owns #export-data.
  * Stage 6c-B1: absorb runtime-fixes.js injectFallbackStyles into styles.css.
  * Stage 6c-B2: RF-A-003 Cabinet Edit/Delete bubble-listener dead-path deletion.
+ * Stage 6c-B3: RF-B-017/018 FitGenRuntimeBridge setView + closeSaveModal retarget.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -95,6 +96,10 @@ const jobs = [
   {
     name: "Stage 6c-B2 RF-A-003 Cabinet Edit/Delete bubble listeners deleted",
     file: path.join(__dirname, "ci", "stage6c-b2-dead-paths-test.js"),
+  },
+  {
+    name: "Stage 6c-B3 RF-B-017/018 bridge setView + closeSaveModal chrome retarget",
+    file: path.join(__dirname, "ci", "stage6c-b3-bridge-chrome-test.js"),
   },
 ];
 
