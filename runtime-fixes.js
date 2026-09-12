@@ -654,6 +654,9 @@ async function syncRemindersToBackend() {
   }
 
   function bindFallbackTabs() {
+    if (typeof window.setActiveView === "function") {
+      return;
+    }
     viewTabs.forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1170,8 +1173,10 @@ async function syncRemindersToBackend() {
   bindFallbackTabs();
   bindNotificationButton();
   renderAllFallback();
-  const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
-  setActiveViewFallback(savedView);
+  if (typeof window.setActiveView !== "function") {
+    const savedView = readJsonStorage(RUNTIME_FIX_STORAGE_KEYS.activeView, "calculator-view");
+    setActiveViewFallback(savedView);
+  }
   window.setTimeout(() => renderFallbackOptions(false), 50);
 
   window.FitGenRuntimeBridge = {

@@ -1,0 +1,106 @@
+{
+  "label": "after",
+  "capturedAt": "2026-09-12T17:12:05.486Z",
+  "activeViewKey": "peptide-calculator-v2-active-view",
+  "views": [
+    {
+      "shot": "after-mobile-calculator.png",
+      "viewport": "mobile",
+      "viewId": "calculator-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calculator-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "after-mobile-schedule.png",
+      "viewport": "mobile",
+      "viewId": "schedule-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"schedule-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "after-mobile-calendar.png",
+      "viewport": "mobile",
+      "viewId": "calendar-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calendar-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "after-mobile-cabinet.png",
+      "viewport": "mobile",
+      "viewId": "cabinet-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"cabinet-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "after-desktop-calculator.png",
+      "viewport": "desktop",
+      "viewId": "calculator-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calculator-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "after-desktop-schedule.png",
+      "viewport": "desktop",
+      "viewId": "schedule-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"schedule-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "after-desktop-calendar.png",
+      "viewport": "desktop",
+      "viewId": "calendar-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calendar-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "after-desktop-cabinet.png",
+      "viewport": "desktop",
+      "viewId": "cabinet-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"cabinet-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    }
+  ],
+  "focus": {
+    "shot": "after-desktop-schedule-focus.png",
+    "viewport": "desktop",
+    "viewId": "schedule-view",
+    "ariaCurrent": "page",
+    "tabActive": true,
+    "stored": "\"schedule-view\"",
+    "stateActiveView": "schedule-view",
+    "focusTarget": "schedule-view",
+    "pixels": "1280x800"
+  }
+}

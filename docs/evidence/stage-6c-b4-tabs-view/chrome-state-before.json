@@ -1,0 +1,96 @@
+{
+  "label": "before",
+  "capturedAt": "2026-09-12T17:10:59.199Z",
+  "activeViewKey": "peptide-calculator-v2-active-view",
+  "views": [
+    {
+      "shot": "before-mobile-calculator.png",
+      "viewport": "mobile",
+      "viewId": "calculator-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calculator-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "before-mobile-schedule.png",
+      "viewport": "mobile",
+      "viewId": "schedule-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"schedule-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "before-mobile-calendar.png",
+      "viewport": "mobile",
+      "viewId": "calendar-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calendar-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "before-mobile-cabinet.png",
+      "viewport": "mobile",
+      "viewId": "cabinet-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"cabinet-view\"",
+      "stateActiveView": null,
+      "pixels": "780x1688"
+    },
+    {
+      "shot": "before-desktop-calculator.png",
+      "viewport": "desktop",
+      "viewId": "calculator-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calculator-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "before-desktop-schedule.png",
+      "viewport": "desktop",
+      "viewId": "schedule-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"schedule-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "before-desktop-calendar.png",
+      "viewport": "desktop",
+      "viewId": "calendar-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"calendar-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    },
+    {
+      "shot": "before-desktop-cabinet.png",
+      "viewport": "desktop",
+      "viewId": "cabinet-view",
+      "ariaCurrent": "page",
+      "tabActive": true,
+      "viewActive": true,
+      "stored": "\"cabinet-view\"",
+      "stateActiveView": null,
+      "pixels": "1280x800"
+    }
+  ],
+  "focus": null
+}
