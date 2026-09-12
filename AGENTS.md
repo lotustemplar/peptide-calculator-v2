@@ -86,7 +86,7 @@ After reviewing an exact commit head, Codex posts exactly one of:
   protocol gates still apply.
 - `[CODEX] [MERGE_AUTHORIZED]` — exact-head merge authorization for routine
   in-scope work that is not Serious and not owner-only. The comment body must
-  name the full 40-character SHA. Recommended phrasing:
+  name the full 40-character SHA. Use this phrasing:
   `Forge may merge exact head <SHA>`.
 - `[CODEX] [OWNER_REQUIRED]` — Grok stops and waits for Filipe. Serious
   decisions are routed through this tag.
@@ -210,7 +210,7 @@ Rules:
   treat that as exact-head merge authorization (still honored).
 - `[CODEX] [MERGE_AUTHORIZED]`: exact-head merge authorization for routine
   in-scope, non-Serious work. Body must name the full 40-character SHA
-  (recommended: `Forge may merge exact head <SHA>`). Agents may undraft and
+  (use: `Forge may merge exact head <SHA>`). Agents may undraft and
   merge only after the four verify checks in `.github/AI_COLLABORATION.md`.
 - `[CODEX] [OWNER_REQUIRED]`: stop and wait. Serious decisions use this tag.
 - Spec-only / inventory-only reviews still need a draft PR so Codex receives

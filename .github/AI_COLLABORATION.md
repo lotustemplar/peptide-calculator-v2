@@ -136,7 +136,7 @@ After reviewing an exact commit head, Codex posts exactly one of:
   protocol gates still apply.
 - `[CODEX] [MERGE_AUTHORIZED]` — exact-head merge authorization for routine
   in-scope work that is not Serious and not owner-only. The comment body must
-  name the full 40-character SHA. Recommended phrasing:
+  name the full 40-character SHA. Use this phrasing:
   `Forge may merge exact head <SHA>`.
 - `[CODEX] [OWNER_REQUIRED]` — Grok stops and waits for Filipe. Serious
   decisions are routed through this tag.
@@ -193,7 +193,7 @@ Filipe locked this procedure on 2026-09-11 for
 7. When Codex posts `[CODEX] [MERGE_AUTHORIZED]`: for routine in-scope work
    that is not Serious and not owner-only, agents may undraft and merge
    after all four verify checks in **Routine exact-head merge** pass. Body
-   must name the full 40-character SHA. Recommended phrasing:
+   must name the full 40-character SHA. Use this phrasing:
    `Forge may merge exact head <SHA>`. `[APPROVED]` alone still does not
    authorize merge.
 8. When Codex posts `[CODEX] [OWNER_REQUIRED]`: stop and wait.
@@ -438,7 +438,7 @@ When a PR review handoff arrives:
    bare form `[MERGE AUTHORIZED]`, `[DECISION REQUIRED]`,
    `[CHANGES REQUESTED]`, or `[REVIEW]` as new Codex outputs. Use
    `[CODEX] [MERGE_AUTHORIZED]` (body names the full 40-character SHA;
-   recommended: `Forge may merge exact head <SHA>`) when authorizing a
+   use: `Forge may merge exact head <SHA>`) when authorizing a
    routine exact-head merge. Codex may later post `[MERGE_AUTHORIZED]`
    for the same unchanged exact head after an earlier `[APPROVED]`.
 4. If `[CHANGES_REQUIRED]`, hand ownership back to Grok for those items only.
