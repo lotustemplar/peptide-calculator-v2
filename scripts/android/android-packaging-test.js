@@ -122,6 +122,64 @@ function testWorkflowIsArtifactOnly() {
   assert(/emulator-smoke\.sh/.test(workflow), "workflow runs the POSIX emulator smoke script");
 }
 
+function testEmulatorIsRequiredGate() {
+  console.log("emulator install+launch is a required workflow gate");
+  const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/android-apk.yml"), "utf8");
+  assert(/emulator-smoke:/.test(workflow), "defines the emulator-smoke job");
+  assert(!/continue-on-error:\s*true/.test(workflow), "does not bypass emulator failure with continue-on-error");
+  assert(!/best effort/i.test(workflow), "does not label emulator smoke as best effort");
+  assert(
+    /name:\s*Emulator install\+launch\s*$/m.test(workflow),
+    "emulator job name is a required install+launch gate"
+  );
+}
+
+function sectionBody(xml, tag) {
+  const match = xml.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`));
+  return match ? match[1] : "";
+}
+
+function testBackupAndTransferDisabled() {
+  console.log("Android backup and device-transfer are fail-closed");
+  const manifest = fs.readFileSync(
+    path.join(ROOT, "android/app/src/main/AndroidManifest.xml"),
+    "utf8"
+  );
+  assert(/android:allowBackup="false"/.test(manifest), "allowBackup is explicitly false");
+  assert(!/android:allowBackup="true"/.test(manifest), "allowBackup is not enabled");
+  assert(
+    /android:fullBackupContent="@xml\/backup_rules"/.test(manifest),
+    "fullBackupContent points at exclude-all backup_rules"
+  );
+  assert(
+    /android:dataExtractionRules="@xml\/data_extraction_rules"/.test(manifest),
+    "dataExtractionRules points at Android 12+ exclude-all rules"
+  );
+
+  const backupRules = fs.readFileSync(
+    path.join(ROOT, "android/app/src/main/res/xml/backup_rules.xml"),
+    "utf8"
+  );
+  const extraction = fs.readFileSync(
+    path.join(ROOT, "android/app/src/main/res/xml/data_extraction_rules.xml"),
+    "utf8"
+  );
+  const domains = ["root", "file", "database", "sharedpref", "external"];
+  assert(!/<include\b/.test(backupRules), "pre-12 backup rules have no include export");
+  assert(!/<include\b/.test(extraction), "Android 12+ extraction rules have no include export");
+
+  const cloud = sectionBody(extraction, "cloud-backup");
+  const transfer = sectionBody(extraction, "device-transfer");
+  assert(Boolean(cloud.trim()), "declares a cloud-backup section");
+  assert(Boolean(transfer.trim()), "declares a device-transfer section");
+  for (const domain of domains) {
+    const exclude = new RegExp(`<exclude\\b[^>]*domain="${domain}"`);
+    assert(exclude.test(backupRules), `pre-12 backup excludes ${domain}`);
+    assert(exclude.test(cloud), `cloud-backup excludes ${domain}`);
+    assert(exclude.test(transfer), `device-transfer excludes ${domain}`);
+  }
+}
+
 function testEmulatorSmokeScript() {
   console.log("emulator-smoke.sh");
   const script = path.join(ROOT, "scripts/android/emulator-smoke.sh");
@@ -138,6 +196,8 @@ function main() {
     testSkipDirs();
     testPrepareWwwMatchesCurrentMain();
     testWorkflowIsArtifactOnly();
+    testEmulatorIsRequiredGate();
+    testBackupAndTransferDisabled();
     testEmulatorSmokeScript();
   } finally {
     for (const dir of tempDirs) {

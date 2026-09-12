@@ -96,11 +96,10 @@ jobs:
             dist-apk/${{ steps.checksum.outputs.apk_name }}.sha256
 
   emulator-smoke:
-    name: Emulator install+launch (best effort)
+    name: Emulator install+launch
     needs: build-debug-apk
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    continue-on-error: true
     steps:
       - name: Checkout smoke script
         uses: actions/checkout@v4

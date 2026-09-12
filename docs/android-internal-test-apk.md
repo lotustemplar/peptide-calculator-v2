@@ -41,6 +41,14 @@ This first APK does **not** add:
 - Capacitor Local Notifications
 - OneSignal / Median native bridges
 
+OS Auto Backup and Android 12+ device-to-device transfer are **fail-closed**:
+`android:allowBackup="false"` plus exclude-all `fullBackupContent` and
+`dataExtractionRules` for cloud backup and device transfer. This does not add
+cloud sync or a new data-handling path.
+
+Emulator install+launch is a **required** Android APK workflow gate (not
+best-effort / not `continue-on-error`).
+
 ## Honest behavior (do not over-claim)
 
 | Area | Status |
