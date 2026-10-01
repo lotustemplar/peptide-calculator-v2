@@ -47,9 +47,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          # The legacy "tools" package was removed from sdkmanager and fails the
-          # action default (`tools platform-tools`). platform-tools is enough.
-          packages: platform-tools
+          # 12266719 is cmdline-tools 16.0. The action puts this id in the
+          # commandlinetools zip URL; the short name 16.0 is not a valid download id.
+          # Default packages is "tools platform-tools". sdkmanager no longer ships
+          # the legacy "tools" package. compileSdk 35 / AGP 8.7.2 need platform 35
+          # and build-tools 35.0.0.
+          cmdline-tools-version: "12266719"
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
 
       - name: Install root dependencies from lockfile
         run: npm ci --ignore-scripts
@@ -123,9 +127,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          # The legacy "tools" package was removed from sdkmanager and fails the
-          # action default (`tools platform-tools`). platform-tools is enough.
-          packages: platform-tools
+          # Same cmdline-tools 16.0 pin as the build job (long id 12266719).
+          # Emulator API 34 needs that platform; build-tools 35.0.0 matches AGP 8.7.2.
+          # Do not request the removed "tools" package.
+          cmdline-tools-version: "12266719"
+          packages: platform-tools platforms;android-34 build-tools;35.0.0
 
       - name: Install and launch on emulator
         uses: reactivecircus/android-emulator-runner@v2
