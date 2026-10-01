@@ -8,8 +8,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
-    "cors": "^2.8.5",
+    "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   }

@@ -24,7 +24,21 @@ Peptide Calculator V2 is a clean static web app designed to be easy to host and 
 
 ## Hosting
 
-Because this is a static app, it can be hosted on any simple website host or static hosting provider and then wrapped in Median.
+The static site and the reminder API are one Vercel project, `peptide-calculator-v2`.
+`vercel.json` keeps the framework unset so files at the repository root stay static,
+and it rewrites the original backend paths onto Vercel Functions under `/api`.
+Vercel builds with Node 24 (`engines.node`). GitHub Actions CI stays on Node 20.19.
+
+Production origin for this project:
+
+- `https://peptide-calculator-v2-snowy.vercel.app`
+
+`peptide-calculator-v2.vercel.app` is already assigned to a different Vercel project,
+so it is not this app's origin. GitHub Pages can stay up until the owner turns it
+off; the Capacitor APK uses the absolute Vercel origin in `config.js`.
+
+The reminder API stores its OneSignal id mapping in Neon Postgres. OneSignal still
+pre-schedules occurrences. There is no cron.
 
 ## Production reminders
 
@@ -50,7 +64,8 @@ is **UNVERIFIED** on this wrapper. Real-device behavior stays labeled
 ## CI (P0.0)
 
 Pull-request quality gates live in `.github/workflows/ci.yml` and are documented
-in `scripts/ci/README.md`. Keep-alive is not a PR quality check. Lockfiles for
+in `scripts/ci/README.md`. Vercel Functions and Neon do not need a five-minute
+ping, so there is no keep-alive workflow. Lockfiles for
 the root package and `backend/` are committed and used by CI installs. Lint
 covers `scripts/` plus changed/new JS/CJS/MJS/TS/TSX outside the legacy-path
 allowlist. TypeScript/TSX is parsed with typescript-eslint (Issue #9).

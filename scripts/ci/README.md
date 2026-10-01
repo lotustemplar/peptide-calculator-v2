@@ -5,8 +5,8 @@ CI slice of **SAF-COPY-001**. It does not change calculator, reminder, or backen
 behavior.
 
 Required PR check path: `.github/workflows/ci.yml` (`on: pull_request`).
-`.github/workflows/keep-alive.yml` is schedule-only and must **not** be a
-required PR check. This workflow must **not** use `pull_request_target`.
+The Render keep-alive workflow was removed when the reminder API moved to
+Vercel Functions. This workflow must **not** use `pull_request_target`.
 
 ## Local commands
 
@@ -164,4 +164,4 @@ Lint probes write under `src/` and must not delete other `src/` files (P0.OCC).
 
 A PR that adds `*-fix.js`, new forbidden copy, or a lint violation on a
 non-legacy file should show a red **PR quality gates** check on the pull
-request, not keep-alive.
+request.

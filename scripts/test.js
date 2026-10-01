@@ -23,6 +23,7 @@
  * Stage 6c-B5: RF-B-010 Cabinet shell stop-last-write + restore 6b.3 accordion hosts.
  * Stage 6c-B6: RF-B-011/012 schedule/calendar chrome + stop Due Today banner emit.
  * Issue #18: Capacitor Android www copy list + artifact-only APK workflow.
+ * Vercel port: reminder API against PGlite, including restart persistence.
  */
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -120,6 +121,10 @@ const jobs = [
   {
     name: "Android packaging prepare-www + artifact-only APK workflow",
     file: path.join(__dirname, "android", "android-packaging-test.js"),
+  },
+  {
+    name: "Vercel reminder API + Postgres restart persistence",
+    file: path.join(__dirname, "backend", "vercel-reminders-test.js"),
   },
 ];
 

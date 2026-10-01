@@ -120,6 +120,19 @@ function testWorkflowIsArtifactOnly() {
   assert(/fitgen-internal-test-apk/.test(workflow), "artifact name is fitgen-internal-test-apk");
   assert(/contents:\s*read/.test(workflow), "workflow uses contents: read (no release write)");
   assert(/emulator-smoke\.sh/.test(workflow), "workflow runs the POSIX emulator smoke script");
+  assert(
+    /cmdline-tools-version:\s*"12266719"/.test(workflow),
+    "pins cmdline-tools 12266719 (short version 16.0)"
+  );
+  assert(/platforms;android-35/.test(workflow), "build job installs platforms;android-35");
+  assert(/build-tools;35\.0\.0/.test(workflow), "installs build-tools;35.0.0");
+  const packageLines = workflow.split("\n").filter((line) => /^\s*packages:/.test(line));
+  assert(packageLines.length >= 2, "both setup-android steps set packages");
+  for (const line of packageLines) {
+    const pkgs = line.slice(line.indexOf(":") + 1).trim().split(/\s+/);
+    assert(!pkgs.includes("tools"), "packages does not request the removed tools package: " + line.trim());
+    assert(pkgs.includes("platform-tools"), "packages includes platform-tools: " + line.trim());
+  }
 }
 
 function testEmulatorIsRequiredGate() {
