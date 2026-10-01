@@ -46,6 +46,10 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The legacy "tools" package was removed from sdkmanager and fails the
+          # action default (`tools platform-tools`). platform-tools is enough.
+          packages: platform-tools
 
       - name: Install root dependencies from lockfile
         run: npm ci --ignore-scripts
@@ -118,6 +122,10 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The legacy "tools" package was removed from sdkmanager and fails the
+          # action default (`tools platform-tools`). platform-tools is enough.
+          packages: platform-tools
 
       - name: Install and launch on emulator
         uses: reactivecircus/android-emulator-runner@v2
