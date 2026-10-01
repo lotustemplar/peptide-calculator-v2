@@ -27,6 +27,7 @@ Peptide Calculator V2 is a clean static web app designed to be easy to host and 
 The static site and the reminder API are one Vercel project, `peptide-calculator-v2`.
 `vercel.json` keeps the framework unset so files at the repository root stay static,
 and it rewrites the original backend paths onto Vercel Functions under `/api`.
+Vercel builds with Node 24 (`engines.node`). GitHub Actions CI stays on Node 20.19.
 
 Production origin for this project:
 
