@@ -41,6 +41,7 @@ module.exports = [
       "scripts/**/*.cjs",
       "backend/**/*.js",
       "backend/**/*.cjs",
+      "api/**/*.js",
       "**/*.cjs",
     ],
     languageOptions: {
@@ -68,6 +69,7 @@ module.exports = [
       "eslint.config.js",
       "scripts/**",
       "backend/**",
+      "api/**",
     ],
     languageOptions: {
       ecmaVersion: 2022,

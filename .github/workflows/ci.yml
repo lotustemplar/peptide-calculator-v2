@@ -1,6 +1,6 @@
 # PR quality gates (SR-CI-001, SR-CI-002, SAF-COPY-001).
 # This is the required pull_request check path for implementation work.
-# keep-alive.yml is schedule-only and must NOT be treated as a required PR check.
+# The Render keep-alive workflow was removed with the Vercel move.
 name: CI
 
 on:

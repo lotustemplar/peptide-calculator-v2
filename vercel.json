@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --ignore-scripts && npm ci --prefix backend",
+  "ignoreCommand": "node -e \"process.exit(1)\"",
+  "rewrites": [
+    { "source": "/health", "destination": "/api/health" },
+    { "source": "/reminders/sync", "destination": "/api/reminders/sync" },
+    { "source": "/test-push", "destination": "/api/test-push" },
+    { "source": "/debug/:userId", "destination": "/api/debug/:userId" }
+  ]
+}
